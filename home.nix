@@ -1,4 +1,4 @@
-{ config, pkgs, user, herdr, ... }:
+{ config, pkgs, user, herdr, unstablePkgs, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
@@ -20,6 +20,7 @@ in
     jq
     gh
     lazygit
+    nodejs_24
 
     # Editor
     neovim
@@ -28,11 +29,14 @@ in
     claude-code
     codex
     wezterm
-    pi-coding-agent
 
     # Font used by WezTerm and Neovim
     nerd-fonts.hack
   ]) ++ [
+
+    # Pi needs the newer compatibility API 
+    unstablePkgs.pi-coding-agent
+
     # Herdr comes from its official pinned flake.
     herdr.packages.${pkgs.system}.default
   ];
