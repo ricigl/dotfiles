@@ -26,6 +26,7 @@ in
 
     # Terminal and coding agents
     claude-code
+    codex
     wezterm
 
     # Font used by WezTerm and Neovim
@@ -73,7 +74,7 @@ in
       m = "git switch main";
 
       cc = "claude --dangerously-skip-permissions";
-      co = "codex --full-auto";
+      co = "codex --ask-for-approval never --sandbox workspace-write";
 
       rebuild = "home-manager switch --flake ~/.dotfiles#${user}@wsl";
     };
