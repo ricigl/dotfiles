@@ -2,6 +2,7 @@
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
+  setxkbmapPkg = pkgs.setxkbmap or pkgs.xorg.setxkbmap;
 in
 {
   home.username = user;
@@ -21,6 +22,7 @@ in
     gh
     lazygit
     nodejs_24
+    setxkbmapPkg
 
     # Editor
     neovim
@@ -68,6 +70,12 @@ in
 
     initContent = ''
       bindkey '^f' autosuggest-accept
+      
+
+      # Configure the WSLg X server for a Brazilian ABNT2 keyboard.
+      if [[ -n "$DISPLAY" ]]; then
+        ${setxkbmapPkg}/bin/setxkbmap -layout br -variant abnt2 >/dev/null 2>&1 || true
+      fi
     '';
 
     shellAliases = {
