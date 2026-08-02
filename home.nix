@@ -28,6 +28,7 @@ in
     claude-code
     codex
     wezterm
+    pi-coding-agent
 
     # Font used by WezTerm and Neovim
     nerd-fonts.hack
@@ -134,5 +135,5 @@ in
 
   home.file.".pi/agent/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink
-      "${dotfiles}/home/.pi/agent/settings.json";
-}
+        "${dotfiles}/home/.pi/agent/settings.json";
+  }
