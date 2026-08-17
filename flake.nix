@@ -1,5 +1,5 @@
 {
-  description = "Ubuntu WSL development environment";
+  description = "Ubuntu WSL Home Manager environment for Orca and Prime";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
@@ -10,6 +10,7 @@
     home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Legacy fallback only; not loaded by the default Orca/Prime profile.
     herdr.url = "github:herdrdev/herdr/v0.7.5";
   };
 
@@ -33,19 +34,30 @@
         inherit system;
         config.allowUnfree = true;
       };
-    in
-    {
-      homeConfigurations."${user}@wsl" =
+
+      specialArgs = {
+        inherit user herdr unstablePkgs;
+      };
+
+      mkHome = modules:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-
-          extraSpecialArgs = {
-            inherit user herdr unstablePkgs;
-          };
-
-          modules = [
-            ./home.nix
-          ];
+          extraSpecialArgs = specialArgs;
+          inherit modules;
         };
+    in
+    {
+      homeConfigurations."${user}@wsl" = mkHome [
+        ./home.nix
+        ./modules/home-base.nix
+        ./modules/home-orca-prime.nix
+      ];
+
+      homeConfigurations."${user}@wsl-legacy" = mkHome [
+        ./home.nix
+        ./modules/home-base.nix
+        ./modules/home-orca-prime.nix
+        ./modules/home-legacy-agents.nix
+      ];
     };
 }
