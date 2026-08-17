@@ -59,5 +59,30 @@
         ./modules/home-orca-prime.nix
         ./modules/home-legacy-agents.nix
       ];
+
+      devShells.${system}.orca-prime = pkgs.mkShell {
+        packages = with pkgs; [
+          nodejs_22
+          python3
+          uv
+          gh
+          jq
+          ripgrep
+          gnumake
+          gcc
+          pkg-config
+        ];
+
+        PRIME_AGENT_TELEMETRY = "0";
+        PI_SKIP_VERSION_CHECK = "1";
+        LAVISH_AXI_TELEMETRY = "0";
+        LAVISH_AXI_NO_OPEN = "1";
+        LAVISH_AXI_HOST = "127.0.0.1";
+
+        shellHook = ''
+          export NPM_CONFIG_PREFIX="$HOME/.local/share/npm"
+          export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
+        '';
+      };
     };
 }
