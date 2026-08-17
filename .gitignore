@@ -15,5 +15,20 @@ result-*
 # Pi Calm is a runtime toggle; its local state file is never tracked
 /home/.pi/agent/calm
 
+# Prime auth, daemon/session state, caches, and downloaded runtimes stay local
+/home/.prime/agent/auth*
+/home/.prime/agent/sessions/
+/home/.prime/agent/cache/
+/home/.prime/agent/downloads/
+/home/.prime/agent/telemetry.json
+
+# Transitional user-scoped npm prefix is runtime state, never repository data
+/home/.local/share/npm/
+
+# Windows bootstrap artifacts and credentials must never be staged here
+*.private-key
+authorized_keys
+orca-windows-setup*.exe
+
 # no-mistakes local validation state - never commit in this public repo
 .no-mistakes/

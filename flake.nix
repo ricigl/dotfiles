@@ -12,6 +12,12 @@
 
     # Legacy fallback only; not loaded by the default Orca/Prime profile.
     herdr.url = "github:herdrdev/herdr/v0.7.5";
+
+    # Opt-in presentation skill only. The lockfile records the exact commit.
+    i-have-adhd = {
+      url = "github:ayghri/i-have-adhd/2ed064090711586e0c97a2fbbf15465fe8f1808b";
+      flake = false;
+    };
   };
 
   outputs = {
@@ -19,6 +25,7 @@
     nixpkgs-unstable,
     home-manager,
     herdr,
+    i-have-adhd,
     ...
   }:
     let
@@ -36,7 +43,7 @@
       };
 
       specialArgs = {
-        inherit user herdr unstablePkgs;
+        inherit user herdr i-have-adhd unstablePkgs;
       };
 
       mkHome = modules:
