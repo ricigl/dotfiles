@@ -29,6 +29,7 @@ required_packages=(
   git
   openssh-client
   openssh-server
+  iproute2
   build-essential
   python3
   xz-utils

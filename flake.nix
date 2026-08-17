@@ -91,5 +91,11 @@
           export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
         '';
       };
+
+      apps.${system}.home-manager = {
+        type = "app";
+        program = "${home-manager.packages.${system}.home-manager}/bin/home-manager";
+        meta.description = "Run the locked Home Manager CLI";
+      };
     };
 }

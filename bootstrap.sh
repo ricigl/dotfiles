@@ -4,6 +4,17 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REAL_USER="$(whoami)"
+PROFILE="${DOTFILES_PROFILE:-default}"
+
+case "$PROFILE" in
+  default) HOME_SUFFIX="wsl" ;;
+  legacy) HOME_SUFFIX="wsl-legacy" ;;
+  *)
+    echo "DOTFILES_PROFILE must be 'default' or 'legacy'." >&2
+    exit 64
+    ;;
+esac
+HOME_TARGET="${REAL_USER}@${HOME_SUFFIX}"
 
 echo "==> Step 1: verify Determinate Nix"
 if ! command -v nix >/dev/null 2>&1; then
@@ -38,21 +49,20 @@ if [ "$FLAKE_USER" != "$REAL_USER" ]; then
   echo "Updated flake.nix user from $FLAKE_USER to $REAL_USER."
 fi
 
-echo "==> Step 4: refresh flake.lock"
-nix flake lock "$DIR"
-
-echo "==> Step 5: validate the Home Manager configuration"
-nix flake check "$DIR"
+echo "==> Step 4: validate the locked flake"
+nix flake check "$DIR" --no-update-lock-file
 
 nix build \
-  "$DIR#homeConfigurations.\"${REAL_USER}@wsl\".activationPackage"
+  --no-link \
+  --no-update-lock-file \
+  "$DIR#homeConfigurations.\"${HOME_TARGET}\".activationPackage"
 
-echo "==> Step 6: first Home Manager activation"
+echo "==> Step 5: first Home Manager activation ($PROFILE profile)"
 BACKUP_SUFFIX="pre-home-manager-$(date +%Y%m%d-%H%M%S)"
 
-nix run github:nix-community/home-manager/release-26.05 -- \
+nix run "$DIR#home-manager" -- \
   switch \
   -b "$BACKUP_SUFFIX" \
-  --flake "$DIR#${REAL_USER}@wsl"
+  --flake "$DIR#${HOME_TARGET}"
 
 echo "==> Done. Use ./rebuild.sh after future changes."

@@ -105,6 +105,18 @@ if ($Distros -notcontains $Distro) {
     throw "WSL distro '$Distro' not found. Registered distros: $($Distros -join ', ')"
 }
 
+$VerboseDistros = @(
+    & wsl.exe --list --verbose |
+        ForEach-Object { ($_ -replace "`0", "").TrimEnd() }
+)
+if ($LASTEXITCODE -ne 0) {
+    throw "Unable to inspect WSL distribution versions."
+}
+$DistroPattern = '^\s*\*?\s*' + [regex]::Escape($Distro) + '\s+.+\s+2\s*$'
+if (-not ($VerboseDistros | Where-Object { $_ -match $DistroPattern })) {
+    throw "WSL distro '$Distro' must use WSL version 2."
+}
+
 & wsl.exe -d $Distro -- true
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to start WSL distro '$Distro'."
