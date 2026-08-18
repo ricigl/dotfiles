@@ -196,7 +196,9 @@ runtime directory (falling back to `/tmp/prime-agent-UID/daemon.sock`). This
 keeps `prime`, `prime list`, `prime attach`, and related commands connected to
 the same daemon even though each invocation enters a fresh Nix development
 shell. Set `PRIME_AGENT_DAEMON_SOCKET` only when an explicit alternate socket
-is required.
+is required. Prime requires subcommand names to remain the first CLI argument,
+so the launcher places the socket option after recognized commands such as
+`list`, `status`, `attach`, and `shutdown`.
 
 ### 5. Register Ubuntu in Orca
 
