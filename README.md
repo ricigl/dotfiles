@@ -175,6 +175,21 @@ Install the pinned transitional agent tools only after reviewing the script:
 
 The installer uses user-owned locations. It does not require root and must never be run with `sudo`.
 
+After the tools are installed, the default Home Manager profile provides a
+`prime` launcher. It can be called from the regular Node 24 shell and runs only
+Prime inside the pinned Node 22 environment:
+
+```bash
+prime
+```
+
+Arguments are forwarded to `prime-agent`, for example `prime --help`. The
+equivalent expanded command is:
+
+```bash
+nix develop ~/.dotfiles#orca-prime --command prime-agent
+```
+
 ### 5. Register Ubuntu in Orca
 
 In Orca 1.4.184, add an SSH host with:
@@ -200,8 +215,7 @@ Do not add the repository through Orca's Local Windows host. Let Orca create and
 In an Orca Empty Terminal attached to the assigned worktree:
 
 ```bash
-nix develop ~/.dotfiles#orca-prime
-prime-agent --tools ipython
+prime --tools ipython
 ```
 
 Initial operating limits are defined in `home/.prime/agent/AGENTS.md`: one root agent, no autonomous schedules or recursive write-heavy agents, gh-axi read-only, and no publication or external side effects without approval.

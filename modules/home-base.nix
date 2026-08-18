@@ -3,6 +3,14 @@
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
   setxkbmapPkg = pkgs.setxkbmap or pkgs.xorg.setxkbmap;
+  primeLauncher = pkgs.writeShellScriptBin "prime" ''
+    if ! command -v nix >/dev/null 2>&1; then
+      printf '%s\n' "Nix is required to launch the pinned Orca/Prime environment." >&2
+      exit 1
+    fi
+
+    exec nix develop "$HOME/.dotfiles#orca-prime" --command prime-agent "$@"
+  '';
 in
 {
   home.packages = with pkgs; [
@@ -16,6 +24,7 @@ in
     setxkbmapPkg
     neovim
     nerd-fonts.hack
+    primeLauncher
   ];
 
   fonts.fontconfig.enable = true;
