@@ -14,24 +14,11 @@ let
     mkdir -p "$runtime_dir"
     chmod 700 "$runtime_dir"
 
-    daemon_socket="''${PRIME_AGENT_DAEMON_SOCKET:-$runtime_dir/daemon.sock}"
-
-    # Prime dispatches subcommands only when the command name is argv[1].
-    # Keep it first, then inject the shared daemon socket before command args.
-    if [ "$#" -gt 0 ]; then
-      case "$1" in
-        help|agents|list|attach|stop|rename|send|schedule|status|doctor|shutdown|package|update|model|session|config)
-          command_name="$1"
-          shift
-          exec nix develop "$HOME/.dotfiles#orca-prime" \
-            --command prime-agent "$command_name" \
-            --daemon-socket "$daemon_socket" "$@"
-          ;;
-      esac
-    fi
-
+    # Nix gives every development-shell invocation a new TMPDIR. Prime derives
+    # its daemon socket from TMPDIR, so override it only for the Prime process.
+    # This keeps argv untouched because some subcommands reject global options.
     exec nix develop "$HOME/.dotfiles#orca-prime" \
-      --command prime-agent --daemon-socket "$daemon_socket" "$@"
+      --command env TMPDIR="$runtime_parent" prime-agent "$@"
   '';
 in
 {

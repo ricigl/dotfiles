@@ -188,17 +188,15 @@ the launcher runs Prime through:
 
 ```bash
 nix develop ~/.dotfiles#orca-prime --command \
-  prime-agent --daemon-socket <stable-user-socket>
+  env TMPDIR=<stable-runtime-parent> prime-agent
 ```
 
-The launcher also passes an explicit daemon socket under the current user's
-runtime directory (falling back to `/tmp/prime-agent-UID/daemon.sock`). This
-keeps `prime`, `prime list`, `prime attach`, and related commands connected to
-the same daemon even though each invocation enters a fresh Nix development
-shell. Set `PRIME_AGENT_DAEMON_SOCKET` only when an explicit alternate socket
-is required. Prime requires subcommand names to remain the first CLI argument,
-so the launcher places the socket option after recognized commands such as
-`list`, `status`, `attach`, and `shutdown`.
+The launcher overrides `TMPDIR` only for the Prime process. Prime consequently
+uses a stable socket under the current user's runtime directory (falling back
+to `/tmp/prime-agent-UID/daemon.sock`) even though each invocation enters a
+fresh Nix development shell. Arguments remain unchanged, which is required
+because daemon-aware commands differ in whether they accept an explicit
+`--daemon-socket` option.
 
 ### 5. Register Ubuntu in Orca
 
