@@ -38,7 +38,7 @@ Constraints:
    - Exact files: `flake.nix`, `home.nix`, `modules/home-base.nix`, `modules/home-orca-prime.nix`, `modules/home-legacy-agents.nix`.
    - Implementation contract: keep `homeConfigurations."${user}@wsl"` as default; add `homeConfigurations."${user}@wsl-legacy"`; move Zsh, Starship, Git defaults, CLI utilities, Neovim link, ABNT2 support, global Node 24, and `rebuild` alias into base; move WezTerm/Herdr/Pi into legacy only; keep `home.stateVersion = "24.11"`.
    - Forbidden scope: no WezTerm/Herdr/Pi in default Orca lane; no personal Git identity; no `cc = "claude --dangerously-skip-permissions"`; no `co = "codex --ask-for-approval never --sandbox workspace-write"` or equivalent full-auto alias; no `homebrew.onActivation.cleanup` changes.
-   - Verification commands: `nix flake check`; `nix build '.#homeConfigurations."ricardon@wsl".activationPackage'`; `nix build '.#homeConfigurations."ricardon@wsl-legacy".activationPackage'`; `home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"`.
+   - Verification commands: `nix flake check`; `nix build '.#homeConfigurations."ricardo@wsl".activationPackage'`; `nix build '.#homeConfigurations."ricardo@wsl-legacy".activationPackage'`; `home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"`.
    - Completion criteria: default activation builds without legacy app links; legacy activation builds with current fallback profile; dry-run shows no auth/runtime ownership.
    - Logical commit message: `refactor: split WSL home-manager modules`.
 
@@ -69,7 +69,7 @@ Constraints:
    - Exact files: `flake.nix`, `flake.lock`, `modules/home-orca-prime.nix`, `README.md`.
    - Implementation contract: add non-flake input `github:ayghri/i-have-adhd/2ed064090711586e0c97a2fbbf15465fe8f1808b`; link `${i-have-adhd}/skills/i-have-adhd` to `~/.prime/agent/skills/i-have-adhd`; document pin.
    - Forbidden scope: no hooks; no plugins; no installers; no vendoring whole upstream repo; no auto-enable unless `~/.prime/agent/settings.json` supports opt-in by name.
-   - Verification commands: `nix flake check`; `nix build '.#homeConfigurations."ricardon@wsl".activationPackage'`.
+   - Verification commands: `nix flake check`; `nix build '.#homeConfigurations."ricardo@wsl".activationPackage'`.
    - Completion criteria: lockfile records exact pin; activation contains exact skill link only.
    - Logical commit message: `feat: add pinned Prime skill`.
 
@@ -136,7 +136,7 @@ Constraints:
    - Exact files: none unless docs need correction.
    - Implementation contract: rehearse `home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"`; document rollback using `home-manager generations`; verify legacy dry-run; do not alter Windows Orca or SSH key state until scripts pass verify/dry mode.
    - Forbidden scope: no destructive rollback; no force push; no main branch changes.
-   - Verification commands: `home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"`; `nix build '.#homeConfigurations."ricardon@wsl-legacy".activationPackage'`; `git status --short`.
+   - Verification commands: `home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"`; `nix build '.#homeConfigurations."ricardo@wsl-legacy".activationPackage'`; `git status --short`.
    - Completion criteria: migration and rollback steps are executable and documented.
    - Logical commit message: none unless docs corrected.
 

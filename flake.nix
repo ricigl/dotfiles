@@ -29,7 +29,7 @@
     ...
   }:
     let
-      user = "ricardon";
+      user = "ricardo";
       system = "x86_64-linux";
 
       pkgs = import nixpkgs {
