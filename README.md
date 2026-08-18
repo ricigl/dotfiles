@@ -183,12 +183,20 @@ Prime inside the pinned Node 22 environment:
 prime
 ```
 
-Arguments are forwarded to `prime-agent`, for example `prime --help`. The
-equivalent expanded command is:
+Arguments are forwarded to `prime-agent`, for example `prime --help`. Conceptually,
+the launcher runs Prime through:
 
 ```bash
-nix develop ~/.dotfiles#orca-prime --command prime-agent
+nix develop ~/.dotfiles#orca-prime --command \
+  prime-agent --daemon-socket <stable-user-socket>
 ```
+
+The launcher also passes an explicit daemon socket under the current user's
+runtime directory (falling back to `/tmp/prime-agent-UID/daemon.sock`). This
+keeps `prime`, `prime list`, `prime attach`, and related commands connected to
+the same daemon even though each invocation enters a fresh Nix development
+shell. Set `PRIME_AGENT_DAEMON_SOCKET` only when an explicit alternate socket
+is required.
 
 ### 5. Register Ubuntu in Orca
 

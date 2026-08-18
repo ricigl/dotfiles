@@ -9,7 +9,14 @@ let
       exit 1
     fi
 
-    exec nix develop "$HOME/.dotfiles#orca-prime" --command prime-agent "$@"
+    runtime_parent="''${XDG_RUNTIME_DIR:-/tmp}"
+    runtime_dir="$runtime_parent/prime-agent-$(id -u)"
+    mkdir -p "$runtime_dir"
+    chmod 700 "$runtime_dir"
+
+    daemon_socket="''${PRIME_AGENT_DAEMON_SOCKET:-$runtime_dir/daemon.sock}"
+    exec nix develop "$HOME/.dotfiles#orca-prime" \
+      --command prime-agent --daemon-socket "$daemon_socket" "$@"
   '';
 in
 {
