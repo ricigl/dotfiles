@@ -26,7 +26,19 @@ fi
 nix --version
 
 echo "==> Step 2: link this repository to ~/.dotfiles"
-ln -sfn "$DIR" "$HOME/.dotfiles"
+DOTFILES_LINK="$HOME/.dotfiles"
+
+if [ "$DIR" != "$DOTFILES_LINK" ]; then
+  if [ -L "$DOTFILES_LINK" ] && [ "$(readlink -f "$DOTFILES_LINK")" = "$DIR" ]; then
+    : # The expected link already exists.
+  elif [ -e "$DOTFILES_LINK" ] || [ -L "$DOTFILES_LINK" ]; then
+    echo "$DOTFILES_LINK already exists and does not point to this repository." >&2
+    echo "Move it aside explicitly before bootstrapping from another location." >&2
+    exit 1
+  else
+    ln -s "$DIR" "$DOTFILES_LINK"
+  fi
+fi
 
 echo "==> Step 3: personalize the configured WSL username"
 FLAKE_USER="$(
