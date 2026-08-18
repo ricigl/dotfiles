@@ -1,0 +1,12 @@
+{
+  "telemetry": {
+    "enabled": false
+  },
+  "idleEvictionMinutes": 60,
+  "packages": [],
+  "extensions": [],
+  "enableBuiltinSkills": false,
+  "bundledSkills": {
+    "websearch": false
+  }
+}

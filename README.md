@@ -1,185 +1,335 @@
-# dotfiles
+# dotfiles: Ubuntu WSL, Orca, and Prime
 
-Watch the walkthrough: https://youtu.be/5N-okeDdIuI
+This repository is the authoritative Home Manager configuration for Ricardo's Ubuntu WSL development environment.
 
-My personal Mac setup, managed with nix-darwin and home-manager.
-One repo, one command, and a fresh Mac ends up configured the same way every time.
+The default lane is:
 
-## Contributing / Using This Repo
-
-These are my personal dotfiles, shared publicly so people can read them, learn from them, and fork them freely.
-Feature requests and pull requests are not accepted here, and PRs are auto-closed.
-If you find a bug, please open a GitHub Issue using the bug report template.
-
-## What you get
-
-Running the switch builds:
-
-- System settings (dark mode, key repeat, dock, Finder, trackpad)
-- Homebrew apps (casks and CLI tools)
-- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, Hack Nerd Font)
-- Shell (zsh, aliases, starship prompt)
-- Editor (Neovim config with the rose-pine moon theme)
-- Terminal (WezTerm config with the rose-pine moon theme and dimmed unfocused windows)
-- Agent configs (Claude, Codex, opencode all share one AGENTS.md)
-- Optional Pi theme and local extensions, generic UI settings and model overrides, plus two deliberately pinned third-party Pi packages
-
-## Prerequisites
-
-- Apple Silicon Mac, by default.
-- Intel Mac: change one line.
-  In `configuration.nix`, set `nixpkgs.hostPlatform = "x86_64-darwin";` (the comment right there tells you the same thing).
-
-## Fresh-machine setup
-
-On a brand new Mac, from a bare clone of this repo:
-
-```sh
-git clone https://github.com/kunchenguid/dotfiles.git
-cd dotfiles
+```text
+Windows 10
+└── Orca 1.4.184
+    └── SSH 127.0.0.1:2222
+        └── Ubuntu WSL2 distro "Ubuntu"
+            └── Linux repository/worktree under /home/...
+                ├── Home Manager: Zsh, Starship, Git, CLI tools, Neovim, ABNT2, Node 24
+                └── nix develop .#orca-prime: Node 22, Python, uv, gh, build tools, Prime
 ```
 
-Before you run it: review "Make it yours" below.
-Change the host label or CPU architecture if needed, and read the Homebrew cleanup warning.
-`bootstrap.sh` applies the config to your machine, so do this first.
+The previous WezTerm, Herdr, Pi, Claude Code, and Codex environment remains available as the optional `legacy` Home Manager profile. It is not loaded by the default Orca/Prime profile.
 
-```sh
+## Responsibility boundaries
+
+| Layer | Owns |
+|---|---|
+| Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3` |
+| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, reviewed Prime policy |
+| `.#orca-prime` | Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, agent environment variables |
+| Orca | Project registration, worktree creation/reuse/removal, editor, diffs, browser, terminals |
+| Prime | Coding and reasoning inside the current Orca-owned worktree only |
+
+Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/usr/bin/make`, `/usr/bin/g++`, and `/usr/bin/python3` globally. The matching Nix packages supplement those host prerequisites; they do not replace them.
+
+## Fixed versions and pins
+
+- WSL distro name: `Ubuntu`
+- Orca: `1.4.184`
+- Orca installer SHA-256: `7765f7f085d04b7fe662ec664825fedd81427dd586023f945182a46e0a0cf5be`
+- Prime Agent: `0.7.2`
+- Lavish AXI: `0.1.50`
+- gh-axi: `0.1.30`
+- `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
+
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation.
+
+## Security model
+
+- Repositories and worktrees live under `/home/...`, never `/mnt/c`.
+- Use Linux Git only for those repositories.
+- Orca is the only worktree manager in the default lane.
+- Prime is not a sandbox and must never run as root.
+- Prime telemetry is disabled in both the dev shell and `~/.prime/agent/settings.json`.
+- Lavish is restricted to `127.0.0.1` and must not publish or share artifacts.
+- gh-axi begins read-only.
+- `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
+- Private keys, authorized keys, provider credentials, sessions, caches, and runtime state are never committed.
+
+## Clean installation
+
+### 1. Prepare Windows and WSL
+
+Install WSL2 and register the distribution with the exact name `Ubuntu`. Confirm from PowerShell:
+
+```powershell
+wsl.exe --list --verbose
+wsl.exe --set-default Ubuntu
+```
+
+Clone this repository inside Ubuntu, not on the Windows filesystem:
+
+```bash
+mkdir -p ~/src
+git clone https://github.com/ricigl/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
+```
+
+Run the Ubuntu host bootstrap:
+
+```bash
+./scripts/ubuntu-bootstrap.sh
+```
+
+It installs the pre-Nix packages, preserves existing `/etc/wsl.conf` sections while enabling systemd, installs a loopback-only sshd drop-in, and validates the effective SSH policy. If it exits with status 2, run this in PowerShell:
+
+```powershell
+wsl.exe --shutdown
+```
+
+Restart Ubuntu, then verify:
+
+```bash
+cd ~/.dotfiles
+./scripts/ubuntu-bootstrap.sh --verify-only
+```
+
+The managed sshd policy is:
+
+```text
+Port 2222
+ListenAddress 127.0.0.1
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+AllowUsers <current Ubuntu user>
+```
+
+### 2. Create the dedicated Windows SSH identity
+
+From PowerShell, locate the script through WSL and apply the Windows-side configuration:
+
+```powershell
+$WslUser = (wsl.exe -d Ubuntu -- bash -lc 'printf %s "$USER"').Trim()
+$Repo = "\\wsl.localhost\Ubuntu\home\$WslUser\.dotfiles"
+& "$Repo\scripts\windows-orca-bootstrap.ps1" -Apply
+```
+
+This preserves existing `.wslconfig` sections while setting conservative defaults, creates `%USERPROFILE%\.ssh\orca-wsl-ed25519`, authorizes only its public key in Ubuntu, and verifies the loopback SSH connection and native build prerequisites.
+
+To install the pinned Orca version as part of the same flow:
+
+```powershell
+& "$Repo\scripts\windows-orca-bootstrap.ps1" -Apply -InstallOrca
+```
+
+To verify without applying changes:
+
+```powershell
+& "$Repo\scripts\windows-orca-bootstrap.ps1" -VerifyOnly
+```
+
+### 3. Install Nix and activate Home Manager
+
+Install Determinate Nix using its reviewed official installation instructions, start a new Ubuntu shell, and confirm:
+
+```bash
+nix --version
+```
+
+Then activate the default profile:
+
+```bash
+cd ~/.dotfiles
 ./bootstrap.sh
 ```
 
-`bootstrap.sh` does four things, in order:
+The bootstrap validates the committed lockfile, builds the activation package, creates a timestamped Home Manager backup, and activates `ricardo@wsl`.
 
-1. Installs Determinate Nix, if it isn't already installed.
-2. Symlinks this repo to `~/.dotfiles`.
-   This has to happen before the first build, because `home.nix` points at config files through `~/.dotfiles`.
-3. Checks the `user` configured in `flake.nix` against your actual macOS username, and offers to fix it for you if they differ.
-4. Runs the first `darwin-rebuild switch`.
-   It fetches the `darwin-rebuild` tool from the nix-darwin 26.05 release branch, then applies this repo's locked flake config.
+Normal updates use:
 
-After that, `darwin-rebuild` exists and you're on the normal workflow below.
-
-### Validate without applying
-
-Once Nix is installed (`bootstrap.sh` step 1 handles that), you can check that the config builds without touching your system - handy when you have edited something:
-
-```sh
-nix flake check --no-build
-nix build .#darwinConfigurations.mac.system --dry-run
-```
-
-If you renamed the host label in "Make it yours", substitute your label for `mac` in these commands.
-
-## Daily use
-
-Edit the config files in place, then apply:
-
-```sh
+```bash
+cd ~/.dotfiles
 ./rebuild.sh
 ```
 
-That's it.
-No separate build-and-copy step.
+### 4. Enter the locked Orca/Prime environment
 
-## Make it yours
-
-This repo is mine.
-If you clone it, review these before you run `bootstrap.sh`:
-
-- **Username**: run `./bootstrap.sh` (it detects your macOS username and offers to set it) OR change the single `user = "kunchen"` line in `flake.nix`.
-  Everything else (`configuration.nix`, `home.nix`, home directory paths) is threaded from that one variable.
-- **Host label** `"mac"`, in three places: `flake.nix` (the `darwinConfigurations."mac"` name), `rebuild.sh:5` (the `#mac` at the end of the flake reference), and `bootstrap.sh`'s first-switch command (also `#mac`).
-  All three have to match.
-- **CPU architecture**, `hostPlatform` in `configuration.nix` (see Prerequisites above).
-
-**Git identity:** this config deliberately does not set your git name or email.
-Git will stop your first commit and tell you to set them (`git config --global user.name "Your Name"` and `git config --global user.email you@example.com`).
-If you'd rather manage that declaratively, add this back to `home.nix` with your own identity:
-
-```nix
-programs.git = {
-  enable = true;
-  settings.user = {
-    name = "Your Name";
-    email = "you@example.com";
-  };
-};
+```bash
+cd ~/.dotfiles
+nix develop .#orca-prime
 ```
 
-**Homebrew cleanup warning:** `configuration.nix` sets `homebrew.onActivation.cleanup = "zap"`.
-That means every time you switch, Homebrew removes any package or cask on your machine that isn't listed in the `brews` and `casks` arrays in `configuration.nix`.
-If you already have Homebrew stuff installed that isn't in that list, the first switch will uninstall it.
-Read through `brews` and `casks` before you run `bootstrap.sh` or `rebuild.sh` for the first time, and add anything you want to keep.
+Inside the shell, Node 22 must take precedence even though Home Manager provides global Node 24:
 
-**About `herdr`:** it's in the `brews` list.
-It's a real public Homebrew formula (`brew info herdr` finds it in homebrew-core, no tap needed), so it will install fine.
-If you don't use it, just remove it from `brews` in your copy.
-
-**Heads-up:**
-
-- `home/AGENTS.md` is my personal agent policy, and `home.nix` installs it for Claude, Codex, and opencode.
-  If you clone this repo, you'd silently inherit my agent instructions - edit or delete `home/AGENTS.md` if you don't want that.
-- The `cc` and `co` shell aliases in `home.nix` are high-agency shortcuts: `claude --dangerously-skip-permissions` and `codex --full-auto`.
-  They're convenient for me, but know what they do before you use them.
-
-## Repo tour
-
-- `flake.nix` - the entry point.
-  Wires up nixpkgs, nix-darwin, home-manager, and nix-homebrew, and declares the `mac` machine.
-- `configuration.nix` - system-level config: macOS defaults, Homebrew.
-- `home.nix` - user-level config: shell, packages, prompt, and the symlinks described below.
-- `rebuild.sh` - re-applies the config after the first switch.
-  Run this every time you make a change.
-- `home/` - the actual config files that get symlinked into place; the sections below explain the shared symlink model and Pi's narrower selective setup.
-
-## How the symlinks work
-
-The files under `home/` are the real files - editing them here is editing your live config, no rebuild needed to see the change in your editor.
-`home.nix` uses `mkOutOfStoreSymlink` to point paths like `~/.config/nvim` straight at `home/.config/nvim` in this repo, so the two never drift out of sync.
-You only run `./rebuild.sh` when you change something that isn't just a symlinked file, like a package list or a system default.
-
-## Optional Pi configuration
-
-Pi is an opt-in CLI, not a dependency this repository vendors. Install it from its owner with the [official Pi instructions](https://pi.dev), for example:
-
-```sh
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+```bash
+node --version
+python3 --version
+uv --version
 ```
 
-[Pi Launcher](https://github.com/kunchenguid/homebrew-tap) is also optional and installed from its owner, not declared by this config:
+Expected Node major version inside the shell: `v22`.
 
-```sh
-brew install --cask kunchenguid/tap/pi-launcher
+Install the pinned transitional agent tools only after reviewing the script:
+
+```bash
+./scripts/install-prime-tools.sh
 ```
 
-Home Manager owns exactly two repository-authored Pi directories: `~/.pi/agent/themes` and `~/.pi/agent/extensions`. It also links `models.json` and `settings.json` as individual files. The local extension directory is for public, repository-authored extensions only - third-party package code never belongs there. Run `/reload` after editing a local extension or other Pi resources. The terminal-title extension shows a spinner while Pi is working, then a completion mark with the session name or current directory. The `rose-pine-moon` theme was authored clean-room from the public [Rosé Pine Moon palette](https://rosepinetheme.com/palette) and Pi's [public theme schema](https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json), not from a private or live theme file.
+The installer uses user-owned locations. It does not require root and must never be run with `sudo`.
 
-### Pi Calm
+After the tools are installed, the default Home Manager profile provides a
+`prime` launcher. It can be called from the regular Node 24 shell and runs only
+Prime inside the pinned Node 22 environment:
 
-`home/.pi/agent/extensions/calm` is a standalone local Pi extension. Home Manager's existing global extensions-directory link makes Pi auto-load it without another declaration. `/calm` toggles a conversation-only presentation mode and is off by default. Its choice is stored locally in `~/.pi/agent/calm` (or the directory selected by `PI_CODING_AGENT_DIR`), not in this repository or Home Manager. Adapted from Firstmate under the bundled MIT license, Calm imports no Firstmate modules and has no Firstmate runtime dependency.
+```bash
+prime
+```
 
-When enabled, Calm hides collapsed thinking and the call/result shells for Pi's seven built-in tools (`read`, `bash`, `edit`, `write`, `grep`, `find`, and `ls`) without leaving blank transcript rows. During an active run it replaces Pi's working row with a two-line animated blue-water, yellow-boat widget. `/calm` restores Pi's stock rendering and preserves the existing Ctrl+O tool-expansion choice.
+Arguments are forwarded to `prime-agent`, for example `prime --help`. Conceptually,
+the launcher runs Prime through:
 
-Calm never changes prompts, tool execution, model context, session data, or ordering. `/share` and `/export` use the complete stock transcript. Generic custom tools, images, and unsupported Pi transcript classes deliberately remain visible because Pi has no safe general-purpose transcript filter. If a future Pi release no longer exports the exact collapsed-thinking rendering seam, Calm logs one diagnostic and leaves only that adapter disabled; all other behavior remains available.
+```bash
+nix develop ~/.dotfiles#orca-prime --command \
+  prime-agent --daemon-socket <stable-user-socket>
+```
 
-Pi's package system declares two third-party sources in the linked global `settings.json`:
+The launcher also passes an explicit daemon socket under the current user's
+runtime directory (falling back to `/tmp/prime-agent-UID/daemon.sock`). This
+keeps `prime`, `prime list`, `prime attach`, and related commands connected to
+the same daemon even though each invocation enters a fresh Nix development
+shell. Set `PRIME_AGENT_DAEMON_SOCKET` only when an explicit alternate socket
+is required. Prime requires subcommand names to remain the first CLI argument,
+so the launcher places the socket option after recognized commands such as
+`list`, `status`, `attach`, and `shutdown`.
 
-- `npm:@ryan_nookpi/pi-extension-codex-fast-mode@0.2.6` - the exact public npm release from `ryan_nookpi`.
-- `git:github.com/algal/pi-openai-server-compaction@c6d593087709e9481223dc6c6c2269b371b5e055` - the exact public `algal` commit for experimental OpenAI server-side compaction.
+### 5. Register Ubuntu in Orca
 
-The version and commit are immutable pins, so Pi does not move them during package updates. Deliberate updates require a new source and security audit, followed by an explicit pin change in `home/.pi/agent/settings.json`. On Pi 0.82.0, global settings declarations install missing pinned packages automatically at startup. No one-time install command is required. Pi keeps the downloaded npm and git package trees in its own unmanaged `~/.pi/agent/npm` and `~/.pi/agent/git` runtime directories, outside Home Manager and Git tracking.
+In Orca 1.4.184, add an SSH host with:
 
-Both packages execute with your full user permissions and must be trusted like any other executable code. The compaction package is experimental, sends the relevant OpenAI compaction and continuity data to OpenAI, and upstream declares the stale peer range `>=0.80.9 <0.81.0`; this exact immutable ref was locally proven to load and perform remote compaction on Pi 0.82.0. Do not treat that proof as a guarantee for a different Pi version or a different package ref.
+```text
+Name: Ubuntu WSL2
+Host: 127.0.0.1
+Port: 2222
+User: <your Ubuntu username>
+Private key: %USERPROFILE%\.ssh\orca-wsl-ed25519
+```
 
-Home Manager deliberately does not manage `~/.pi/agent` itself, or Pi authentication, sessions, trust decisions, caches, npm/git package trees, or any other runtime state. The model overrides contain no credentials or endpoint settings, do not choose a default model, and only take effect after you authenticate Pi yourself. This remains an additive post-video layer: it does not install Pi, a launcher, or package source code into this repository.
+Add projects by browsing to a Linux path such as:
+
+```text
+/home/<user>/src/<repository>
+```
+
+Do not add the repository through Orca's Local Windows host. Let Orca create and manage its own worktrees.
+
+### 6. Start Prime in an Orca terminal
+
+In an Orca Empty Terminal attached to the assigned worktree:
+
+```bash
+prime --tools ipython
+```
+
+Initial operating limits are defined in `home/.prime/agent/AGENTS.md`: one root agent, no autonomous schedules or recursive write-heavy agents, gh-axi read-only, and no publication or external side effects without approval.
+
+ADHD presentation mode is opt-in:
+
+```text
+/skill:i-have-adhd
+```
+
+Use `normal mode` or `stop adhd mode` to disable it for the session.
+
+## Validation
+
+Static and Nix validation:
+
+```bash
+cd ~/.dotfiles
+./scripts/validate.sh
+```
+
+Runtime checks outside the dev shell confirm global Node 24:
+
+```bash
+./tests/smoke-orca-prime.sh
+```
+
+Runtime checks inside the dev shell confirm Node 22 and Prime environment policy:
+
+```bash
+nix develop .#orca-prime --command ./tests/smoke-orca-prime.sh
+```
+
+Windows and Ubuntu host checks:
+
+```powershell
+& "$Repo\scripts\windows-orca-bootstrap.ps1" -VerifyOnly
+```
+
+```bash
+./scripts/ubuntu-bootstrap.sh --verify-only
+```
+
+## Legacy fallback
+
+Activate the previous WezTerm, Herdr, Pi, Claude Code, and Codex profile only when needed:
+
+```bash
+DOTFILES_PROFILE=legacy ./rebuild.sh
+```
+
+Return to the conservative default profile with:
+
+```bash
+./rebuild.sh
+```
+
+The legacy profile retains the old tools but does not restore the removed high-agency permission-bypass aliases.
+
+## Rollback
+
+### Home Manager
+
+List generations:
+
+```bash
+home-manager generations
+```
+
+Run the `activate` program from the prior generation path shown by that command.
+
+### Git branch
+
+The migration is developed on `feat/orca-prime-home-manager`. The original `main` branch remains the baseline until a reviewed pull request is merged.
+
+### Ubuntu SSH
+
+The managed file is:
+
+```text
+/etc/ssh/sshd_config.d/99-orca-wsl.conf
+```
+
+Before changing or removing it, keep an external shell open. Validate every edit with `sudo sshd -t`, then restart with `sudo systemctl restart ssh`.
+
+## Repository map
+
+- `flake.nix`: Home Manager profiles, locked Orca/Prime dev shell, Home Manager app.
+- `modules/home-base.nix`: default user packages and shell/editor configuration.
+- `modules/home-orca-prime.nix`: reviewed Prime settings, policy, and pinned opt-in skill.
+- `modules/home-legacy-agents.nix`: WezTerm, Herdr, Pi, Claude Code, and Codex fallback.
+- `scripts/ubuntu-bootstrap.sh`: Ubuntu system and sshd bootstrap.
+- `scripts/windows-orca-bootstrap.ps1`: Windows resources, dedicated SSH key, optional Orca installer.
+- `scripts/install-prime-tools.sh`: pinned transitional Prime/Lavish/gh-axi installation.
+- `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
+- `tests/smoke-orca-prime.sh`: target-runtime acceptance checks.
+- `home/`: repository-authored configuration linked by Home Manager.
 
 ## Notes
 
-The first time you launch `nvim`, it bootstraps [lazy.nvim](https://github.com/folke/lazy.nvim) by cloning plugins from GitHub.
-That needs network access once; after that it's offline.
-Neovim and WezTerm both use the rose-pine moon theme.
-Neovim keeps italics off and uses a transparent background on macOS, Windows, and WSL so it matches the terminal setup.
+- The first Neovim launch bootstraps `lazy.nvim` from GitHub.
+- Prime auth, sessions, daemon state, provider credentials, telemetry identity, and caches remain local mutable state.
+- Home Manager owns exact reviewed Prime policy files, not the entire `~/.prime/agent` directory.
 
 ## License
 
-This repo is licensed under MIT No Attribution.
-See `LICENSE`.
+MIT No Attribution. See `LICENSE`.
