@@ -436,8 +436,8 @@ Nix checks:
 
 ```sh
 nix flake check
-nix build '.#homeConfigurations."ricardo@wsl".activationPackage'
-nix build '.#homeConfigurations."ricardo@wsl-legacy".activationPackage'
+nix build '.#homeConfigurations."ricardon@wsl".activationPackage'
+nix build '.#homeConfigurations."ricardon@wsl-legacy".activationPackage'
 home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"
 nix develop .#orca-prime --command node --version
 nix develop .#orca-prime --command python3 --version

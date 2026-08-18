@@ -141,7 +141,7 @@ cd ~/.dotfiles
 ./bootstrap.sh
 ```
 
-The bootstrap validates the committed lockfile, builds the activation package, creates a timestamped Home Manager backup, and activates `ricardo@wsl`.
+The bootstrap validates the committed lockfile, builds the activation package, creates a timestamped Home Manager backup, and activates `ricardon@wsl`.
 
 Normal updates use:
 
