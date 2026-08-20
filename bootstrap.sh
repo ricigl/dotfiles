@@ -2,6 +2,11 @@
 # Bootstrap an Ubuntu WSL environment managed by Home Manager.
 set -euo pipefail
 
+# Load the Nix environment
+if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+  source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+fi
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REAL_USER="$(whoami)"
 PROFILE="${DOTFILES_PROFILE:-default}"
