@@ -25,6 +25,10 @@ result-*
 # Transitional user-scoped npm prefix is runtime state, never repository data
 /home/.local/share/npm/
 
+# Codebase Memory indexes/caches are runtime state, never repository data
+.codebase-memory/
+/home/.cache/codebase-memory-mcp/
+
 # Windows bootstrap artifacts and credentials must never be staged here
 *.private-key
 authorized_keys

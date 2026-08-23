@@ -5,6 +5,25 @@
   "idleEvictionMinutes": 60,
   "packages": [],
   "extensions": [],
+  "mcpServers": {
+    "codebase_memory": {
+      "type": "stdio",
+      "command": "/home/ricardo/.local/bin/codebase-memory-mcp",
+      "cwd": "/home/ricardo/src",
+      "startupTimeoutMs": 30000,
+      "callTimeoutMs": 120000,
+      "env": {
+        "CBM_ALLOWED_ROOT": { "env": "CBM_ALLOWED_ROOT" },
+        "CBM_CACHE_DIR": { "env": "CBM_CACHE_DIR" },
+        "CBM_DIAGNOSTICS": { "env": "CBM_DIAGNOSTICS" }
+      },
+      "disabledTools": [
+        "delete_project",
+        "manage_adr",
+        "ingest_traces"
+      ]
+    }
+  },
   "enableBuiltinSkills": false,
   "bundledSkills": {
     "websearch": false

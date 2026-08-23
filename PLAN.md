@@ -67,8 +67,10 @@ Known verified values:
 - Prime skill path: `~/.prime/agent/skills/i-have-adhd`.
 - Orca `1.4.184` installer URL: `https://github.com/stablyai/orca/releases/download/v1.4.184/orca-windows-setup.exe`.
 - Orca installer SHA256: `7765f7f085d04b7fe662ec664825fedd81427dd586023f945182a46e0a0cf5be`.
-- Prime installer source: `https://app.primeintellect.ai/prime-agent/install.sh`, invoked with version `0.7.2` only after review.
+- Prime installer source: `https://app.primeintellect.ai/prime-agent/install.sh`, invoked with version `0.8.0` only after review.
 - npm packages: `lavish-axi@0.1.50` and `gh-axi@0.1.30`, installed with `--ignore-scripts --no-audit --no-fund` during the transitional phase.
+- Codebase Memory MCP `0.10.8` portable Linux x86_64 release: `https://github.com/DeusData/codebase-memory-mcp/releases/download/v0.10.8/codebase-memory-mcp-linux-amd64-portable.tar.gz`.
+- Codebase Memory MCP release SHA256: `6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325`.
 
 Approval choices before implementation:
 
@@ -155,12 +157,15 @@ Expected changes:
   - `pkg-config`
 - Set verified env vars used by the current guide:
   - `NPM_CONFIG_PREFIX="$HOME/.local/share/npm"`
-  - prepend `$NPM_CONFIG_PREFIX/bin` to `PATH`
+  - prepend `$HOME/.local/bin` and `$NPM_CONFIG_PREFIX/bin` to `PATH`
   - `PRIME_AGENT_TELEMETRY=0`
   - `PI_SKIP_VERSION_CHECK=1`
   - `LAVISH_AXI_TELEMETRY=0`
   - `LAVISH_AXI_NO_OPEN=1`
   - `LAVISH_AXI_HOST=127.0.0.1`
+  - `CBM_ALLOWED_ROOT=/home/ricardo/src`
+  - `CBM_CACHE_DIR=/home/ricardo/.cache/codebase-memory-mcp`
+  - `CBM_DIAGNOSTICS=0`
 - Document that Node 22 from the shell is authoritative for Orca Prime work.
 - Keep global Home Manager `nodejs_24`; verify the dev shell resolves Node 22 ahead of it.
 
@@ -292,7 +297,7 @@ Files:
 Expected changes:
 
 - Use reviewed pinned installer/npm prefix under user-owned runtime path, not repo:
-  - Prime `0.7.2`
+  - Prime `0.8.0`
   - Lavish `0.1.50`
   - gh-axi `0.1.30`
 - Run inside `nix develop .#orca-prime`.
@@ -311,12 +316,44 @@ Later phase:
 Acceptance:
 
 - Version checks pass:
-  - `prime-agent --version` -> `0.7.2`
+  - `prime-agent --version` -> `0.8.0`
   - `lavish-axi --version` -> `0.1.50`
   - `gh-axi --version` -> `0.1.30`
 - README does not describe these tools as reproducibly Nix-packaged yet.
 
-### Phase 8 - Rewrite README for Ubuntu WSL + Orca
+### Phase 8 - Codebase Memory MCP Integration
+
+Files:
+
+- `home/.prime/agent/settings.json`
+- `modules/home-orca-prime.nix`
+- `flake.nix`
+- `scripts/install-codebase-memory.sh`
+- `scripts/validate.sh`
+- `tests/smoke-orca-prime.sh`
+- `README.md`
+- `.gitignore`
+
+Expected changes:
+
+- Configure Prime 0.8.0 generic MCP runtime with `mcpServers.codebase_memory`.
+- Use stdio command `/home/ricardo/.local/bin/codebase-memory-mcp`, cwd `/home/ricardo/src`, startup timeout `30000`, and call timeout `120000`.
+- Pass env references for `CBM_ALLOWED_ROOT`, `CBM_CACHE_DIR`, and `CBM_DIAGNOSTICS`.
+- Disable initial mutating/high-risk tools with `disabledTools`: `delete_project`, `manage_adr`, and `ingest_traces`.
+- Leave indexing and read/query tools available, keep Codebase Memory's default `auto_index=false`, and do not start a watcher or the optional UI initially.
+- Install Codebase Memory MCP `0.10.8` through `scripts/install-codebase-memory.sh` only inside `nix develop .#orca-prime`.
+- Verify release SHA256 before extraction, use private temp state, install mode `0755` to `$HOME/.local/bin`, and verify `--version`.
+- Do not make Home Manager own cache/index state. No committed `.codebase-memory` or graph artifact.
+- Document install, manual indexing/usage, local-only cache boundaries, rollback, and uninstall.
+
+Acceptance:
+
+- `jq empty home/.prime/agent/settings.json` passes.
+- `bash -n scripts/install-codebase-memory.sh` passes.
+- `nix develop .#orca-prime --command codebase-memory-mcp --version` reports `0.10.8` after explicit install.
+- `git ls-files '.codebase-memory/**' 'home/.cache/codebase-memory-mcp/**'` is empty.
+
+### Phase 9 - Rewrite README for Ubuntu WSL + Orca
 
 Files:
 
@@ -460,13 +497,15 @@ Prime/Lavish/gh-axi checks:
 nix develop .#orca-prime --command prime-agent --version
 nix develop .#orca-prime --command lavish-axi --version
 nix develop .#orca-prime --command gh-axi --version
+nix develop .#orca-prime --command codebase-memory-mcp --version
 ```
 
 Expected versions:
 
-- Prime `0.7.2`
+- Prime `0.8.0`
 - Lavish `0.1.50`
 - gh-axi `0.1.30`
+- Codebase Memory MCP `0.10.8`
 
 Orca smoke:
 
@@ -551,7 +590,8 @@ If `gh` remains unauthenticated, use GitHub web UI after pushing branch. Do not 
 
 ## Known Uncertainties and Blockers
 
-- Exact Prime installer behavior at `0.7.2` must be re-reviewed immediately before implementation; do not use an uninspected `curl | sh` path.
+- Exact Prime installer behavior at `0.8.0` must be re-reviewed immediately before implementation; do not use an uninspected `curl | sh` path.
+- Codebase Memory auto indexing and file watching remain disabled until separately reviewed against target repositories.
 - `i-have-adhd` is pinned to reviewed commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`; implementation must still verify that the expected `skills/i-have-adhd` path exists in the locked input.
 - Node 24 global retention is approved; validation must catch accidental leakage into the Node 22 `orca-prime` shell.
 - PowerShell validation depends on Windows host availability; Linux-only CI can only parser-check if `pwsh`/`powershell.exe` exists.

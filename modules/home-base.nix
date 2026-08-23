@@ -18,7 +18,8 @@ let
     # its daemon socket from TMPDIR, so override it only for the Prime process.
     # This keeps argv untouched because some subcommands reject global options.
     exec nix develop "$HOME/.dotfiles#orca-prime" \
-      --command env TMPDIR="$runtime_parent" prime-agent "$@"
+      --command env TMPDIR="$runtime_parent" sh -c \
+      'export PATH="$HOME/.local/bin:$PATH"; exec prime-agent "$@"' prime "$@"
   '';
 in
 {

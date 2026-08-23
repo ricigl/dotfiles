@@ -14,6 +14,7 @@ fi
 for script in \
   bootstrap.sh \
   rebuild.sh \
+  scripts/install-codebase-memory.sh \
   scripts/install-prime-tools.sh \
   scripts/ubuntu-bootstrap.sh \
   scripts/validate.sh \
@@ -48,6 +49,8 @@ for forbidden_pattern in \
   'home/.prime/agent/cache/**' \
   'home/.prime/agent/downloads/**' \
   'home/.prime/agent/telemetry.json' \
+  '.codebase-memory/**' \
+  'home/.cache/codebase-memory-mcp/**' \
   '**/authorized_keys' \
   '*.private-key' \
   'orca-windows-setup*.exe'; do
@@ -78,6 +81,10 @@ run_nix_checks() {
       test "$PRIME_AGENT_TELEMETRY" = 0
       test "$LAVISH_AXI_HOST" = 127.0.0.1
       test "$NPM_CONFIG_PREFIX" = "$HOME/.local/share/npm"
+      case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) exit 1 ;; esac
+      test "$CBM_ALLOWED_ROOT" = /home/ricardo/src
+      test "$CBM_CACHE_DIR" = /home/ricardo/.cache/codebase-memory-mcp
+      test "$CBM_DIAGNOSTICS" = 0
     '
 }
 

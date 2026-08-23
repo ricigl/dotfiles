@@ -88,7 +88,10 @@
 
         shellHook = ''
           export NPM_CONFIG_PREFIX="$HOME/.local/share/npm"
-          export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
+          export PATH="$HOME/.local/bin:$NPM_CONFIG_PREFIX/bin:$PATH"
+          export CBM_ALLOWED_ROOT="/home/ricardo/src"
+          export CBM_CACHE_DIR="/home/ricardo/.cache/codebase-memory-mcp"
+          export CBM_DIAGNOSTICS="0"
         '';
       };
 

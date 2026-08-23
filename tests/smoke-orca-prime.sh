@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -31,6 +31,10 @@ if [ "${IN_NIX_SHELL:-}" ]; then
   [ "${LAVISH_AXI_TELEMETRY:-}" = "0" ]
   [ "${LAVISH_AXI_NO_OPEN:-}" = "1" ]
   [ "${LAVISH_AXI_HOST:-}" = "127.0.0.1" ]
+  [ "${CBM_ALLOWED_ROOT:-}" = "/home/ricardo/src" ]
+  [ "${CBM_CACHE_DIR:-}" = "/home/ricardo/.cache/codebase-memory-mcp" ]
+  [ "${CBM_DIAGNOSTICS:-}" = "0" ]
+  codebase-memory-mcp --version | grep -Eq '0\.10\.8'
 else
   node --version | grep -Eq '^v24\.' || {
     printf '%s\n' "Default Home Manager profile must resolve global Node 24." >&2
@@ -47,7 +51,6 @@ fi
 if command -v gh-axi >/dev/null 2>&1; then
   gh-axi --version
 fi
-
 settings="$HOME/.prime/agent/settings.json"
 policy="$HOME/.prime/agent/AGENTS.md"
 skill="$HOME/.prime/agent/skills/i-have-adhd/SKILL.md"
@@ -57,6 +60,18 @@ for required_file in "$settings" "$policy" "$skill"; do
     exit 1
   }
 done
+
+jq -e '
+  .mcpServers.codebase_memory.type == "stdio" and
+  .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+  .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+  .mcpServers.codebase_memory.env.CBM_ALLOWED_ROOT.env == "CBM_ALLOWED_ROOT" and
+  .mcpServers.codebase_memory.env.CBM_CACHE_DIR.env == "CBM_CACHE_DIR" and
+  .mcpServers.codebase_memory.env.CBM_DIAGNOSTICS.env == "CBM_DIAGNOSTICS" and
+  (.mcpServers.codebase_memory.disabledTools | index("delete_project")) != null and
+  (.mcpServers.codebase_memory.disabledTools | index("manage_adr")) != null and
+  (.mcpServers.codebase_memory.disabledTools | index("ingest_traces")) != null
+' "$settings" >/dev/null
 
 printf '%s\n' \
   "Ubuntu WSL runtime smoke passed." \

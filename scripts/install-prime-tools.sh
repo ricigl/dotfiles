@@ -3,7 +3,7 @@
 # This is reviewed and version-pinned, but it is not a reproducible Nix build.
 set -euo pipefail
 
-PRIME_VERSION="0.7.2"
+PRIME_VERSION="0.8.0"
 PRIME_INSTALLER_URL="https://app.primeintellect.ai/prime-agent/install.sh"
 PRIME_INSTALLER_SHA256="38d14a1be73b325652c7ce8342e3bf19335721837192855a7907732caf8e6d04"
 LAVISH_SPEC="lavish-axi@0.1.50"

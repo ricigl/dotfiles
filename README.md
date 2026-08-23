@@ -33,12 +33,13 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - WSL distro name: `Ubuntu`
 - Orca: `1.4.184`
 - Orca installer SHA-256: `7765f7f085d04b7fe662ec664825fedd81427dd586023f945182a46e0a0cf5be`
-- Prime Agent: `0.7.2`
+- Prime Agent: `0.8.0`
 - Lavish AXI: `0.1.50`
 - gh-axi: `0.1.30`
+- Codebase Memory MCP: `0.10.8`
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
-`flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation.
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation. `scripts/install-codebase-memory.sh` verifies the pinned Codebase Memory release archive before installing the portable binary.
 
 ## Security model
 
@@ -49,6 +50,8 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - Prime telemetry is disabled in both the dev shell and `~/.prime/agent/settings.json`.
 - Lavish is restricted to `127.0.0.1` and must not publish or share artifacts.
 - gh-axi begins read-only.
+- Codebase Memory is local-only: allowed root `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact.
+- Prime's Codebase Memory MCP entry disables initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
 - `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
 - Private keys, authorized keys, provider credentials, sessions, caches, and runtime state are never committed.
 
@@ -173,7 +176,13 @@ Install the pinned transitional agent tools only after reviewing the script:
 ./scripts/install-prime-tools.sh
 ```
 
-The installer uses user-owned locations. It does not require root and must never be run with `sudo`.
+Install the pinned Codebase Memory MCP server the same way:
+
+```bash
+./scripts/install-codebase-memory.sh
+```
+
+Both installers use user-owned locations. They do not require root and must never be run with `sudo`.
 
 After the tools are installed, the default Home Manager profile provides a
 `prime` launcher. It can be called from the regular Node 24 shell and runs only
@@ -188,7 +197,8 @@ the launcher runs Prime through:
 
 ```bash
 nix develop ~/.dotfiles#orca-prime --command \
-  env TMPDIR=<stable-runtime-parent> prime-agent
+  env TMPDIR=<stable-runtime-parent> sh -c \
+  'export PATH="$HOME/.local/bin:$PATH"; exec prime-agent "$@"' prime
 ```
 
 The launcher overrides `TMPDIR` only for the Prime process. Prime consequently
@@ -197,6 +207,35 @@ to `/tmp/prime-agent-UID/daemon.sock`) even though each invocation enters a
 fresh Nix development shell. Arguments remain unchanged, which is required
 because daemon-aware commands differ in whether they accept an explicit
 `--daemon-socket` option.
+
+Codebase Memory is configured as a native stdio MCP server in `home/.prime/agent/settings.json`:
+
+```text
+command: /home/ricardo/.local/bin/codebase-memory-mcp
+cwd: /home/ricardo/src
+```
+
+Indexing is manual at first. Codebase Memory `0.10.8` defaults `auto_index` to false; this stdio configuration starts neither a watcher nor the optional UI. Keep that default until the target workflow is reviewed. Use Prime's MCP tools to index/query repositories under `/home/ricardo/src`; do not commit `.codebase-memory` directories, exported graph artifacts, or cache contents.
+
+To inspect the connection from the shell:
+
+```bash
+prime-agent mcp list
+```
+
+Inside a Prime session, the generic MCP API is pre-imported:
+
+```python
+import mcp
+await mcp.list_tools("codebase_memory")
+await mcp.call_tool(
+    "codebase_memory",
+    "index_repository",
+    {"repo_path": "/home/ricardo/src/example", "mode": "fast", "persistence": False},
+)
+```
+
+Use `get_architecture`, `search_graph`, `query_graph`, `trace_path`, and `get_code_snippet` before broad file reads. Keep `persistence` false unless a separately reviewed shared graph artifact is desired.
 
 ### 5. Register Ubuntu in Orca
 
@@ -309,6 +348,17 @@ The managed file is:
 
 Before changing or removing it, keep an external shell open. Validate every edit with `sudo sshd -t`, then restart with `sudo systemctl restart ssh`.
 
+### Codebase Memory
+
+Remove the user-installed MCP binary and cache:
+
+```bash
+rm -f ~/.local/bin/codebase-memory-mcp
+rm -rf ~/.cache/codebase-memory-mcp
+```
+
+Then remove or disable `mcpServers.codebase_memory` in `home/.prime/agent/settings.json` and rebuild Home Manager.
+
 ## Repository map
 
 - `flake.nix`: Home Manager profiles, locked Orca/Prime dev shell, Home Manager app.
@@ -318,6 +368,7 @@ Before changing or removing it, keep an external shell open. Validate every edit
 - `scripts/ubuntu-bootstrap.sh`: Ubuntu system and sshd bootstrap.
 - `scripts/windows-orca-bootstrap.ps1`: Windows resources, dedicated SSH key, optional Orca installer.
 - `scripts/install-prime-tools.sh`: pinned transitional Prime/Lavish/gh-axi installation.
+- `scripts/install-codebase-memory.sh`: pinned Codebase Memory MCP portable binary installation.
 - `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
 - `tests/smoke-orca-prime.sh`: target-runtime acceptance checks.
 - `home/`: repository-authored configuration linked by Home Manager.
@@ -325,7 +376,7 @@ Before changing or removing it, keep an external shell open. Validate every edit
 ## Notes
 
 - The first Neovim launch bootstraps `lazy.nvim` from GitHub.
-- Prime auth, sessions, daemon state, provider credentials, telemetry identity, and caches remain local mutable state.
+- Prime auth, sessions, daemon state, provider credentials, telemetry identity, Codebase Memory indexes, and caches remain local mutable state.
 - Home Manager owns exact reviewed Prime policy files, not the entire `~/.prime/agent` directory.
 
 ## License

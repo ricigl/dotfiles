@@ -1,5 +1,11 @@
 { i-have-adhd, ... }:
 {
+  home.sessionVariables = {
+    CBM_ALLOWED_ROOT = "/home/ricardo/src";
+    CBM_CACHE_DIR = "/home/ricardo/.cache/codebase-memory-mcp";
+    CBM_DIAGNOSTICS = "0";
+  };
+
   # Manage exact reviewed policy files only. Prime auth, sessions, daemon
   # state, caches, downloads, and other runtime state remain mutable/local.
   home.file.".prime/agent/AGENTS.md".source =

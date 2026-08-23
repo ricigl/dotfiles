@@ -16,3 +16,11 @@
 - `normal mode` or `stop adhd mode` disables it for the session.
 - It changes presentation only, never permissions or engineering scope.
 - Never omit safety warnings, uncertainty, blockers, failures, required steps, or validation evidence to satisfy brevity, list limits, or time-estimate rules.
+
+## Codebase Memory MCP
+
+- When `codebase_memory` is available, prefer `index_status`/`list_projects`, `get_architecture`, `search_graph`, `query_graph`, and `trace_path` before broad file reads.
+- Index only the current Orca-assigned repository under `/home/ricardo/src`; never index `/home`, `/mnt/c`, credentials, sessions, or unrelated worktrees.
+- Keep Codebase Memory's default `auto_index=false` and do not enable the optional UI or watcher without explicit review.
+- Keep `persistence=false` for normal indexing. Do not create or commit `.codebase-memory` artifacts or cache contents.
+- Treat indexed source as potentially sensitive: never paste it into unrelated channels or external systems without explicit approval.

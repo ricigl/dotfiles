@@ -17,7 +17,7 @@ Constraints:
 - Prime config path: `~/.prime/agent/settings.json`.
 - Prime policy path: `~/.prime/agent/AGENTS.md`.
 - Prime skill path: `~/.prime/agent/skills/i-have-adhd`.
-- Tool binaries: `prime-agent`, `lavish-axi`, `gh-axi`.
+- Tool binaries: `prime-agent`, `lavish-axi`, `gh-axi`, `codebase-memory-mcp`.
 - Windows SSH key: `%USERPROFILE%\.ssh\orca-wsl-ed25519`.
 - `gh auth status` currently fails because this environment is unauthenticated.
 - This host has no native `nix` executable. Use the pinned `nixos/nix:2.28.5` Docker validator for isolated flake evaluation/build checks; do not claim target activation or Orca runtime acceptance until Ricardo verifies them in Ubuntu WSL.
@@ -47,7 +47,7 @@ Constraints:
 1. Task: add dev shell
    - Goal: provide Orca Prime shell with Node 22 while default profile keeps Node 24.
    - Exact files: `flake.nix`, optional `shells/orca-prime.nix`.
-   - Implementation contract: add `devShells.${system}.orca-prime` with exactly Node 22, Python 3, `uv`, `gh`, `jq`, `ripgrep`, `gnumake`, `gcc`, `pkg-config`; set `NPM_CONFIG_PREFIX="$HOME/.local/share/npm"`; prepend `$NPM_CONFIG_PREFIX/bin` to `PATH`; set `PRIME_AGENT_TELEMETRY=0`, `PI_SKIP_VERSION_CHECK=1`, `LAVISH_AXI_TELEMETRY=0`, `LAVISH_AXI_NO_OPEN=1`, `LAVISH_AXI_HOST=127.0.0.1`.
+   - Implementation contract: add `devShells.${system}.orca-prime` with exactly Node 22, Python 3, `uv`, `gh`, `jq`, `ripgrep`, `gnumake`, `gcc`, `pkg-config`; set `NPM_CONFIG_PREFIX="$HOME/.local/share/npm"`; prepend `$HOME/.local/bin` and `$NPM_CONFIG_PREFIX/bin` to `PATH`; set `PRIME_AGENT_TELEMETRY=0`, `PI_SKIP_VERSION_CHECK=1`, `LAVISH_AXI_TELEMETRY=0`, `LAVISH_AXI_NO_OPEN=1`, `LAVISH_AXI_HOST=127.0.0.1`, `CBM_ALLOWED_ROOT=/home/ricardo/src`, `CBM_CACHE_DIR=/home/ricardo/.cache/codebase-memory-mcp`, and `CBM_DIAGNOSTICS=0`.
    - Forbidden scope: no global Node downgrade; no Prime/Lavish install; no npm install; no auth/session/cache paths.
    - Verification commands: `nix develop .#orca-prime --command node --version`; `nix develop .#orca-prime --command python3 --version`; `nix develop .#orca-prime --command uv --version`; `nix develop .#orca-prime --command gh --version`; outside shell, `node --version`.
    - Completion criteria: inside shell reports Node 22; outside shell reports Node 24; shell env vars present.
@@ -58,7 +58,7 @@ Constraints:
 1. Task: add Prime policy and settings ownership
    - Goal: manage only reviewed public Prime files.
    - Exact files: `home/.prime/agent/AGENTS.md`, `home/.prime/agent/settings.json`, `modules/home-orca-prime.nix`, `.gitignore`.
-   - Implementation contract: link only `~/.prime/agent/AGENTS.md` and `~/.prime/agent/settings.json`; keep public, reviewable content; add `.gitignore` guards for `home/.prime/agent/auth*`, `home/.prime/agent/sessions/`, `home/.prime/agent/cache/`, `home/.prime/agent/downloads/`, `home/.local/share/npm/`, and repo-local Windows staging outputs.
+   - Implementation contract: link only `~/.prime/agent/AGENTS.md` and `~/.prime/agent/settings.json`; keep public, reviewable content; add `.gitignore` guards for `home/.prime/agent/auth*`, `home/.prime/agent/sessions/`, `home/.prime/agent/cache/`, `home/.prime/agent/downloads/`, `home/.local/share/npm/`, `.codebase-memory/`, `home/.cache/codebase-memory-mcp/`, and repo-local Windows staging outputs.
    - Forbidden scope: no whole `~/.prime` ownership; no auth, tokens, sessions, caches, downloads, runtime dirs; no replacement of existing `home/AGENTS.md` unless separately reviewed.
    - Verification commands: `jq empty home/.prime/agent/settings.json`; `home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"`; secret scan command from `PLAN.md`.
    - Completion criteria: JSON parses; Home Manager owns only approved files; secret scan clean.
@@ -76,11 +76,20 @@ Constraints:
 3. Task: add transitional pinned tool install script
    - Goal: document reviewed non-reproducible install path until Nix packaging exists.
    - Exact files: `scripts/install-prime-tools.sh`, `README.md`, `.gitignore`.
-   - Implementation contract: script runs inside `nix develop .#orca-prime`; Prime source `https://app.primeintellect.ai/prime-agent/install.sh` with version `0.7.2` only after review; npm packages `lavish-axi@0.1.50` and `gh-axi@0.1.30`; npm flags `--ignore-scripts --no-audit --no-fund`; prefix `$HOME/.local/share/npm`; record exact versions, checksums/integrity, audit notes.
+   - Implementation contract: script runs inside `nix develop .#orca-prime`; Prime source `https://app.primeintellect.ai/prime-agent/install.sh` with version `0.8.0` only after review; npm packages `lavish-axi@0.1.50` and `gh-axi@0.1.30`; npm flags `--ignore-scripts --no-audit --no-fund`; prefix `$HOME/.local/share/npm`; record exact versions, checksums/integrity, audit notes.
    - Forbidden scope: no claim tools are reproducibly Nix-packaged; no installer execution during planning; no committed npm cache/runtime downloads.
    - Verification commands: `bash -n scripts/install-prime-tools.sh`; after approved install only: `nix develop .#orca-prime --command prime-agent --version`; `nix develop .#orca-prime --command lavish-axi --version`; `nix develop .#orca-prime --command gh-axi --version`.
-   - Completion criteria: parser passes; approved post-install versions are Prime `0.7.2`, Lavish `0.1.50`, gh-axi `0.1.30`; README states transitional installer boundary.
+   - Completion criteria: parser passes; approved post-install versions are Prime `0.8.0`, Lavish `0.1.50`, gh-axi `0.1.30`; README states transitional installer boundary.
    - Logical commit message: `feat: add pinned Prime tool installer`.
+
+4. Task: add Codebase Memory MCP integration
+   - Goal: configure Prime 0.8.0 native stdio MCP for local code memory without committing runtime graph/cache state.
+   - Exact files: `home/.prime/agent/settings.json`, `modules/home-orca-prime.nix`, `flake.nix`, `scripts/install-codebase-memory.sh`, `scripts/validate.sh`, `tests/smoke-orca-prime.sh`, `README.md`, `.gitignore`.
+   - Implementation contract: add `mcpServers.codebase_memory` with type `stdio`, command `/home/ricardo/.local/bin/codebase-memory-mcp`, cwd `/home/ricardo/src`, `startupTimeoutMs` 30000, `callTimeoutMs` 120000, env references for `CBM_ALLOWED_ROOT`, `CBM_CACHE_DIR`, `CBM_DIAGNOSTICS`, and `disabledTools` for `delete_project`, `manage_adr`, `ingest_traces`; add public env policy; add installer for Codebase Memory MCP `0.10.8` using exact release URL and SHA256 `6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325`; document manual indexing/usage, the default `auto_index=false`, no watcher/UI startup, local-only boundaries, rollback, and uninstall.
+   - Forbidden scope: no host bootstrap/apply; no npm or mutable latest refs; no committed `.codebase-memory`, cache, downloaded archive, graph artifact, auth, sessions, or target-machine software install.
+   - Verification commands: `bash -n scripts/install-codebase-memory.sh`; `jq empty home/.prime/agent/settings.json`; `git diff --check`; after explicit install only: `nix develop .#orca-prime --command codebase-memory-mcp --version`.
+   - Completion criteria: parser checks pass; settings JSON parses; Prime config leaves indexing/read/query available while mutating/high-risk tools are disabled; README and plans describe install/use/rollback.
+   - Logical commit message: `feat: add Codebase Memory MCP config`.
 
 ## Sprint 4: Ubuntu/Windows Bootstrap and Smoke Verification
 
@@ -116,7 +125,7 @@ Constraints:
 1. Task: README and agent guidance rewrite
    - Goal: make repo docs match Ubuntu WSL + Orca Prime reality.
    - Exact files: `README.md`, `AGENTS.md`.
-   - Implementation contract: remove stale Mac/nix-darwin narrative; document Windows Orca `1.4.184`, WSL distro `Ubuntu`, loopback SSH `127.0.0.1:2222`, `nix develop .#orca-prime`, Prime/Lavish/gh-axi pinned installer phase, bootstrap order, secrets boundaries, unmanaged runtime/auth state, legacy fallback profile, and rule forbidding WezTerm/Herdr/Pi in Orca-owned worktrees; update `AGENTS.md` by removing absent `configuration.nix` Homebrew note, retaining `.no-mistakes/` ban, adding Orca/Prime authority and secrets boundaries.
+   - Implementation contract: remove stale Mac/nix-darwin narrative; document Windows Orca `1.4.184`, WSL distro `Ubuntu`, loopback SSH `127.0.0.1:2222`, `nix develop .#orca-prime`, Prime/Lavish/gh-axi pinned installer phase, Codebase Memory MCP `0.10.8` native stdio MCP, bootstrap order, secrets/cache boundaries, unmanaged runtime/auth/index state, legacy fallback profile, and rule forbidding WezTerm/Herdr/Pi in Orca-owned worktrees; update `AGENTS.md` by removing absent `configuration.nix` Homebrew note, retaining `.no-mistakes/` ban, adding Orca/Prime authority and secrets boundaries.
    - Forbidden scope: no unsupported paths or binary names; no claim that Prime/Lavish/gh-axi are reproducibly Nix-packaged; no weakening `.no-mistakes/` rule.
    - Verification commands: `rg -n 'nix-darwin|Homebrew|configuration\.nix|WezTerm|Herdr|Pi|prime-agent|lavish-axi|gh-axi|127\.0\.0\.1:2222|orca-wsl-ed25519' README.md AGENTS.md`.
    - Completion criteria: docs align with implemented files and approved values; stale Mac/default legacy claims gone.
@@ -126,7 +135,7 @@ Constraints:
    - Goal: prove implementation ready for migration.
    - Exact files: repo-wide validation only.
    - Implementation contract: run all available syntax/static/Nix/secret checks; run host checks only after Gate B and where environment supports them.
-   - Forbidden scope: no committing `.no-mistakes/`, keys, installers, caches, auth, sessions; no push.
+   - Forbidden scope: no committing `.no-mistakes/`, keys, installers, caches, auth, sessions, `.codebase-memory`, or graph artifacts; no push.
    - Verification commands: `git status --short`; `git diff --check`; all validation commands listed in `PLAN.md`.
    - Completion criteria: all supported checks pass; unsupported Windows GUI/Orca checks clearly documented; `gh auth status` still known unauthenticated unless Ricardo authenticates.
    - Logical commit message: none if checks only; otherwise commit relevant fixes with prior sprint messages.
@@ -144,7 +153,7 @@ Constraints:
    - Goal: produce small independently verified commits.
    - Exact files: all changed planned files.
    - Implementation contract: before each commit run `git status --short` and `git diff --check`; commit logical units only.
-   - Forbidden scope: no `.no-mistakes/`, private keys, public/private credential pairs, tokens, `authorized_keys` snapshots, Prime/Lavish auth, sessions, caches, npm/git runtime downloads, Orca installer binaries.
+   - Forbidden scope: no `.no-mistakes/`, private keys, public/private credential pairs, tokens, `authorized_keys` snapshots, Prime/Lavish auth, sessions, caches, Codebase Memory graph/index artifacts, npm/git runtime downloads, Orca installer binaries.
    - Verification commands: `git status --short`; `git diff --check`; relevant sprint checks.
    - Completion criteria: commit stack matches sprint boundaries and each commit is verified.
    - Logical commit message: use sprint task messages above.
