@@ -153,6 +153,12 @@ cd ~/.dotfiles
 ./rebuild.sh
 ```
 
+`rebuild.sh` passes a timestamped Home Manager backup suffix so existing files such as `~/.prime/agent/settings.json` are moved aside instead of being clobbered. To run the equivalent command manually, use a backup extension:
+
+```bash
+home-manager switch -b backup --flake "$HOME/.dotfiles#$(whoami)@wsl"
+```
+
 ### 4. Enter the locked Orca/Prime environment
 
 ```bash

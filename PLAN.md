@@ -122,7 +122,7 @@ Expected changes:
 - Remove dangerous default aliases in Orca lane:
   - remove `cc = "claude --dangerously-skip-permissions"`
   - remove `co = "codex --ask-for-approval never --sandbox workspace-write"` or any equivalent full-auto alias.
-- Keep `rebuild = "home-manager switch --flake ~/.dotfiles#${user}@wsl"`.
+- Keep `rebuild = "home-manager switch -b backup --flake ~/.dotfiles#${user}@wsl"`.
 - Move WezTerm, Herdr, and Pi package/config links into `modules/home-legacy-agents.nix`.
 - Expose legacy fallback explicitly, for example:
   - `homeConfigurations."${user}@wsl"` = Orca Prime default.
@@ -423,9 +423,9 @@ Acceptance:
 2. On feature branch, add Orca default profile without deleting legacy files first.
 3. Add `wsl-legacy` Home Manager config that links current WezTerm/Herdr/Pi files.
 4. Apply default Orca profile in WSL:
-   `home-manager switch --flake ~/.dotfiles#$(whoami)@wsl`
+   `home-manager switch -b backup --flake ~/.dotfiles#$(whoami)@wsl`
 5. Use legacy fallback only if needed:
-   `home-manager switch --flake ~/.dotfiles#$(whoami)@wsl-legacy`
+   `home-manager switch -b backup --flake ~/.dotfiles#$(whoami)@wsl-legacy`
 6. If Orca path fails, switch back to legacy profile or reclone/reset local feature branch from `origin/main`.
 7. Do not change Windows Orca or SSH key state until verification scripts pass in dry/verify mode.
 

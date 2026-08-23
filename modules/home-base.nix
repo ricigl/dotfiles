@@ -77,7 +77,7 @@ in
       push = "git push";
       pull = "git pull";
       m = "git switch main";
-      rebuild = "home-manager switch --flake ~/.dotfiles#${user}@wsl";
+      rebuild = "home-manager switch -b backup --flake ~/.dotfiles#${user}@wsl";
     };
   };
 

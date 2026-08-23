@@ -14,6 +14,7 @@ case "$PROFILE" in
 esac
 
 DOTFILES_LINK="$HOME/.dotfiles"
+BACKUP_SUFFIX="${HOME_MANAGER_BACKUP_SUFFIX:-home-manager-$(date +%Y%m%d-%H%M%S)}"
 
 if [ "$DIR" != "$DOTFILES_LINK" ]; then
   if [ -L "$DOTFILES_LINK" ] && [ "$(readlink -f "$DOTFILES_LINK")" = "$DIR" ]; then
@@ -27,4 +28,5 @@ if [ "$DIR" != "$DOTFILES_LINK" ]; then
 fi
 
 exec home-manager switch \
+  -b "$BACKUP_SUFFIX" \
   --flake "$HOME/.dotfiles#$(whoami)@${HOME_SUFFIX}"
