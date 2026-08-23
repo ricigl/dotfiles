@@ -60,8 +60,6 @@ in
       # Keep Orca relay and other noninteractive SSH sessions quiet.
       [[ -o interactive ]] || return
 
-      bindkey '^f' autosuggest-accept
-
       # Configure the WSLg X server for a Brazilian ABNT2 keyboard.
       if [[ -n "$DISPLAY" ]]; then
         ${setxkbmapPkg}/bin/setxkbmap -layout br -variant abnt2 >/dev/null 2>&1 || true
