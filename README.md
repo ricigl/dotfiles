@@ -208,6 +208,39 @@ fresh Nix development shell. Arguments remain unchanged, which is required
 because daemon-aware commands differ in whether they accept an explicit
 `--daemon-socket` option.
 
+## Prime maintenance
+
+The default Home Manager profile provides a safe `prime-maintenance` utility for inspecting Prime workers and saved sessions without printing conversation contents:
+
+```bash
+prime-maintenance
+prime-maintenance list
+prime-maintenance list-agents
+prime-maintenance list-sessions
+```
+
+Prime worker operations use Prime's supported lifecycle commands:
+
+```bash
+prime-maintenance stop-agent <agent-id>
+prime-maintenance stop-all-agents
+```
+
+Saved sessions are JSONL files and can contain private prompts, tool calls, and responses. The utility lists only metadata such as the session ID, safe display name, working directory, lifecycle state, path, and modification time:
+
+```bash
+prime-maintenance delete-session <session-id>
+prime-maintenance delete-all-sessions
+```
+
+Session deletion moves files to the desktop trash when `trash` or `gio` is available. Permanent deletion requires the explicit `--permanent` flag. Active sessions are refused until their owning agent is stopped. All destructive actions require confirmation unless `--yes` is supplied. The combined emergency cleanup command requires the phrase `DELETE ALL PRIME STATE`:
+
+```bash
+prime-maintenance clean-all
+```
+
+Use `--session-dir` with disposable fixtures or a separately managed Prime session directory. Never commit the session directory or its contents.
+
 Codebase Memory is configured as a native stdio MCP server in `home/.prime/agent/settings.json`:
 
 ```text
@@ -369,8 +402,10 @@ Then remove or disable `mcpServers.codebase_memory` in `home/.prime/agent/settin
 - `scripts/windows-orca-bootstrap.ps1`: Windows resources, dedicated SSH key, optional Orca installer.
 - `scripts/install-prime-tools.sh`: pinned transitional Prime/Lavish/gh-axi installation.
 - `scripts/install-codebase-memory.sh`: pinned Codebase Memory MCP portable binary installation.
+- `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
 - `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
 - `tests/smoke-orca-prime.sh`: target-runtime acceptance checks.
+- `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `home/`: repository-authored configuration linked by Home Manager.
 
 ## Notes

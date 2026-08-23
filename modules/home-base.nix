@@ -21,6 +21,9 @@ let
       --command env TMPDIR="$runtime_parent" sh -c \
       'export PATH="$HOME/.local/bin:$PATH"; exec prime-agent "$@"' prime "$@"
   '';
+  primeMaintenance = pkgs.writeShellScriptBin "prime-maintenance" ''
+    exec "${dotfiles}/scripts/prime-maintenance.py" "$@"
+  '';
 in
 {
   home.packages = with pkgs; [
@@ -35,6 +38,7 @@ in
     neovim
     nerd-fonts.hack
     primeLauncher
+    primeMaintenance
   ];
 
   fonts.fontconfig.enable = true;

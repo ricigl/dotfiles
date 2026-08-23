@@ -353,6 +353,34 @@ Acceptance:
 - `nix develop .#orca-prime --command codebase-memory-mcp --version` reports `0.10.8` after explicit install.
 - `git ls-files '.codebase-memory/**' 'home/.cache/codebase-memory-mcp/**'` is empty.
 
+### Phase 8A - Prime Maintenance Utility
+
+Files:
+
+- `scripts/prime-maintenance.py`
+- `modules/home-base.nix`
+- `scripts/validate.sh`
+- `tests/smoke-orca-prime.sh`
+- `tests/test-prime-maintenance.sh`
+- `README.md`
+
+Expected changes:
+
+- Provide a `prime-maintenance` launcher for listing Prime agents and saved sessions.
+- Use Prime 0.8.0 lifecycle commands for stopping one agent or all agents.
+- Parse only session metadata from JSONL files. Never print prompts, transcripts, tool output, auth, or session contents.
+- Require explicit confirmation for destructive actions.
+- Prefer `trash` or `gio trash` for session deletion. Permit permanent deletion only with `--permanent`.
+- Refuse active-session deletion until the owning agent is stopped.
+- Keep session paths contained below the configured Prime session directory.
+- Test listing, redaction, containment, active-session refusal, and confirmation behavior with disposable fixtures only.
+
+Acceptance:
+
+- `prime-maintenance --help` works after Home Manager activation.
+- `tests/test-prime-maintenance.sh` passes without invoking real Prime lifecycle commands.
+- No session content or runtime state is committed.
+
 ### Phase 9 - Rewrite README for Ubuntu WSL + Orca
 
 Files:

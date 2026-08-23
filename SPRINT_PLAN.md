@@ -91,6 +91,15 @@ Constraints:
    - Completion criteria: parser checks pass; settings JSON parses; Prime config leaves indexing/read/query available while mutating/high-risk tools are disabled; README and plans describe install/use/rollback.
    - Logical commit message: `feat: add Codebase Memory MCP config`.
 
+5. Task: add Prime maintenance utility
+   - Goal: inspect and safely clean Prime agents and saved sessions without exposing session contents.
+   - Exact files: `scripts/prime-maintenance.py`, `modules/home-base.nix`, `scripts/validate.sh`, `tests/smoke-orca-prime.sh`, `tests/test-prime-maintenance.sh`, `README.md`.
+   - Implementation contract: list agents through `prime-agent list --all --json`; stop one with `stop`; stop all with confirmed `shutdown --force`; parse only session metadata; use trash/gio before permanent deletion; enforce session-directory containment and active-session refusal; support interactive and explicit subcommands.
+   - Forbidden scope: no real agent/session lifecycle operations during implementation tests; no prompt/transcript output; no unconfirmed destructive action; no recursive deletion of Prime state; no committed session state.
+   - Verification commands: `python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("scripts/prime-maintenance.py").read_text())'`; `bash -n tests/test-prime-maintenance.sh`; `tests/test-prime-maintenance.sh`; `git diff --check`.
+   - Completion criteria: help, listing, redaction, containment, active-session refusal, and confirmation tests pass; Home Manager exposes `prime-maintenance`.
+   - Logical commit message: `feat: add Prime maintenance utility`.
+
 ## Sprint 4: Ubuntu/Windows Bootstrap and Smoke Verification
 
 1. Task: Ubuntu SSH relay bootstrap

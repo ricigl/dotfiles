@@ -18,9 +18,11 @@ for script in \
   scripts/install-prime-tools.sh \
   scripts/ubuntu-bootstrap.sh \
   scripts/validate.sh \
-  tests/smoke-orca-prime.sh; do
+  tests/smoke-orca-prime.sh \
+  tests/test-prime-maintenance.sh; do
   bash -n "$script"
 done
+python3 -c 'import ast, pathlib; path = pathlib.Path("scripts/prime-maintenance.py"); ast.parse(path.read_text(encoding="utf-8"), filename=str(path))'
 
 if command -v jq >/dev/null 2>&1; then
   jq empty home/.prime/agent/settings.json
