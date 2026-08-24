@@ -10,7 +10,7 @@ Windows 10
     └── SSH 127.0.0.1:2222
         └── Ubuntu WSL2 distro "Ubuntu"
             └── Linux repository/worktree under /home/...
-                ├── Home Manager: Zsh, Starship, Git, CLI tools, Neovim, ABNT2, Node 24, AGY/Pi PATH
+                ├── Home Manager: Zsh, Starship, Git, CLI tools, Neovim, ABNT2, Node 24, AGY/Pi PATH, shared agent policy/MCP
                 └── nix develop .#orca-prime: Node 22, Python, uv, gh, build tools, Prime
 ```
 
@@ -21,7 +21,7 @@ The previous WezTerm, Herdr, Claude Code, and Codex environment remains availabl
 | Layer | Owns |
 |---|---|
 | Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3` |
-| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, `~/.local/bin` PATH, reviewed Prime policy, AGY/Pi installer path |
+| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, `~/.local/bin` PATH, shared AGY/Pi policy and MCP config, reviewed Prime policy, AGY/Pi installer path |
 | `.#orca-prime` | Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, agent environment variables |
 | Orca | Project registration, worktree creation/reuse/removal, editor, diffs, browser, terminals |
 | Prime | Coding and reasoning inside the current Orca-owned worktree only |
@@ -41,6 +41,7 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - no-mistakes Linux x86_64 SHA-256: `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`
 - AGY bootstrapper SHA-256: `ee1ea43ce4e9e56356c4ab6dad907ef357ae4bdfcaadb682735909fb57c9c640`
 - Pi bootstrapper SHA-256: `a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5b`
+- Pi MCP adapter: `2.27.0` (`npm:pi-mcp-adapter@2.27.0`)
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
 `flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation. `scripts/install-codebase-memory.sh` verifies the pinned Codebase Memory release archive before installing the portable binary. `scripts/install-no-mistakes.sh` verifies the pinned no-mistakes release archive before installing the user-owned binary.
@@ -57,7 +58,7 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - no-mistakes telemetry and automatic update checks are disabled by Home Manager. Its daemon, gate repositories, worktrees, logs, database, and evidence remain local mutable state.
 - AGY and Pi are user-owned transitional installs. Their reviewed bootstrap scripts are pinned, but upstream release payloads remain dynamic and may self-update; auth, sessions, caches, logs, and downloads remain local and untracked.
 - Codebase Memory is local-only: allowed root `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact.
-- Prime's Codebase Memory MCP entry disables initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
+- AGY, Pi, and Prime Codebase Memory MCP entries disable initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
 - `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
 - Private keys, authorized keys, provider credentials, sessions, caches, and runtime state are never committed.
 
@@ -224,9 +225,29 @@ cd ~/.dotfiles
 ./scripts/install-home-agents.sh
 agy --version
 pi --version
+pi list | grep pi-mcp-adapter
 ```
 
-Run this installer from the regular Home Manager shell, not from `nix develop .#orca-prime`. It verifies the reviewed upstream bootstrap scripts before execution, requires Node.js `22.19.0+` and npm already on PATH, refuses the Pi installer's system-package bootstrap path, installs user-owned launchers under `~/.local/bin`, and does not copy credentials or runtime state into the repository. The bootstrap scripts currently resolve upstream dynamic releases, so review their hashes and versions again before a future refresh.
+Run this installer from the regular Home Manager shell, not from `nix develop .#orca-prime`. It verifies the reviewed upstream bootstrap scripts before execution, requires Node.js `22.19.0+` and npm already on PATH, refuses the Pi installer's system-package bootstrap path, installs user-owned launchers under `~/.local/bin`, installs the pinned `pi-mcp-adapter@2.27.0`, and does not copy credentials or runtime state into the repository. The bootstrap scripts currently resolve dynamic upstream releases, so review their hashes and versions again before a future refresh.
+
+### Shared AGY and Pi policy, Caveman, and Codebase Memory
+
+The repository root `AGENTS.md` is the single tracked shared policy for AGY and Pi. Home Manager exposes that same source to Pi as `~/.pi/agent/AGENTS.md` and to AGY as `~/.gemini/GEMINI.md`. The separate Prime policy remains `~/.prime/agent/AGENTS.md` and is not merged into the shared file.
+
+The reviewed Caveman skill is exposed to Pi through `~/.agents/skills/caveman/` and to AGY through `~/.gemini/antigravity-cli/skills/caveman/`. Use `/caveman ultra` for token-efficient coding-agent prompts when full-detail output is not required.
+
+Codebase Memory is available to both agents after the pinned binary is installed:
+
+```text
+Pi shared MCP config: ~/.config/mcp/mcp.json
+AGY global MCP config: ~/.gemini/config/mcp_config.json
+AGY compatibility MCP config: ~/.gemini/antigravity-cli/mcp_config.json
+Server: /home/ricardo/.local/bin/codebase-memory-mcp
+Allowed root: /home/ricardo/src
+Cache: /home/ricardo/.cache/codebase-memory-mcp
+```
+
+Pi uses the pinned `pi-mcp-adapter@2.27.0`; AGY uses native stdio MCP support. Both configurations keep diagnostics off and disable `delete_project`, `manage_adr`, and `ingest_traces`. For non-trivial work, follow the graph-first workflow in the shared `AGENTS.md`: check index status, get a bounded architecture overview, search narrowly, trace relevant paths, read exact symbols, verify source, and run blast-radius checks after edits.
 
 After the tools are installed, the default Home Manager profile provides a
 `prime` launcher. It can be called from the regular Node 24 shell and runs only

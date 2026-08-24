@@ -59,7 +59,7 @@ Constraints:
    - Goal: manage only reviewed public Prime files.
    - Exact files: `home/.prime/agent/AGENTS.md`, `home/.prime/agent/settings.json`, `modules/home-orca-prime.nix`, `.gitignore`.
    - Implementation contract: link only `~/.prime/agent/AGENTS.md` and `~/.prime/agent/settings.json`; keep public, reviewable content; add `.gitignore` guards for `home/.prime/agent/auth*`, `home/.prime/agent/sessions/`, `home/.prime/agent/cache/`, `home/.prime/agent/downloads/`, `home/.local/share/npm/`, `.codebase-memory/`, `home/.cache/codebase-memory-mcp/`, and repo-local Windows staging outputs.
-   - Forbidden scope: no whole `~/.prime` ownership; no auth, tokens, sessions, caches, downloads, runtime dirs; no replacement of existing `home/AGENTS.md` unless separately reviewed.
+   - Forbidden scope: no whole `~/.prime` ownership; no auth, tokens, sessions, caches, downloads, runtime dirs; no merging Prime policy into the shared root `AGENTS.md`.
    - Verification commands: `jq empty home/.prime/agent/settings.json`; `home-manager switch --dry-run --flake "$PWD#$(whoami)@wsl"`; secret scan command from `PLAN.md`.
    - Completion criteria: JSON parses; Home Manager owns only approved files; secret scan clean.
    - Logical commit message: `feat: add Prime policy and config`.
@@ -143,7 +143,7 @@ Constraints:
 1. Task: README and agent guidance rewrite
    - Goal: make repo docs match Ubuntu WSL + Orca Prime reality.
    - Exact files: `README.md`, `AGENTS.md`.
-   - Implementation contract: remove stale Mac/nix-darwin narrative; document Windows Orca `1.4.184`, WSL distro `Ubuntu`, loopback SSH `127.0.0.1:2222`, `nix develop .#orca-prime`, Prime/Lavish/gh-axi pinned installer phase, AGY/Pi regular Home Manager-shell transitional installer phase, Codebase Memory MCP `0.10.8` native stdio MCP, bootstrap order, secrets/cache boundaries, unmanaged runtime/auth/index state, legacy fallback profile, and rule forbidding WezTerm/Herdr/Pi in Orca-owned worktrees; update `AGENTS.md` by removing absent `configuration.nix` Homebrew note, retaining `.no-mistakes/` ban, adding Orca/Prime authority and secrets boundaries.
+   - Implementation contract: remove stale Mac/nix-darwin narrative; document Windows Orca `1.4.184`, WSL distro `Ubuntu`, loopback SSH `127.0.0.1:2222`, `nix develop .#orca-prime`, Prime/Lavish/gh-axi pinned installer phase, AGY/Pi regular Home Manager-shell transitional installer phase, one shared AGY/Pi `AGENTS.md`, shared Caveman skill, Pi MCP adapter, Codebase Memory MCP `0.10.8` for AGY/Pi/Prime, bootstrap order, secrets/cache boundaries, unmanaged runtime/auth/index state, legacy fallback profile, and rule forbidding WezTerm/Herdr/Pi in Orca-owned worktrees; update `AGENTS.md` by removing absent `configuration.nix` Homebrew note, retaining `.no-mistakes/` ban, adding Orca/Prime authority and secrets boundaries.
    - Forbidden scope: no unsupported paths or binary names; no claim that Prime/Lavish/gh-axi are reproducibly Nix-packaged; no weakening `.no-mistakes/` rule.
    - Verification commands: `rg -n 'nix-darwin|Homebrew|configuration\.nix|WezTerm|Herdr|Pi|prime-agent|lavish-axi|gh-axi|127\.0\.0\.1:2222|orca-wsl-ed25519' README.md AGENTS.md`.
    - Completion criteria: docs align with implemented files and approved values; stale Mac/default legacy claims gone.

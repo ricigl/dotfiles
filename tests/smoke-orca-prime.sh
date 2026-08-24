@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq prime-maintenance no-mistakes agy pi; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq prime-maintenance no-mistakes agy pi codebase-memory-mcp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -62,12 +62,37 @@ fi
 settings="$HOME/.prime/agent/settings.json"
 policy="$HOME/.prime/agent/AGENTS.md"
 skill="$HOME/.prime/agent/skills/i-have-adhd/SKILL.md"
-for required_file in "$settings" "$policy" "$skill"; do
+shared_policy="$HOME/.pi/agent/AGENTS.md"
+agy_policy="$HOME/.gemini/GEMINI.md"
+pi_mcp="$HOME/.config/mcp/mcp.json"
+agy_mcp="$HOME/.gemini/config/mcp_config.json"
+shared_skill="$HOME/.agents/skills/caveman/SKILL.md"
+agy_skill="$HOME/.gemini/antigravity-cli/skills/caveman/SKILL.md"
+for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$shared_skill" "$agy_skill"; do
   test -r "$required_file" || {
     printf 'Missing Home Manager file: %s\n' "$required_file" >&2
     exit 1
   }
 done
+
+cmp -s "$shared_policy" "$agy_policy"
+pi list | grep -F 'pi-mcp-adapter' >/dev/null
+
+jq -e '
+  .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+  .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+  (.mcpServers.codebase_memory.excludeTools | index("delete_project")) != null and
+  (.mcpServers.codebase_memory.excludeTools | index("manage_adr")) != null and
+  (.mcpServers.codebase_memory.excludeTools | index("ingest_traces")) != null
+' "$pi_mcp" >/dev/null
+
+jq -e '
+  .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+  .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+  (.mcpServers.codebase_memory.disabledTools | index("delete_project")) != null and
+  (.mcpServers.codebase_memory.disabledTools | index("manage_adr")) != null and
+  (.mcpServers.codebase_memory.disabledTools | index("ingest_traces")) != null
+' "$agy_mcp" >/dev/null
 
 jq -e '
   .mcpServers.codebase_memory.type == "stdio" and

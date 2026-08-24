@@ -36,10 +36,13 @@ Authority boundaries:
 |-- flake.lock
 |-- home.nix
 |-- home/
+|   |-- .agents/skills/caveman/              # shared Caveman skill
 |   |-- .config/
-|   |   |-- nvim/                         # retained base editor config
-|   |   |-- wezterm/                      # legacy module only
-|   |   `-- herdr/                        # legacy module only
+|   |   |-- mcp/mcp.json                     # Pi shared MCP config
+|   |   |-- nvim/                            # retained base editor config
+|   |   |-- wezterm/                         # legacy module only
+|   |   `-- herdr/                            # legacy module only
+|   |-- .gemini/config/mcp_config.json       # AGY MCP config
 |   |-- .prime/
 |   |   `-- agent/
 |   |       |-- AGENTS.md                 # reviewed Prime policy only
@@ -47,6 +50,7 @@ Authority boundaries:
 |   `-- .pi/agent/                        # legacy module only
 |-- modules/
 |   |-- home-base.nix                     # Zsh, Starship, Git, CLI utils, Neovim, ABNT2
+|   |-- home-common-agents.nix             # shared AGY/Pi policy, Caveman, MCP links
 |   |-- home-orca-prime.nix               # Prime/Lavish policy links, no auth/runtime
 |   `-- home-legacy-agents.nix            # optional WezTerm/Herdr/Pi fallback profile
 |-- scripts/
@@ -84,7 +88,7 @@ Approval choices before implementation:
 - Legacy shape: recommended second Home Manager configuration `${user}@wsl-legacy`, not a runtime toggle inside the default profile.
 - Global Node: **approved 2026-08-17** - keep Node 24 in the default Home Manager profile; `orca-prime` still uses Node 22 and its `PATH` takes precedence inside the shell.
 - WSL distro handling: recommended verify exact registered name `Ubuntu` and fail closed; never rename an existing distro automatically.
-- Prime policy: use a dedicated Orca/Prime policy at `home/.prime/agent/AGENTS.md`; preserve the existing `home/AGENTS.md` unless separately reviewed.
+- Shared policy: use the repository-root `AGENTS.md` for AGY and Pi; remove the duplicate `home/AGENTS.md`. Prime keeps its dedicated policy at `home/.prime/agent/AGENTS.md`.
 
 ## Phased Tasks
 
@@ -192,7 +196,7 @@ Files:
 
 Expected changes:
 
-- Add reviewed Prime-oriented `home/.prime/agent/AGENTS.md`; do not silently replace the existing cross-agent `home/AGENTS.md`.
+- Add reviewed Prime-oriented `home/.prime/agent/AGENTS.md`; keep it separate from the shared root `AGENTS.md`.
 - Keep policy public and non-secret.
 - Link only exact reviewed config/policy files through Home Manager.
 - Do not link whole mutable directories:
@@ -426,6 +430,11 @@ Acceptance:
 Files:
 
 - `modules/home-base.nix`
+- `modules/home-common-agents.nix`
+- `home/.agents/skills/caveman/SKILL.md`
+- `home/.config/mcp/mcp.json`
+- `home/.gemini/config/mcp_config.json`
+- `home/.pi/agent/settings.json`
 - `scripts/install-home-agents.sh`
 - `scripts/validate.sh`
 - `tests/smoke-orca-prime.sh`
@@ -441,6 +450,9 @@ Expected changes:
 - Verify the upstream AGY and Pi bootstrap script SHA256 values before executing them.
 - Require Node/npm from the Home Manager shell so the Pi installer does not bootstrap system packages or invoke `sudo`.
 - Install user-owned `agy` and `pi` launchers without linking auth, sessions, caches, logs, or downloads into the repository.
+- Expose one shared root `AGENTS.md` to Pi and AGY, remove duplicate `home/AGENTS.md`, and keep Prime's policy separate.
+- Install the pinned Pi MCP adapter and expose the same local Codebase Memory server to Pi and AGY with destructive tools disabled.
+- Expose the reviewed Caveman skill through both agents' global skill roots.
 - Document that the bootstrap scripts resolve dynamic upstream releases and are not reproducible Nix packages.
 - Keep AGY/Pi out of Orca worktree management; they are shell tools only.
 
@@ -449,6 +461,8 @@ Acceptance:
 - `bash -n scripts/install-home-agents.sh` passes.
 - Home Manager configuration evaluates with the user-owned PATH and explicit `curl` package.
 - Target regular-shell smoke testing reports `agy --version` and `pi --version` after explicit installation.
+- Pi lists `pi-mcp-adapter`, both MCP configurations parse, and both contain the expected Codebase Memory safety restrictions.
+- The live tracked policy set contains only root `AGENTS.md` and Prime's `home/.prime/agent/AGENTS.md`.
 - Runtime/auth/session/cache/download paths remain untracked.
 
 ### Phase 9 - Rewrite README for Ubuntu WSL + Orca

@@ -8,6 +8,7 @@ AGY_INSTALLER_URL="https://antigravity.google/cli/install.sh"
 AGY_INSTALLER_SHA256="ee1ea43ce4e9e56356c4ab6dad907ef357ae4bdfcaadb682735909fb57c9c640"
 PI_INSTALLER_URL="https://pi.dev/install.sh"
 PI_INSTALLER_SHA256="a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5b"
+PI_MCP_ADAPTER_PACKAGE="npm:pi-mcp-adapter@2.27.0"
 
 if [ -n "${IN_NIX_SHELL:-}" ]; then
   printf '%s\n' "Run this from the regular Home Manager shell, not nix develop .#orca-prime." >&2
@@ -67,3 +68,10 @@ printf '%s\n' "AGY:"
 agy --version
 printf '%s\n' "Pi:"
 pi --version
+
+printf '%s\n' "Installing the pinned Pi MCP adapter..."
+pi install "$PI_MCP_ADAPTER_PACKAGE"
+pi list | grep -F 'pi-mcp-adapter' >/dev/null || {
+  printf '%s\n' "Pinned Pi MCP adapter was not listed after installation." >&2
+  exit 1
+}

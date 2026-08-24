@@ -26,13 +26,56 @@ for script in \
 done
 python3 -c 'import ast, pathlib; path = pathlib.Path("scripts/prime-maintenance.py"); ast.parse(path.read_text(encoding="utf-8"), filename=str(path))'
 
+json_files=(
+  home/.prime/agent/settings.json
+  home/.pi/agent/settings.json
+  home/.config/mcp/mcp.json
+  home/.gemini/config/mcp_config.json
+)
 if command -v jq >/dev/null 2>&1; then
-  jq empty home/.prime/agent/settings.json
+  for json_file in "${json_files[@]}"; do
+    jq empty "$json_file"
+  done
 elif command -v node >/dev/null 2>&1; then
-  node -e 'JSON.parse(require("fs").readFileSync("home/.prime/agent/settings.json", "utf8"))'
+  node -e 'for (const path of process.argv.slice(1)) JSON.parse(require("fs").readFileSync(path, "utf8"))' "${json_files[@]}"
 else
   printf '%s\n' "Neither jq nor node is available to validate settings.json." >&2
   exit 1
+fi
+
+tracked_agent_files="$(git ls-files -- '*AGENTS.md' | while IFS= read -r agent_file; do
+  if test -e "$agent_file"; then
+    printf '%s\n' "$agent_file"
+  fi
+done | sort)"
+test "${tracked_agent_files}" = $'AGENTS.md\nhome/.prime/agent/AGENTS.md'
+grep -F 'pi-mcp-adapter@2.27.0' home/.pi/agent/settings.json >/dev/null
+if command -v jq >/dev/null 2>&1; then
+  jq -e '
+    .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+    .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+    (.mcpServers.codebase_memory.excludeTools | index("delete_project")) != null and
+    (.mcpServers.codebase_memory.excludeTools | index("manage_adr")) != null and
+    (.mcpServers.codebase_memory.excludeTools | index("ingest_traces")) != null
+  ' home/.config/mcp/mcp.json >/dev/null
+  jq -e '
+    .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+    .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+    (.mcpServers.codebase_memory.disabledTools | index("delete_project")) != null and
+    (.mcpServers.codebase_memory.disabledTools | index("manage_adr")) != null and
+    (.mcpServers.codebase_memory.disabledTools | index("ingest_traces")) != null
+  ' home/.gemini/config/mcp_config.json >/dev/null
+else
+  node -e '
+    const fs = require("fs");
+    const required = ["delete_project", "manage_adr", "ingest_traces"];
+    const check = (path, field) => {
+      const server = JSON.parse(fs.readFileSync(path, "utf8")).mcpServers.codebase_memory;
+      if (server.command !== "/home/ricardo/.local/bin/codebase-memory-mcp" || server.cwd !== "/home/ricardo/src" || !required.every((name) => server[field].includes(name))) process.exit(1);
+    };
+    check("home/.config/mcp/mcp.json", "excludeTools");
+    check("home/.gemini/config/mcp_config.json", "disabledTools");
+  '
 fi
 
 git diff --check

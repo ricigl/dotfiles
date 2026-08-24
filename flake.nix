@@ -57,12 +57,14 @@
       homeConfigurations."${user}@wsl" = mkHome [
         ./home.nix
         ./modules/home-base.nix
+        ./modules/home-common-agents.nix
         ./modules/home-orca-prime.nix
       ];
 
       homeConfigurations."${user}@wsl-legacy" = mkHome [
         ./home.nix
         ./modules/home-base.nix
+        ./modules/home-common-agents.nix
         ./modules/home-orca-prime.nix
         ./modules/home-legacy-agents.nix
       ];

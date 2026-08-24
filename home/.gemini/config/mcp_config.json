@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "codebase_memory": {
+      "command": "/home/ricardo/.local/bin/codebase-memory-mcp",
+      "args": [],
+      "cwd": "/home/ricardo/src",
+      "startupTimeoutMs": 30000,
+      "callTimeoutMs": 120000,
+      "env": {
+        "CBM_ALLOWED_ROOT": "/home/ricardo/src",
+        "CBM_CACHE_DIR": "/home/ricardo/.cache/codebase-memory-mcp",
+        "CBM_DIAGNOSTICS": "0"
+      },
+      "disabledTools": [
+        "delete_project",
+        "manage_adr",
+        "ingest_traces"
+      ]
+    }
+  }
+}
