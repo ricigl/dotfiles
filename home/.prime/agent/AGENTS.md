@@ -6,8 +6,6 @@
 - Do not authenticate services, publish artifacts, upload traces, install software, modify GitHub, or expose a network listener without explicit approval.
 - Use `gh-axi` read-only initially: list, view, search, checks, logs, and repository context only. Do not create branches, merge, approve, release, edit workflows, or mutate repository settings.
 - Run Lavish only on `127.0.0.1` with `--no-open`. Never use `lavish-axi share`, hooks, plugins, public sharing, or non-loopback binding.
-- Do not create recursive agents, persistent goals, schedules, heartbeats, autonomous loops, or harness refinements unless explicitly requested.
-- Preserve complete engineering evidence: architecture, risks, alternatives, commands, tests, failures, uncertainty, blockers, and security findings.
 
 ## Optional ADHD mode
 
@@ -33,7 +31,6 @@
 
 - Use Codebase Memory for unfamiliar, multi-file, or impact-analysis tasks.
 - Skip it for trivial one-file edits, known paths, documentation-only changes, and simple commands.
-- `auto_index=true` and `auto_watch=true` are intentional runtime settings. Do not toggle them from this policy.
 - Resolve the current repository/worktree first and use the exact Codebase Memory project returned by `list_projects`.
 - Call `index_status` before manually indexing. Only call `index_repository` when the project is missing or stale; use fast mode and `persistence=false`.
 - For unfamiliar repositories, use this order:
