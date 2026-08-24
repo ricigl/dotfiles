@@ -31,6 +31,7 @@ in
     fd
     fzf
     jq
+    curl
     gh
     lazygit
     nodejs_24
@@ -42,6 +43,10 @@ in
   ];
 
   fonts.fontconfig.enable = true;
+
+  home.sessionPath = [
+    "${config.home.homeDirectory}/.local/bin"
+  ];
 
   home.sessionVariables = {
     EDITOR = "nvim";

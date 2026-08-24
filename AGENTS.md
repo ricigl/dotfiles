@@ -9,7 +9,7 @@ Deliberate decisions in this repository:
 - Ubuntu apt/system bootstrap owns systemd, OpenSSH, sshd configuration, `build-essential`, and global `python3`. Do not move those pre-relay requirements into Home Manager or a project shell.
 - The default Home Manager profile owns Zsh, Starship, Git, CLI tools, Neovim, ABNT2 support, and global Node 24.
 - `nix develop .#orca-prime` intentionally shadows global Node 24 with Node 22.
-- WezTerm, Herdr, Pi, Claude Code, and Codex are isolated in the optional legacy profile.
+- WezTerm, Herdr, Claude Code, and Codex remain isolated in the optional legacy profile. AGY and Pi are user-installed transitional tools in the default Home Manager profile, not Orca worktree managers.
 - Do not restore permission-bypass or approval-bypass aliases to the default profile.
 - Prime is not a sandbox and must never run as root. Keep `PRIME_AGENT_TELEMETRY=0`.
 - `home/.prime/agent/AGENTS.md` and `settings.json` are public reviewed policy. Never add auth, tokens, sessions, provider credentials, telemetry identity, caches, or daemon state.

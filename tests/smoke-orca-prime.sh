@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq prime-maintenance no-mistakes; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq prime-maintenance no-mistakes agy pi; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -16,6 +16,8 @@ done
 
 prime-maintenance --help >/dev/null
 no-mistakes --version
+agy --version
+pi --version
 
 [ "${NO_MISTAKES_TELEMETRY:-}" = "0" ]
 [ "${NO_MISTAKES_NO_UPDATE_CHECK:-}" = "1" ]

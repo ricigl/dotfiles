@@ -11,6 +11,10 @@ result-*
 # Pi credentials and Home Manager adoption backups stay local
 /home/.pi/agent/auth.json
 /home/.pi/agent/**/*.backup
+/home/.pi/agent/sessions/
+/home/.pi/agent/cache/
+/home/.pi/agent/logs/
+/home/.pi/agent/downloads/
 
 # Pi Calm is a runtime toggle; its local state file is never tracked
 /home/.pi/agent/calm
@@ -24,6 +28,9 @@ result-*
 
 # Transitional user-scoped npm prefix is runtime state, never repository data
 /home/.local/share/npm/
+
+# AGY staging/cache is runtime state, never repository data
+/home/.cache/antigravity/
 
 # Codebase Memory indexes/caches are runtime state, never repository data
 .codebase-memory/

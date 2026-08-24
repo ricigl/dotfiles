@@ -10,18 +10,18 @@ Windows 10
     └── SSH 127.0.0.1:2222
         └── Ubuntu WSL2 distro "Ubuntu"
             └── Linux repository/worktree under /home/...
-                ├── Home Manager: Zsh, Starship, Git, CLI tools, Neovim, ABNT2, Node 24
+                ├── Home Manager: Zsh, Starship, Git, CLI tools, Neovim, ABNT2, Node 24, AGY/Pi PATH
                 └── nix develop .#orca-prime: Node 22, Python, uv, gh, build tools, Prime
 ```
 
-The previous WezTerm, Herdr, Pi, Claude Code, and Codex environment remains available as the optional `legacy` Home Manager profile. It is not loaded by the default Orca/Prime profile.
+The previous WezTerm, Herdr, Claude Code, and Codex environment remains available as the optional `legacy` Home Manager profile. Pi's authored configuration remains available there, while the default profile can install the user-owned Pi CLI through the reviewed transitional installer.
 
 ## Responsibility boundaries
 
 | Layer | Owns |
 |---|---|
 | Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3` |
-| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, reviewed Prime policy |
+| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, `~/.local/bin` PATH, reviewed Prime policy, AGY/Pi installer path |
 | `.#orca-prime` | Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, agent environment variables |
 | Orca | Project registration, worktree creation/reuse/removal, editor, diffs, browser, terminals |
 | Prime | Coding and reasoning inside the current Orca-owned worktree only |
@@ -39,6 +39,8 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - Codebase Memory MCP: `0.10.8`
 - no-mistakes: `1.57.0`
 - no-mistakes Linux x86_64 SHA-256: `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`
+- AGY bootstrapper SHA-256: `ee1ea43ce4e9e56356c4ab6dad907ef357ae4bdfcaadb682735909fb57c9c640`
+- Pi bootstrapper SHA-256: `a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5b`
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
 `flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation. `scripts/install-codebase-memory.sh` verifies the pinned Codebase Memory release archive before installing the portable binary. `scripts/install-no-mistakes.sh` verifies the pinned no-mistakes release archive before installing the user-owned binary.
@@ -53,6 +55,7 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - Lavish is restricted to `127.0.0.1` and must not publish or share artifacts.
 - gh-axi begins read-only.
 - no-mistakes telemetry and automatic update checks are disabled by Home Manager. Its daemon, gate repositories, worktrees, logs, database, and evidence remain local mutable state.
+- AGY and Pi are user-owned transitional installs. Their reviewed bootstrap scripts are pinned, but upstream release payloads remain dynamic and may self-update; auth, sessions, caches, logs, and downloads remain local and untracked.
 - Codebase Memory is local-only: allowed root `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact.
 - Prime's Codebase Memory MCP entry disables initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
 - `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
@@ -213,6 +216,17 @@ no-mistakes doctor
 Only after that review should you use `git push no-mistakes <branch>` or `/no-mistakes` from a supported coding agent. The no-mistakes remote forwards changes only after its configured pipeline passes.
 
 These installers use user-owned locations. They do not require root and must never be run with `sudo`.
+
+Install AGY and Pi into the regular Home Manager shell after rebuilding the profile and opening a new shell:
+
+```bash
+cd ~/.dotfiles
+./scripts/install-home-agents.sh
+agy --version
+pi --version
+```
+
+Run this installer from the regular Home Manager shell, not from `nix develop .#orca-prime`. It verifies the reviewed upstream bootstrap scripts before execution, requires Node.js `22.19.0+` and npm already on PATH, refuses the Pi installer's system-package bootstrap path, installs user-owned launchers under `~/.local/bin`, and does not copy credentials or runtime state into the repository. The bootstrap scripts currently resolve upstream dynamic releases, so review their hashes and versions again before a future refresh.
 
 After the tools are installed, the default Home Manager profile provides a
 `prime` launcher. It can be called from the regular Node 24 shell and runs only
@@ -441,6 +455,7 @@ Then remove or disable `mcpServers.codebase_memory` in `home/.prime/agent/settin
 - `scripts/install-prime-tools.sh`: pinned transitional Prime/Lavish/gh-axi installation.
 - `scripts/install-codebase-memory.sh`: pinned Codebase Memory MCP portable binary installation.
 - `scripts/install-no-mistakes.sh`: pinned no-mistakes CLI installation with checksum verification.
+- `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation for the regular Home Manager shell.
 - `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
 - `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
 - `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.

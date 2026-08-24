@@ -17,6 +17,7 @@ Authority boundaries:
 
 - Repository owns declarative, reviewable configuration only.
 - Home Manager may own exact policy/config files for Prime/Lavish and public opt-in skill files.
+- Home Manager owns the regular shell PATH and reviewed transitional install entry for AGY/Pi; their binaries, releases, auth, and runtime state remain user-owned mutable state.
 - Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Orca can relay over SSH, so they cannot live only inside a per-user Nix shell.
 - Windows PowerShell bootstrap owns Windows-side WSL name checks, `.wslconfig`, SSH key creation/copy, Orca installer verification, and terminal/node-pty prerequisite checks.
 - User owns secrets and auth: OpenAI/Prime auth, GitHub auth, Windows account secrets, SSH private keys, `authorized_keys` material before copy, session dirs, caches, and runtime downloads.
@@ -53,6 +54,7 @@ Authority boundaries:
 |   |-- windows-orca-bootstrap.ps1        # WSL/Orca/SSH setup and verification
 |   |-- install-prime-tools.sh            # reviewed pinned npm/prefix install, not Nix-packaged
 |   |-- install-no-mistakes.sh            # reviewed pinned gate CLI install, not Nix-packaged
+|   |-- install-home-agents.sh            # reviewed AGY/Pi bootstrap install, not Nix-packaged
 |   `-- validate.sh                       # local validation wrapper, no evidence committed
 |-- .no-mistakes.yaml                     # targeted gate policy, local-only evidence
 `-- tests/
@@ -74,6 +76,8 @@ Known verified values:
 - Codebase Memory MCP `0.10.8` portable Linux x86_64 release: `https://github.com/DeusData/codebase-memory-mcp/releases/download/v0.10.8/codebase-memory-mcp-linux-amd64-portable.tar.gz`.
 - Codebase Memory MCP release SHA256: `6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325`.
 - no-mistakes `1.57.0` Linux x86_64 release SHA256: `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`.
+- AGY bootstrap script SHA256: `ee1ea43ce4e9e56356c4ab6dad907ef357ae4bdfcaadb682735909fb57c9c640`.
+- Pi bootstrap script SHA256: `a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5b`.
 
 Approval choices before implementation:
 
@@ -126,7 +130,7 @@ Expected changes:
   - remove `cc = "claude --dangerously-skip-permissions"`
   - remove `co = "codex --ask-for-approval never --sandbox workspace-write"` or any equivalent full-auto alias.
 - Keep `rebuild = "home-manager switch -b backup --flake ~/.dotfiles#${user}@wsl"`.
-- Move WezTerm, Herdr, and Pi package/config links into `modules/home-legacy-agents.nix`.
+- Keep WezTerm, Herdr, and Pi authored package/config links in `modules/home-legacy-agents.nix`; the default profile's Pi CLI is installed separately through the user-owned transitional installer in Phase 8C.
 - Expose legacy fallback explicitly, for example:
   - `homeConfigurations."${user}@wsl"` = Orca Prime default.
   - `homeConfigurations."${user}@wsl-legacy"` = base + legacy module.
@@ -135,7 +139,7 @@ Expected changes:
 
 Acceptance:
 
-- Orca default profile does not install or link WezTerm, Herdr, or Pi.
+- Orca default profile does not install or link WezTerm or Herdr. Pi's default-profile CLI remains user-owned and is not used for Orca worktree management.
 - Legacy profile still can restore current WezTerm/Herdr/Pi fallback.
 
 ### Phase 2 - Add `orca-prime` Nix Dev Shell
@@ -417,6 +421,36 @@ Acceptance:
 - `git diff --check` passes and no runtime state or credentials are tracked.
 - Target Ubuntu WSL smoke testing reports no-mistakes version and telemetry policy after explicit installation.
 
+### Phase 8C - Default Home Manager AGY and Pi Installation
+
+Files:
+
+- `modules/home-base.nix`
+- `scripts/install-home-agents.sh`
+- `scripts/validate.sh`
+- `tests/smoke-orca-prime.sh`
+- `.gitignore`
+- `README.md`
+- `AGENTS.md`
+- `PLAN.md`
+- `SPRINT_PLAN.md`
+
+Expected changes:
+
+- Add `~/.local/bin` to the regular Home Manager shell PATH and provide `curl` for reviewed installers.
+- Verify the upstream AGY and Pi bootstrap script SHA256 values before executing them.
+- Require Node/npm from the Home Manager shell so the Pi installer does not bootstrap system packages or invoke `sudo`.
+- Install user-owned `agy` and `pi` launchers without linking auth, sessions, caches, logs, or downloads into the repository.
+- Document that the bootstrap scripts resolve dynamic upstream releases and are not reproducible Nix packages.
+- Keep AGY/Pi out of Orca worktree management; they are shell tools only.
+
+Acceptance:
+
+- `bash -n scripts/install-home-agents.sh` passes.
+- Home Manager configuration evaluates with the user-owned PATH and explicit `curl` package.
+- Target regular-shell smoke testing reports `agy --version` and `pi --version` after explicit installation.
+- Runtime/auth/session/cache/download paths remain untracked.
+
 ### Phase 9 - Rewrite README for Ubuntu WSL + Orca
 
 Files:
@@ -434,6 +468,7 @@ Expected changes:
   - loopback SSH `127.0.0.1:2222`
   - `nix develop .#orca-prime`
   - Prime/Lavish/gh-axi pinned installer phase
+  - AGY/Pi Home Manager-shell transitional installer phase
 - Explain bootstrap order:
   1. Windows prerequisites and `.wslconfig`
   2. Ubuntu apt/system prerequisites
