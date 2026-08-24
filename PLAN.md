@@ -52,7 +52,9 @@ Authority boundaries:
 |   |-- ubuntu-bootstrap.sh               # apt + sshd loopback prerequisites
 |   |-- windows-orca-bootstrap.ps1        # WSL/Orca/SSH setup and verification
 |   |-- install-prime-tools.sh            # reviewed pinned npm/prefix install, not Nix-packaged
+|   |-- install-no-mistakes.sh            # reviewed pinned gate CLI install, not Nix-packaged
 |   `-- validate.sh                       # local validation wrapper, no evidence committed
+|-- .no-mistakes.yaml                     # targeted gate policy, local-only evidence
 `-- tests/
     `-- smoke-orca-prime.sh               # SSH/node-pty/version smoke checks
 ```
@@ -71,6 +73,7 @@ Known verified values:
 - npm packages: `lavish-axi@0.1.50` and `gh-axi@0.1.30`, installed with `--ignore-scripts --no-audit --no-fund` during the transitional phase.
 - Codebase Memory MCP `0.10.8` portable Linux x86_64 release: `https://github.com/DeusData/codebase-memory-mcp/releases/download/v0.10.8/codebase-memory-mcp-linux-amd64-portable.tar.gz`.
 - Codebase Memory MCP release SHA256: `6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325`.
+- no-mistakes `1.57.0` Linux x86_64 release SHA256: `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`.
 
 Approval choices before implementation:
 
@@ -340,7 +343,7 @@ Expected changes:
 - Use stdio command `/home/ricardo/.local/bin/codebase-memory-mcp`, cwd `/home/ricardo/src`, startup timeout `30000`, and call timeout `120000`.
 - Pass env references for `CBM_ALLOWED_ROOT`, `CBM_CACHE_DIR`, and `CBM_DIAGNOSTICS`.
 - Disable initial mutating/high-risk tools with `disabledTools`: `delete_project`, `manage_adr`, and `ingest_traces`.
-- Leave indexing and read/query tools available, keep Codebase Memory's default `auto_index=false`, and do not start a watcher or the optional UI initially.
+- Leave indexing and read/query tools available with the approved `auto_index=true` and `auto_watch=true` settings; do not enable the optional UI initially.
 - Install Codebase Memory MCP `0.10.8` through `scripts/install-codebase-memory.sh` only inside `nix develop .#orca-prime`.
 - Verify release SHA256 before extraction, use private temp state, install mode `0755` to `$HOME/.local/bin`, and verify `--version`.
 - Do not make Home Manager own cache/index state. No committed `.codebase-memory` or graph artifact.
@@ -380,6 +383,37 @@ Acceptance:
 - `prime-maintenance --help` works after Home Manager activation.
 - `tests/test-prime-maintenance.sh` passes without invoking real Prime lifecycle commands.
 - No session content or runtime state is committed.
+
+### Phase 8B - no-mistakes Repository Integration
+
+Files:
+
+- `.no-mistakes.yaml`
+- `scripts/install-no-mistakes.sh`
+- `modules/home-base.nix`
+- `flake.nix`
+- `scripts/validate.sh`
+- `tests/smoke-orca-prime.sh`
+- `README.md`
+- `PLAN.md`
+- `.gitignore`
+
+Expected changes:
+
+- Pin no-mistakes `1.57.0` Linux x86_64 and verify its release SHA256 before extraction.
+- Install the user-owned binary under `~/.no-mistakes/bin` with a `~/.local/bin` command link.
+- Keep telemetry and automatic update checks disabled in both the regular Home Manager shell and the `orca-prime` development shell.
+- Add targeted shell and Prime maintenance checks without a repository-wide local regression command.
+- Keep validation evidence in no-mistakes-managed local state and never commit `.no-mistakes/`.
+- Do not run `no-mistakes init`, modify Git remotes, start the daemon, or start a gate during repository installation.
+
+Acceptance:
+
+- `bash -n scripts/install-no-mistakes.sh` passes.
+- The pinned release archive checksum passes in a disposable install directory.
+- The disposable installed binary reports `1.57.0`.
+- `git diff --check` passes and no runtime state or credentials are tracked.
+- Target Ubuntu WSL smoke testing reports no-mistakes version and telemetry policy after explicit installation.
 
 ### Phase 9 - Rewrite README for Ubuntu WSL + Orca
 
@@ -619,7 +653,7 @@ If `gh` remains unauthenticated, use GitHub web UI after pushing branch. Do not 
 ## Known Uncertainties and Blockers
 
 - Exact Prime installer behavior at `0.8.0` must be re-reviewed immediately before implementation; do not use an uninspected `curl | sh` path.
-- Codebase Memory auto indexing and file watching remain disabled until separately reviewed against target repositories.
+- Codebase Memory auto indexing and file watching are intentionally enabled by the approved Prime runtime configuration and remain restricted to `/home/ricardo/src`.
 - `i-have-adhd` is pinned to reviewed commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`; implementation must still verify that the expected `skills/i-have-adhd` path exists in the locked input.
 - Node 24 global retention is approved; validation must catch accidental leakage into the Node 22 `orca-prime` shell.
 - PowerShell validation depends on Windows host availability; Linux-only CI can only parser-check if `pwsh`/`powershell.exe` exists.

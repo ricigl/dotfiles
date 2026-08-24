@@ -1,0 +1,17 @@
+# Reviewed repository gate policy for no-mistakes.
+# Gate-control fields are trusted from the default branch by no-mistakes.
+agent: auto
+allow_repo_commands: false
+
+commands:
+  lint: "bash -n bootstrap.sh rebuild.sh scripts/install-codebase-memory.sh scripts/install-no-mistakes.sh scripts/install-prime-tools.sh scripts/ubuntu-bootstrap.sh scripts/validate.sh tests/smoke-orca-prime.sh tests/test-prime-maintenance.sh && git diff --check"
+  test: "tests/test-prime-maintenance.sh"
+
+ignore_patterns:
+  - ".no-mistakes/**"
+
+# Evidence remains in no-mistakes-managed local state and is never committed
+# to this public repository.
+test:
+  evidence:
+    store_in_repo: false

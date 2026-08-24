@@ -85,6 +85,8 @@
         LAVISH_AXI_TELEMETRY = "0";
         LAVISH_AXI_NO_OPEN = "1";
         LAVISH_AXI_HOST = "127.0.0.1";
+        NO_MISTAKES_TELEMETRY = "0";
+        NO_MISTAKES_NO_UPDATE_CHECK = "1";
 
         shellHook = ''
           export NPM_CONFIG_PREFIX="$HOME/.local/share/npm"

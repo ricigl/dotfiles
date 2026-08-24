@@ -35,4 +35,5 @@ authorized_keys
 orca-windows-setup*.exe
 
 # no-mistakes local validation state - never commit in this public repo
+# The tracked .no-mistakes.yaml is policy, not runtime state.
 .no-mistakes/

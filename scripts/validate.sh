@@ -15,6 +15,7 @@ for script in \
   bootstrap.sh \
   rebuild.sh \
   scripts/install-codebase-memory.sh \
+  scripts/install-no-mistakes.sh \
   scripts/install-prime-tools.sh \
   scripts/ubuntu-bootstrap.sh \
   scripts/validate.sh \

@@ -46,6 +46,8 @@ in
   home.sessionVariables = {
     EDITOR = "nvim";
     VISUAL = "nvim";
+    NO_MISTAKES_TELEMETRY = "0";
+    NO_MISTAKES_NO_UPDATE_CHECK = "1";
   };
 
   programs.git = {

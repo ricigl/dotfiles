@@ -85,7 +85,7 @@ Constraints:
 4. Task: add Codebase Memory MCP integration
    - Goal: configure Prime 0.8.0 native stdio MCP for local code memory without committing runtime graph/cache state.
    - Exact files: `home/.prime/agent/settings.json`, `modules/home-orca-prime.nix`, `flake.nix`, `scripts/install-codebase-memory.sh`, `scripts/validate.sh`, `tests/smoke-orca-prime.sh`, `README.md`, `.gitignore`.
-   - Implementation contract: add `mcpServers.codebase_memory` with type `stdio`, command `/home/ricardo/.local/bin/codebase-memory-mcp`, cwd `/home/ricardo/src`, `startupTimeoutMs` 30000, `callTimeoutMs` 120000, env references for `CBM_ALLOWED_ROOT`, `CBM_CACHE_DIR`, `CBM_DIAGNOSTICS`, and `disabledTools` for `delete_project`, `manage_adr`, `ingest_traces`; add public env policy; add installer for Codebase Memory MCP `0.10.8` using exact release URL and SHA256 `6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325`; document manual indexing/usage, the default `auto_index=false`, no watcher/UI startup, local-only boundaries, rollback, and uninstall.
+   - Implementation contract: add `mcpServers.codebase_memory` with type `stdio`, command `/home/ricardo/.local/bin/codebase-memory-mcp`, cwd `/home/ricardo/src`, `startupTimeoutMs` 30000, `callTimeoutMs` 120000, env references for `CBM_ALLOWED_ROOT`, `CBM_CACHE_DIR`, `CBM_DIAGNOSTICS`, and `disabledTools` for `delete_project`, `manage_adr`, `ingest_traces`; add public env policy; add installer for Codebase Memory MCP `0.10.8` using exact release URL and SHA256 `6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325`; document manual indexing/usage, approved `auto_index=true` and `auto_watch=true`, no UI startup, local-only boundaries, rollback, and uninstall.
    - Forbidden scope: no host bootstrap/apply; no npm or mutable latest refs; no committed `.codebase-memory`, cache, downloaded archive, graph artifact, auth, sessions, or target-machine software install.
    - Verification commands: `bash -n scripts/install-codebase-memory.sh`; `jq empty home/.prime/agent/settings.json`; `git diff --check`; after explicit install only: `nix develop .#orca-prime --command codebase-memory-mcp --version`.
    - Completion criteria: parser checks pass; settings JSON parses; Prime config leaves indexing/read/query available while mutating/high-risk tools are disabled; README and plans describe install/use/rollback.
@@ -99,6 +99,15 @@ Constraints:
    - Verification commands: `python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("scripts/prime-maintenance.py").read_text())'`; `bash -n tests/test-prime-maintenance.sh`; `tests/test-prime-maintenance.sh`; `git diff --check`.
    - Completion criteria: help, listing, redaction, containment, active-session refusal, and confirmation tests pass; Home Manager exposes `prime-maintenance`.
    - Logical commit message: `feat: add Prime maintenance utility`.
+
+6. Task: add no-mistakes repository integration
+   - Goal: install a pinned local gate CLI and document safe manual activation without changing Git remotes automatically.
+   - Exact files: `.no-mistakes.yaml`, `scripts/install-no-mistakes.sh`, `modules/home-base.nix`, `flake.nix`, `scripts/validate.sh`, `tests/smoke-orca-prime.sh`, `README.md`, `PLAN.md`, `.gitignore`.
+   - Implementation contract: pin no-mistakes `1.57.0` Linux x86_64 with SHA256 `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`; install under `~/.no-mistakes/bin` and link from `~/.local/bin`; set `NO_MISTAKES_TELEMETRY=0` and `NO_MISTAKES_NO_UPDATE_CHECK=1`; configure targeted shell and Prime maintenance checks with `test.evidence.store_in_repo=false`; leave `allow_repo_commands=false`.
+   - Forbidden scope: no `no-mistakes init`; no remote mutation; no daemon start or validation gate during installation; no committed `.no-mistakes/` state, credentials, logs, worktrees, databases, or evidence.
+   - Verification commands: `bash -n scripts/install-no-mistakes.sh`; disposable checksum-verified install and `--version`; `git diff --check`; target Ubuntu smoke test after explicit installation.
+   - Completion criteria: pinned binary installs without root; telemetry and update checks are disabled; repository policy is reviewable; evidence remains local; manual activation steps are documented.
+   - Logical commit message: `feat: add no-mistakes repository integration`.
 
 ## Sprint 4: Ubuntu/Windows Bootstrap and Smoke Verification
 

@@ -37,9 +37,11 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - Lavish AXI: `0.1.50`
 - gh-axi: `0.1.30`
 - Codebase Memory MCP: `0.10.8`
+- no-mistakes: `1.57.0`
+- no-mistakes Linux x86_64 SHA-256: `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
-`flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation. `scripts/install-codebase-memory.sh` verifies the pinned Codebase Memory release archive before installing the portable binary.
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation. `scripts/install-codebase-memory.sh` verifies the pinned Codebase Memory release archive before installing the portable binary. `scripts/install-no-mistakes.sh` verifies the pinned no-mistakes release archive before installing the user-owned binary.
 
 ## Security model
 
@@ -50,6 +52,7 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - Prime telemetry is disabled in both the dev shell and `~/.prime/agent/settings.json`.
 - Lavish is restricted to `127.0.0.1` and must not publish or share artifacts.
 - gh-axi begins read-only.
+- no-mistakes telemetry and automatic update checks are disabled by Home Manager. Its daemon, gate repositories, worktrees, logs, database, and evidence remain local mutable state.
 - Codebase Memory is local-only: allowed root `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact.
 - Prime's Codebase Memory MCP entry disables initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
 - `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
@@ -188,7 +191,28 @@ Install the pinned Codebase Memory MCP server the same way:
 ./scripts/install-codebase-memory.sh
 ```
 
-Both installers use user-owned locations. They do not require root and must never be run with `sudo`.
+Install the pinned no-mistakes CLI without starting its daemon or changing Git remotes:
+
+```bash
+nix develop .#orca-prime
+./scripts/install-no-mistakes.sh
+no-mistakes --version
+no-mistakes doctor
+```
+
+The installer uses a checksum-verified Linux x86_64 release, installs the real binary under `~/.no-mistakes/bin`, and links it from `~/.local/bin`. It does not run `no-mistakes init`, add a `no-mistakes` Git remote, start a daemon, or start a validation gate.
+
+The repository policy is in `.no-mistakes.yaml`. It selects targeted shell and Prime maintenance checks, keeps evidence outside Git, and leaves `allow_repo_commands` disabled. Review the configuration and the trusted-default-branch behavior before manually initializing this repository:
+
+```bash
+no-mistakes init
+git remote -v
+no-mistakes doctor
+```
+
+Only after that review should you use `git push no-mistakes <branch>` or `/no-mistakes` from a supported coding agent. The no-mistakes remote forwards changes only after its configured pipeline passes.
+
+These installers use user-owned locations. They do not require root and must never be run with `sudo`.
 
 After the tools are installed, the default Home Manager profile provides a
 `prime` launcher. It can be called from the regular Node 24 shell and runs only
@@ -408,8 +432,10 @@ Then remove or disable `mcpServers.codebase_memory` in `home/.prime/agent/settin
 - `scripts/windows-orca-bootstrap.ps1`: Windows resources, dedicated SSH key, optional Orca installer.
 - `scripts/install-prime-tools.sh`: pinned transitional Prime/Lavish/gh-axi installation.
 - `scripts/install-codebase-memory.sh`: pinned Codebase Memory MCP portable binary installation.
+- `scripts/install-no-mistakes.sh`: pinned no-mistakes CLI installation with checksum verification.
 - `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
 - `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
+- `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.
 - `tests/smoke-orca-prime.sh`: target-runtime acceptance checks.
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `home/`: repository-authored configuration linked by Home Manager.
