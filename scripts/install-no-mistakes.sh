@@ -7,11 +7,6 @@ NO_MISTAKES_ARCHIVE="no-mistakes-v${NO_MISTAKES_VERSION}-linux-amd64.tar.gz"
 NO_MISTAKES_URL="https://github.com/kunchenguid/no-mistakes/releases/download/v${NO_MISTAKES_VERSION}/${NO_MISTAKES_ARCHIVE}"
 NO_MISTAKES_SHA256="1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84"
 
-if [ -z "${IN_NIX_SHELL:-}" ]; then
-  printf '%s\n' "Run this script inside: nix develop .#orca-prime" >&2
-  exit 1
-fi
-
 for command_name in curl sha256sum tar install mktemp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing required command: %s\n' "$command_name" >&2

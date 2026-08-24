@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq prime-maintenance no-mistakes agy pi firstmate codebase-memory-mcp; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq prime prime-agent prime-maintenance no-mistakes agy pi firstmate treehouse lavish-axi gh-axi codebase-memory-mcp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -15,9 +15,14 @@ for command_name in git make g++ python3 node npm nvim zsh starship jq prime-mai
 done
 
 prime-maintenance --help >/dev/null
+prime --version
+prime-agent --version
 no-mistakes --version
 agy --version
 pi --version
+treehouse --version
+lavish-axi --version
+gh-axi --version
 
 [ "${NO_MISTAKES_TELEMETRY:-}" = "0" ]
 [ "${NO_MISTAKES_NO_UPDATE_CHECK:-}" = "1" ]
@@ -39,6 +44,8 @@ if [ "${IN_NIX_SHELL:-}" ]; then
   [ "${LAVISH_AXI_TELEMETRY:-}" = "0" ]
   [ "${LAVISH_AXI_NO_OPEN:-}" = "1" ]
   [ "${LAVISH_AXI_HOST:-}" = "127.0.0.1" ]
+  [ "${NPM_CONFIG_PREFIX:-}" = "$HOME/.local/share/npm" ]
+  case ":${PATH}:" in *":$HOME/.local/share/npm/bin:"*) ;; *) exit 1 ;; esac
   [ "${CBM_ALLOWED_ROOT:-}" = "/home/ricardo/src" ]
   [ "${CBM_CACHE_DIR:-}" = "/home/ricardo/.cache/codebase-memory-mcp" ]
   [ "${CBM_DIAGNOSTICS:-}" = "0" ]
@@ -48,17 +55,18 @@ else
     printf '%s\n' "Default Home Manager profile must resolve global Node 24." >&2
     exit 1
   }
+  [ "${PRIME_AGENT_TELEMETRY:-}" = "0" ]
+  [ "${LAVISH_AXI_TELEMETRY:-}" = "0" ]
+  [ "${LAVISH_AXI_NO_OPEN:-}" = "1" ]
+  [ "${LAVISH_AXI_HOST:-}" = "127.0.0.1" ]
+  [ "${NPM_CONFIG_PREFIX:-}" = "$HOME/.local/share/npm" ]
+  case ":${PATH}:" in *":$HOME/.local/share/npm/bin:"*) ;; *) exit 1 ;; esac
+  [ "${CBM_ALLOWED_ROOT:-}" = "/home/ricardo/src" ]
+  [ "${CBM_CACHE_DIR:-}" = "/home/ricardo/.cache/codebase-memory-mcp" ]
+  [ "${CBM_DIAGNOSTICS:-}" = "0" ]
+  codebase-memory-mcp --version | grep -Eq '0\.10\.8'
 fi
 
-if command -v prime-agent >/dev/null 2>&1; then
-  prime-agent --version
-fi
-if command -v lavish-axi >/dev/null 2>&1; then
-  lavish-axi --version
-fi
-if command -v gh-axi >/dev/null 2>&1; then
-  gh-axi --version
-fi
 settings="$HOME/.prime/agent/settings.json"
 policy="$HOME/.prime/agent/AGENTS.md"
 skill="$HOME/.prime/agent/skills/i-have-adhd/SKILL.md"
@@ -68,7 +76,7 @@ pi_mcp="$HOME/.config/mcp/mcp.json"
 agy_mcp="$HOME/.gemini/config/mcp_config.json"
 shared_skill="$HOME/.agents/skills/caveman/SKILL.md"
 agy_skill="$HOME/.gemini/antigravity-cli/skills/caveman/SKILL.md"
-firstmate_root="${FIRSTMATE_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/firstmate}"
+firstmate_root="${FIRSTMATE_ROOT:-$HOME/firstmate}"
 for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$shared_skill" "$agy_skill"; do
   test -r "$required_file" || {
     printf 'Missing Home Manager file: %s\n' "$required_file" >&2
@@ -76,7 +84,7 @@ for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_polic
   }
 done
 
-for firstmate_path in AGENTS.md bin/fm-bootstrap.sh bin/fm-session-start.sh docs/configuration.md; do
+for firstmate_path in AGENTS.md bin/fm-bootstrap.sh bin/fm-session-start.sh bin/fm-install-treehouse.sh docs/configuration.md projects; do
   test -e "$firstmate_root/$firstmate_path" || {
     printf 'Missing Firstmate checkout path: %s/%s\n' "$firstmate_root" "$firstmate_path" >&2
     exit 1
@@ -90,8 +98,11 @@ case "$firstmate_remote" in
     exit 1
     ;;
 esac
+firstmate_commit="$(git -C "$firstmate_root" rev-parse HEAD)"
+test "$firstmate_commit" = "038d0f7ec6ba7238a151722931434dcf06ff37c4"
 
 cmp -s "$shared_policy" "$agy_policy"
+cmp -s "$shared_policy" "$policy"
 pi list | grep -F 'pi-mcp-adapter' >/dev/null
 
 jq -e '

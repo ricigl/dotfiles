@@ -10,17 +10,20 @@ Hard gates:
 
 Constraints:
 
-- Branch stays `feat/orca-prime-home-manager`.
+- Branch stays `feat/orca-prime-codebase-memory`.
 - `origin/main` remains unchanged backup.
 - Keep global Node 24 in default Home Manager profile.
-- `orca-prime` shell must resolve Node 22 before global Node 24.
-- Prime config path: `~/.prime/agent/settings.json`.
-- Prime policy path: `~/.prime/agent/AGENTS.md`.
-- Prime skill path: `~/.prime/agent/skills/i-have-adhd`.
-- Tool binaries: `prime-agent`, `lavish-axi`, `gh-axi`, `codebase-memory-mcp`.
+- `orca-prime` shell is optional and resolves Node 22 for validation only.
+- Prime, Pi, and AGY launch from the regular Home Manager shell.
+- Root `AGENTS.md` is the single shared policy source for all three harnesses.
+- Firstmate root is `~/firstmate`; project and Treehouse worktree root is `~/firstmate/projects`.
+- Firstmate owns Linux Treehouse worktrees; Windows Orca connects over SSH without worktree lifecycle operations.
+- Tool binaries: `prime-agent`, `lavish-axi`, `gh-axi`, `codebase-memory-mcp`, and pinned Treehouse `2.0.1`.
 - Windows SSH key: `%USERPROFILE%\.ssh\orca-wsl-ed25519`.
 - `gh auth status` currently fails because this environment is unauthenticated.
-- This host has no native `nix` executable. Use the pinned `nixos/nix:2.28.5` Docker validator for isolated flake evaluation/build checks; do not claim target activation or Orca runtime acceptance until Ricardo verifies them in Ubuntu WSL.
+- This host has no native `nix` executable. Use an available pinned container validator only if its daemon is running; do not claim target activation or Orca runtime acceptance until Ricardo verifies them in Ubuntu WSL.
+
+The earlier sprint sections document the already-landed baseline. Sprint 6 below supersedes conflicting Prime-policy, Prime-shell, and Orca-worktree assumptions.
 
 ## Sprint 1: Home Manager Split, Default, Legacy
 
@@ -76,7 +79,7 @@ Constraints:
 3. Task: add transitional pinned tool install script
    - Goal: document reviewed non-reproducible install path until Nix packaging exists.
    - Exact files: `scripts/install-prime-tools.sh`, `README.md`, `.gitignore`.
-   - Implementation contract: script runs inside `nix develop .#orca-prime`; Prime source `https://app.primeintellect.ai/prime-agent/install.sh` with version `0.8.0` only after review; npm packages `lavish-axi@0.1.50` and `gh-axi@0.1.30`; npm flags `--ignore-scripts --no-audit --no-fund`; prefix `$HOME/.local/share/npm`; record exact versions, checksums/integrity, audit notes.
+   - Implementation contract: historical baseline only. Sprint 6 moves this installer to the regular Home Manager shell; retain the same Prime version, npm pins, integrity checks, prefix, and no-runtime-state policy.
    - Forbidden scope: no claim tools are reproducibly Nix-packaged; no installer execution during planning; no committed npm cache/runtime downloads.
    - Verification commands: `bash -n scripts/install-prime-tools.sh`; after approved install only: `nix develop .#orca-prime --command prime-agent --version`; `nix develop .#orca-prime --command lavish-axi --version`; `nix develop .#orca-prime --command gh-axi --version`.
    - Completion criteria: parser passes; approved post-install versions are Prime `0.8.0`, Lavish `0.1.50`, gh-axi `0.1.30`; README states transitional installer boundary.
@@ -184,3 +187,46 @@ Constraints:
    - Verification commands: `gh auth status`; `git push -u origin feat/orca-prime-home-manager`; `gh pr create --base main --head feat/orca-prime-home-manager --title "Add Orca Prime WSL Home Manager setup" --body-file PR.md`.
    - Completion criteria: feature branch pushed only after approval; PR created only after auth and approval, or manual PR handoff documented.
    - Logical commit message: none.
+
+## Sprint 6: Unified Home Manager Agent Runtime Migration
+
+Planning status: architecture decisions approved by Ricardo; implementation remains gated on explicit coding approval after this plan review.
+
+1. Move all three harnesses into the regular Home Manager shell.
+   - Keep Node 24 and the normal Zsh/Starship/Neovim/UX profile as the daily runtime.
+   - Make `prime` call the user-installed `prime-agent` directly without entering `nix develop`.
+   - Persist the npm global bin directory in PATH for Prime, Lavish, and gh-axi.
+   - Keep `.#orca-prime` only as an optional Node 22/build-validation shell.
+
+2. Consolidate common policy and skills.
+   - Merge Prime safety and Orca worktree rules into root `AGENTS.md`.
+   - Link that source to Pi, AGY, and Prime.
+   - Expose Caveman and pinned `i-have-adhd` to all three clients through supported skill roots.
+   - Keep Prime settings and client-specific MCP schemas separate from mutable auth/session state.
+
+3. Rebase reviewed installers on the regular-shell boundary.
+   - Remove the `IN_NIX_SHELL` requirement from Prime and Codebase Memory installers.
+   - Keep checksum/integrity pins, telemetry settings, user-owned prefixes, and no-root behavior.
+   - Add one explicit regular-shell installation/verification sequence without silently starting daemons or mutating remotes.
+
+4. Move Firstmate and establish Linux worktree ownership.
+   - Install Firstmate under `~/firstmate` and use `~/firstmate/projects` for project roots and Treehouse-managed crew worktrees.
+   - Use Firstmate's reviewed Linux `tmux`/Treehouse backend; do not select its pinned macOS-only `orca` backend.
+   - Orca connects over SSH and may access selected Firstmate worktrees, but cannot create, move, remove, or prune them.
+   - Verify the required Treehouse dependency and Firstmate backend from WSL before enabling crew dispatch.
+   - Verify Orca SSH access to the shared project root and at least one safe read-only project operation.
+
+5. Validate and migrate safely.
+   - Build both Home Manager profiles and the optional dev shell.
+   - Run regular-shell command, policy, skill, MCP, and telemetry smoke checks.
+   - Run direct `agy`, `pi`, and `prime` version/help checks from fresh shells.
+   - Run bounded read-only Codebase Memory calls through each harness.
+   - Run WSL SSH and Orca terminal acceptance before removing old runtime assumptions.
+
+Logical commit groups:
+
+- `docs: plan unified Home Manager agent runtime`
+- `refactor: run Prime and shared tools from Home Manager`
+- `feat: share policy skills and MCP across three harnesses`
+- `feat: place Firstmate projects under WSL home`
+- `test: validate unified agent runtime and Orca access`

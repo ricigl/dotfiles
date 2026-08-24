@@ -8,11 +8,6 @@ CBM_SHA256="6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325"
 INSTALL_DIR="$HOME/.local/bin"
 INSTALL_PATH="$INSTALL_DIR/codebase-memory-mcp"
 
-if [ -z "${IN_NIX_SHELL:-}" ]; then
-  printf '%s\n' "Run this script inside: nix develop .#orca-prime" >&2
-  exit 1
-fi
-
 if [ "$(uname -s)" != "Linux" ] || [ "$(uname -m)" != "x86_64" ]; then
   printf '%s\n' "This installer supports Linux x86_64 only." >&2
   exit 1

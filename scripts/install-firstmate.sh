@@ -6,16 +6,15 @@ set -euo pipefail
 
 FIRSTMATE_REPOSITORY="https://github.com/kunchenguid/firstmate.git"
 FIRSTMATE_COMMIT="038d0f7ec6ba7238a151722931434dcf06ff37c4"
-FIRSTMATE_ROOT="${FIRSTMATE_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/firstmate}"
+FIRSTMATE_ROOT="${FIRSTMATE_ROOT:-$HOME/firstmate}"
 
 usage() {
   cat <<'USAGE'
 Usage: install-firstmate.sh [--check] [--help]
 
-Install Firstmate into ${XDG_DATA_HOME:-$HOME/.local/share}/firstmate at the
-reviewed commit pinned by this repository. The install is user-owned and does
-not use sudo, copy Firstmate policy into this repository, or create project
-clones here.
+Install Firstmate into $HOME/firstmate at the reviewed commit pinned by this
+repository. The install is user-owned and does not use sudo, copy Firstmate
+policy into this repository, or create project clones here.
 
 Options:
   --check  Verify an existing checkout without fetching or changing it.
@@ -90,7 +89,7 @@ verify_checkout() {
     return 1
   }
 
-  for required in AGENTS.md bin/fm-bootstrap.sh bin/fm-session-start.sh docs/configuration.md; do
+  for required in AGENTS.md bin/fm-bootstrap.sh bin/fm-session-start.sh bin/fm-install-treehouse.sh docs/configuration.md; do
     [ -e "$FIRSTMATE_ROOT/$required" ] || {
       printf 'Firstmate checkout is missing required path: %s\n' "$required" >&2
       return 1
@@ -124,6 +123,7 @@ if [ -e "$FIRSTMATE_ROOT" ]; then
       "Use its reviewed /updatefirstmate flow or choose a fresh FIRSTMATE_ROOT; this installer will not reset it." >&2
     exit 1
   fi
+  mkdir -p "$FIRSTMATE_ROOT/projects"
   printf '%s\n' "Firstmate is already installed at the pinned commit."
   exit 0
 fi
@@ -134,4 +134,5 @@ git clone --filter=blob:none --no-checkout "$FIRSTMATE_REPOSITORY" "$FIRSTMATE_R
 git -C "$FIRSTMATE_ROOT" fetch --depth=1 origin "$FIRSTMATE_COMMIT"
 git -C "$FIRSTMATE_ROOT" checkout -B main "$FIRSTMATE_COMMIT"
 verify_checkout
+mkdir -p "$FIRSTMATE_ROOT/projects"
 printf '%s\n' "Firstmate installation passed."

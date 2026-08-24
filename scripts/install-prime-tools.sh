@@ -11,11 +11,6 @@ LAVISH_INTEGRITY="sha512-w57Pdna5MmsgHTewyhOPkuzwbCe98WqR6yrvf/r+fxs1qor2ypHzeHD
 GH_AXI_SPEC="gh-axi@0.1.30"
 GH_AXI_INTEGRITY="sha512-4qw7+INJqdH5obm6NOUQnqBRALMG/BYQwTseVr9I7DHvccEytBtltc0EvB0SxrDzIUTKPshI9uKtfp83TjlBjA=="
 
-if [ -z "${IN_NIX_SHELL:-}" ]; then
-  printf '%s\n' "Run this script inside: nix develop .#orca-prime" >&2
-  exit 1
-fi
-
 for command_name in curl sha256sum node npm python3; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing required command: %s\n' "$command_name" >&2
@@ -23,9 +18,14 @@ for command_name in curl sha256sum node npm python3; do
   }
 done
 
+if ! node -e 'const [major, minor, patch] = process.versions.node.split(".").map(Number); process.exit(major > 22 || (major === 22 && (minor > 19 || (minor === 19 && patch >= 0))) ? 0 : 1)'; then
+  printf '%s\n' "Node.js 22.19.0 or newer is required; refusing to bootstrap Node with a system package installer." >&2
+  exit 1
+fi
+
 export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$HOME/.local/share/npm}"
 export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
-mkdir -p "$NPM_CONFIG_PREFIX" "$HOME/.prime/agent/skills"
+mkdir -p "$NPM_CONFIG_PREFIX" "$HOME/.agents/skills"
 
 installer="$(mktemp)"
 cleanup() {
@@ -59,13 +59,12 @@ npm install -g --ignore-scripts --no-audit --no-fund \
   "$GH_AXI_SPEC"
 
 npm_root="$(npm root -g)"
-skills_root="$HOME/.prime/agent/skills"
+skills_root="$HOME/.agents/skills"
 backup_suffix="pre-orca-prime-$(date +%Y%m%d-%H%M%S)"
 backup_root="${XDG_STATE_HOME:-$HOME/.local/state}/orca-prime/skill-backups/$backup_suffix"
 
-# Prime scans every directory directly under skills_root as a skill. Keep both
-# new backups and backups produced by older installer/Home Manager runs outside
-# that discovery path so they cannot create duplicate-name conflicts.
+# Pi reads the shared user-global skills root directly. Home Manager exposes
+# these same mutable skills through AGY and Prime client-specific roots.
 shopt -s nullglob
 stale_skill_backups=(
   "$skills_root"/*.pre-orca-prime-*
@@ -94,7 +93,7 @@ python3 - <<'PY'
 from pathlib import Path
 
 for name, command in (("lavish", "lavish-axi"), ("gh-axi", "gh-axi")):
-    path = Path.home() / ".prime" / "agent" / "skills" / name / "SKILL.md"
+    path = Path.home() / ".agents" / "skills" / name / "SKILL.md"
     text = path.read_text()
     updated = text.replace(f"npx -y {command}", command)
     if updated == text and f"npx {command}" in text:

@@ -2,7 +2,7 @@
 
 ## Scope
 
-Goal: merge this repository's Ubuntu WSL Home Manager base with Ricardo's verified Windows Orca -> loopback SSH -> Ubuntu WSL -> Prime Agent workflow on branch `feat/orca-prime-home-manager`, while preserving `origin/main` unchanged as backup.
+Goal: maintain a single regular Ubuntu WSL Home Manager environment for AGY, Pi, and Prime Agent, with an optional `orca-prime` Node 22/build-validation shell and Windows Orca access through loopback SSH on branch `feat/orca-prime-codebase-memory`.
 
 Non-goals:
 
@@ -10,18 +10,60 @@ Non-goals:
 - Do not commit or push during planning.
 - Do not run installers or package managers during planning.
 - Do not commit credentials, SSH keys, Prime auth, sessions, daemon state, caches, npm cache, downloaded runtime packages, Orca installers, or validation evidence.
-- Do not claim Prime, Lavish, or gh-axi are reproducibly Nix-packaged until fixed-output Nix packaging exists and is validated.
-- Do not include WezTerm, Herdr, or Pi in Orca-owned worktrees except through an explicit optional legacy profile.
+- Do not claim Prime, Lavish, gh-axi, AGY, Pi, or Codebase Memory are reproducibly Nix-packaged until fixed-output Nix packaging exists and is validated.
+- Do not allow AGY, Pi, Prime, or Firstmate to create, remove, move, or prune Orca-owned worktrees. Agents may operate only inside an Orca-assigned worktree.
 
 Authority boundaries:
 
 - Repository owns declarative, reviewable configuration only.
 - Home Manager may own exact policy/config files for Prime/Lavish and public opt-in skill files.
-- Home Manager owns the regular shell PATH, the reviewed transitional install entries for AGY/Pi, and the separate Firstmate launcher; their binaries, releases, auth, and runtime state remain user-owned mutable state.
+- Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, shared policy/skill/MCP links, and Nix-provided support packages such as tmux; transitional binaries, releases, auth, and runtime state remain user-owned mutable state.
+- The optional `orca-prime` shell owns Node 22, Python, uv, gh, jq, and build tooling for deterministic validation only. It is not required to launch Prime, AGY, Pi, or Firstmate.
 - Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Orca can relay over SSH, so they cannot live only inside a per-user Nix shell.
 - Windows PowerShell bootstrap owns Windows-side WSL name checks, `.wslconfig`, SSH key creation/copy, Orca installer verification, and terminal/node-pty prerequisite checks.
 - User owns secrets and auth: OpenAI/Prime auth, GitHub auth, Windows account secrets, SSH private keys, `authorized_keys` material before copy, session dirs, caches, and runtime downloads.
 - Ricardo's verified Windows Orca workflow is the source of truth for installer URL/checksum, expected Orca version `1.4.184`, and smoke-test behavior. If repo text conflicts, use Ricardo's verified values after approval.
+
+## Current migration decision: unified regular Home Manager agents
+
+Status: architecture decisions approved in the current session; implementation remains gated on review of this migration contract.
+
+The regular Home Manager shell becomes the daily runtime for all three harnesses:
+
+- Home Manager keeps Zsh, Starship, Git, Neovim, fonts, ABNT2, shortcuts, Node 24, `~/.local/bin`, and the persistent npm global bin path.
+- AGY, Pi, and Prime are launched directly from that regular shell.
+- `gh-axi`, `lavish-axi`, `no-mistakes`, `codebase-memory-mcp`, and the reviewed user-owned agent installers are available from the same PATH.
+- Caveman and the pinned `i-have-adhd` skill are exposed to all three harnesses through client-compatible skill roots.
+- Pi, AGY, and Prime retain client-specific MCP configuration schemas but point at the same local Codebase Memory policy and binary.
+- `nix develop .#orca-prime` remains available only for Node 22, Python, uv, gh, jq, compiler, and package validation. It is not required by any agent launcher.
+
+The policy surface becomes one tracked root `AGENTS.md` linked to Pi, AGY, and Prime. Prime-specific safety, Firstmate worktree authority, Orca SSH boundaries, Codebase Memory rules, telemetry boundaries, and engineering rules are merged into that common source. The tracked `home/.prime/agent/AGENTS.md` file is removed; Prime settings remain separately managed in `home/.prime/agent/settings.json`.
+
+Firstmate becomes the user-owned project coordination home at `~/firstmate`, with project clones and Treehouse-managed crew worktrees under `~/firstmate/projects`. The dotfiles repository remains the installer and policy source; Firstmate's `data/`, `state/`, `config/`, sessions, caches, and project runtime state remain outside Git.
+
+Firstmate owns project and crew worktree lifecycle through its reviewed Linux `tmux`/Treehouse backend. Windows Orca connects to WSL over SSH and may inspect or operate inside an explicitly selected Firstmate worktree, but it does not create, move, remove, or prune worktrees. The pinned Firstmate macOS-only `orca` backend is not used in this topology.
+
+Implementation order:
+
+1. Update `PLAN.md`, `SPRINT_PLAN.md`, and the common policy contract.
+2. Move agent launchers and the npm global bin path into the regular Home Manager module.
+3. Make `install-prime-tools.sh` and Codebase Memory installation valid from the regular shell while keeping user-owned integrity checks.
+4. Link the common policy and skills to all three clients and preserve client-specific MCP schemas.
+5. Move Firstmate's default root to `~/firstmate`, create/use `~/firstmate/projects`, install the pinned Treehouse provider, and expose the Linux worktree boundary to Orca over SSH.
+6. Retain `.#orca-prime` as an optional validation shell and remove agent-runtime assumptions from its launcher/tests.
+7. Run static checks, activation builds, regular-shell smoke checks, direct harness version/help checks, MCP read-only checks, and Orca SSH acceptance on WSL.
+
+Acceptance criteria:
+
+- A fresh regular Home Manager shell resolves `agy`, `pi`, `prime`, `prime-agent`, `gh-axi`, `lavish-axi`, `no-mistakes`, and `codebase-memory-mcp` without entering `nix develop`.
+- All three harnesses load the same common `AGENTS.md`, Caveman, and pinned `i-have-adhd` skill through their supported paths.
+- All three harnesses can perform a bounded read-only Codebase Memory query with the same local safety boundary.
+- `nix develop .#orca-prime` still provides the pinned Node 22/build-validation toolchain.
+- `~/firstmate/projects` is reachable from Orca's WSL SSH terminal, and Firstmate's Linux Treehouse backend owns crew worktree lifecycle.
+- The Windows Orca client cannot create or remove Firstmate-owned worktrees through the SSH workflow.
+- No credentials, sessions, caches, generated state, or project runtime data enter the dotfiles repository.
+
+The earlier Prime-only shell, Prime-specific policy, and Prime-only skill-link requirements in Phases 3, 4, 7, 8, and 8C are historical records of the already-landed baseline. Where they conflict with this current migration decision, this unified Home Manager contract is authoritative.
 
 ## Proposed Repository Tree
 
@@ -36,35 +78,36 @@ Authority boundaries:
 |-- flake.lock
 |-- home.nix
 |-- home/
-|   |-- .agents/skills/caveman/              # shared Caveman skill
+|   |-- .agents/skills/
+|   |   |-- caveman/                      # shared Caveman skill
+|   |   `-- i-have-adhd/                  # shared pinned presentation skill
 |   |-- .config/
-|   |   |-- mcp/mcp.json                     # Pi shared MCP config
-|   |   |-- nvim/                            # retained base editor config
-|   |   |-- wezterm/                         # legacy module only
-|   |   `-- herdr/                            # legacy module only
-|   |-- .gemini/config/mcp_config.json       # AGY MCP config
+|   |   |-- mcp/mcp.json                  # Pi shared MCP config
+|   |   |-- nvim/                         # retained base editor config
+|   |   |-- wezterm/                       # legacy module only
+|   |   `-- herdr/                         # legacy module only
+|   |-- .gemini/config/mcp_config.json    # AGY MCP config
 |   |-- .prime/
 |   |   `-- agent/
-|   |       |-- AGENTS.md                 # reviewed Prime policy only
 |   |       `-- settings.json             # reviewed Prime settings only
 |   `-- .pi/agent/                        # legacy module only
 |-- modules/
-|   |-- home-base.nix                     # Zsh, Starship, Git, CLI utils, Neovim, ABNT2
-|   |-- home-common-agents.nix             # shared AGY/Pi policy, Caveman, MCP links
-|   |-- home-firstmate.nix                 # separate Firstmate launcher and tmux
-|   |-- home-orca-prime.nix               # Prime/Lavish policy links, no auth/runtime
-|   `-- home-legacy-agents.nix            # optional WezTerm/Herdr/Pi fallback profile
+|   |-- home-base.nix                     # shell UX, Node 24, all agent launchers and PATH
+|   |-- home-common-agents.nix            # common AGENTS.md, skills, and MCP links
+|   |-- home-firstmate.nix                # Firstmate launcher and tmux
+|   |-- home-orca-prime.nix               # optional Prime settings and build-shell support
+|   `-- home-legacy-agents.nix            # optional WezTerm/Herdr fallback profile
 |-- scripts/
 |   |-- ubuntu-bootstrap.sh               # apt + sshd loopback prerequisites
-|   |-- windows-orca-bootstrap.ps1        # WSL/Orca/SSH setup and verification
-|   |-- install-prime-tools.sh            # reviewed pinned npm/prefix install, not Nix-packaged
-|   |-- install-no-mistakes.sh            # reviewed pinned gate CLI install, not Nix-packaged
-|   |-- install-home-agents.sh            # reviewed AGY/Pi bootstrap install, not Nix-packaged
+|   |-- windows-orca-bootstrap.ps1        # WSL/Orca/SSH verification
+|   |-- install-prime-tools.sh            # regular-shell pinned Prime/AXI install
+|   |-- install-no-mistakes.sh            # reviewed pinned gate CLI install
+|   |-- install-home-agents.sh            # reviewed AGY/Pi bootstrap install
 |   |-- install-firstmate.sh              # reviewed pinned Firstmate checkout install
 |   `-- validate.sh                       # local validation wrapper, no evidence committed
 |-- .no-mistakes.yaml                     # targeted gate policy, local-only evidence
 `-- tests/
-    |-- smoke-orca-prime.sh               # SSH/node-pty/version smoke checks
+    |-- smoke-orca-prime.sh               # regular shell, optional dev shell, and SSH smoke checks
     `-- test-firstmate-install.sh          # Firstmate installer checks
 ```
 
@@ -74,8 +117,9 @@ Tree can be flattened if Ricardo prefers fewer files, but module boundaries shou
 
 Known verified values:
 
-- Prime policy/settings paths: `~/.prime/agent/AGENTS.md` and `~/.prime/agent/settings.json`.
-- Prime skill path: `~/.prime/agent/skills/i-have-adhd`.
+- Common policy path: `AGENTS.md`, linked to `~/.pi/agent/AGENTS.md`, `~/.gemini/GEMINI.md`, and `~/.prime/agent/AGENTS.md`.
+- Prime settings path: `~/.prime/agent/settings.json`.
+- Shared skill paths: `~/.agents/skills/{caveman,i-have-adhd}`, plus client-compatible AGY and Prime links.
 - Orca `1.4.184` installer URL: `https://github.com/stablyai/orca/releases/download/v1.4.184/orca-windows-setup.exe`.
 - Orca installer SHA256: `7765f7f085d04b7fe662ec664825fedd81427dd586023f945182a46e0a0cf5be`.
 - Prime installer source: `https://app.primeintellect.ai/prime-agent/install.sh`, invoked with version `0.8.0` only after review.
@@ -92,7 +136,9 @@ Approval choices before implementation:
 - Legacy shape: recommended second Home Manager configuration `${user}@wsl-legacy`, not a runtime toggle inside the default profile.
 - Global Node: **approved 2026-08-17** - keep Node 24 in the default Home Manager profile; `orca-prime` still uses Node 22 and its `PATH` takes precedence inside the shell.
 - WSL distro handling: recommended verify exact registered name `Ubuntu` and fail closed; never rename an existing distro automatically.
-- Shared policy: use the repository-root `AGENTS.md` for AGY and Pi; remove the duplicate `home/AGENTS.md`. Prime keeps its dedicated policy at `home/.prime/agent/AGENTS.md`.
+- Shared policy: use the repository-root `AGENTS.md` for AGY, Pi, and Prime; merge Prime safety/worktree rules into that common source and remove the separate tracked Prime `AGENTS.md`.
+- Firstmate home: use `~/firstmate` with `~/firstmate/projects`; Treehouse owns Linux project/crew worktrees.
+- Worktree authority: Firstmate owns Linux Treehouse worktrees; Windows Orca connects over SSH and does not create, move, remove, or prune them.
 
 ## Phased Tasks
 
@@ -102,7 +148,7 @@ Files: none initially.
 
 Expected work:
 
-- Verify current branch is `feat/orca-prime-home-manager`.
+- Verify current branch is `feat/orca-prime-codebase-memory`.
 - Verify `origin/main` points at current backup commit and remains untouched.
 - Record baseline with `git status --short --branch`.
 - Inspect existing Home Manager files and current tracked agent/runtime boundaries.
@@ -365,7 +411,7 @@ Acceptance:
 
 - `jq empty home/.prime/agent/settings.json` passes.
 - `bash -n scripts/install-codebase-memory.sh` passes.
-- `nix develop .#orca-prime --command codebase-memory-mcp --version` reports `0.10.8` after explicit install.
+- `./scripts/install-codebase-memory.sh` followed by `codebase-memory-mcp --version` reports `0.10.8` from the regular Home Manager shell.
 - `git ls-files '.codebase-memory/**' 'home/.cache/codebase-memory-mcp/**'` is empty.
 
 ### Phase 8A - Prime Maintenance Utility

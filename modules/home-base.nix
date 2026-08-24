@@ -4,8 +4,9 @@ let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
   setxkbmapPkg = pkgs.setxkbmap or pkgs.xorg.setxkbmap;
   primeLauncher = pkgs.writeShellScriptBin "prime" ''
-    if ! command -v nix >/dev/null 2>&1; then
-      printf '%s\n' "Nix is required to launch the pinned Orca/Prime environment." >&2
+    if ! command -v prime-agent >/dev/null 2>&1; then
+      printf '%s\n' "prime-agent is not installed in the regular Home Manager shell." >&2
+      printf '%s\n' "Run: $HOME/.dotfiles/scripts/install-prime-tools.sh" >&2
       exit 1
     fi
 
@@ -14,12 +15,9 @@ let
     mkdir -p "$runtime_dir"
     chmod 700 "$runtime_dir"
 
-    # Nix gives every development-shell invocation a new TMPDIR. Prime derives
-    # its daemon socket from TMPDIR, so override it only for the Prime process.
-    # This keeps argv untouched because some subcommands reject global options.
-    exec nix develop "$HOME/.dotfiles#orca-prime" \
-      --command env TMPDIR="$runtime_parent" sh -c \
-      'export PATH="$HOME/.local/bin:$PATH"; exec prime-agent "$@"' prime "$@"
+    # Keep the Prime daemon socket stable across fresh shell invocations while
+    # preserving the exact argv passed to prime-agent.
+    exec env TMPDIR="$runtime_parent" prime-agent "$@"
   '';
   primeMaintenance = pkgs.writeShellScriptBin "prime-maintenance" ''
     exec "${dotfiles}/scripts/prime-maintenance.py" "$@"
@@ -46,11 +44,13 @@ in
 
   home.sessionPath = [
     "${config.home.homeDirectory}/.local/bin"
+    "${config.home.homeDirectory}/.local/share/npm/bin"
   ];
 
   home.sessionVariables = {
     EDITOR = "nvim";
     VISUAL = "nvim";
+    NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.local/share/npm";
     NO_MISTAKES_TELEMETRY = "0";
     NO_MISTAKES_NO_UPDATE_CHECK = "1";
   };

@@ -16,6 +16,7 @@ for script in \
   rebuild.sh \
   scripts/install-codebase-memory.sh \
   scripts/install-firstmate.sh \
+  scripts/install-firstmate-treehouse.sh \
   scripts/install-home-agents.sh \
   scripts/install-no-mistakes.sh \
   scripts/install-prime-tools.sh \
@@ -50,10 +51,13 @@ tracked_agent_files="$(git ls-files -- '*AGENTS.md' | while IFS= read -r agent_f
     printf '%s\n' "$agent_file"
   fi
 done | sort)"
-test "${tracked_agent_files}" = $'AGENTS.md\nhome/.prime/agent/AGENTS.md'
+test "${tracked_agent_files}" = 'AGENTS.md'
 grep -F './modules/home-firstmate.nix' flake.nix >/dev/null
 grep -F 'FIRSTMATE_COMMIT="038d0f7ec6ba7238a151722931434dcf06ff37c4"' scripts/install-firstmate.sh >/dev/null
+grep -F 'TREEHOUSE_VERSION="2.0.1"' scripts/install-firstmate-treehouse.sh >/dev/null
 grep -F 'pkgs.tmux' modules/home-firstmate.nix >/dev/null
+grep -F 'export FM_BACKEND=' modules/home-firstmate.nix >/dev/null
+grep -F 'FM_BACKEND:-tmux' modules/home-firstmate.nix >/dev/null
 grep -F 'exec pi "$@"' modules/home-firstmate.nix >/dev/null
 grep -F 'pi-mcp-adapter@2.27.0' home/.pi/agent/settings.json >/dev/null
 if command -v jq >/dev/null 2>&1; then

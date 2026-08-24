@@ -1,37 +1,65 @@
-# Shared instructions for Antigravity CLI and Pi
+# Shared instructions for Antigravity CLI, Pi, and Prime Agent
 
-This is the single tracked shared policy for Antigravity CLI (`agy`) and Pi. Home Manager exposes this same source to Pi's global context and Antigravity's global `GEMINI.md` context. Prime has a separate policy at `home/.prime/agent/AGENTS.md`; do not merge Prime-only operating rules into this file.
+This is the single tracked shared policy for Antigravity CLI (`agy`), Pi, and Prime Agent. Home Manager exposes this same source to each harness's global policy path. Firstmate has its own project-level `AGENTS.md` inside `~/firstmate`; this file governs the shared WSL agent environment and must not be replaced by Firstmate's distro policy.
 
 ## Durable repository decisions
 
 - The target is Ubuntu WSL2 with the registered distro name exactly `Ubuntu`.
-- Windows Orca 1.4.184 reaches Ubuntu only through key-authenticated SSH on `127.0.0.1:2222`.
+- Windows Orca reaches Ubuntu only through key-authenticated SSH on `127.0.0.1:2222`.
 - Repositories and worktrees belong under `/home/...`, never `/mnt/c`. Use Linux Git only.
-- Orca exclusively creates, reuses, moves, and removes coding worktrees. AGY and Pi do not manage Orca worktrees.
-- Ubuntu apt/system bootstrap owns systemd, OpenSSH, sshd configuration, `build-essential`, and global `python3`. Do not move those pre-relay requirements into Home Manager or a project shell.
-- The default Home Manager profile owns Zsh, Starship, Git, CLI tools, Neovim, ABNT2 support, global Node 24, AGY, and Pi.
-- `nix develop .#orca-prime` intentionally shadows global Node 24 with Node 22 for Prime.
-- WezTerm, Herdr, Claude Code, and Codex remain isolated in the optional legacy profile.
-- AGY and Pi are user-installed coding tools, not Orca worktree managers. Do not restore permission-bypass or approval-bypass aliases to the default profile.
-- Never commit private keys, `authorized_keys`, credentials, installer binaries, auth, sessions, caches, generated runtime state, or `.no-mistakes/` validation evidence.
+- Firstmate owns creation, reuse, movement, and removal of project and crew worktrees under `~/firstmate/projects` through its reviewed Linux Treehouse backend.
+- Windows Orca connects to WSL over SSH and may inspect or operate inside an explicitly selected Firstmate worktree, but it must not create, move, remove, or prune those worktrees.
+- AGY, Pi, and Prime must never run `git worktree add`, `git worktree remove`, `git worktree prune`, Treehouse allocation, or another worktree manager. Only Firstmate's orchestrator may allocate its crew worktrees.
+- Agents may operate only inside a worktree explicitly assigned by Firstmate and exposed through the Orca/SSH workflow.
+- The regular Home Manager shell owns daily shell UX, Node 24, the three harness launchers, shared paths, and Nix-provided support tools.
+- `nix develop .#orca-prime` is an optional Node 22/build-validation shell. It is not required to launch AGY, Pi, Prime, or Firstmate.
+- Firstmate's project coordination home is `~/firstmate`; project roots are under `~/firstmate/projects`.
+- Firstmate must use its reviewed Linux `tmux`/Treehouse backend for project and crew worktrees. Do not select its macOS-only `orca` backend in this WSL/Windows topology.
+- Ubuntu apt/system bootstrap owns systemd, OpenSSH, sshd configuration, `build-essential`, and global `python3`.
+- Never commit private keys, `authorized_keys`, credentials, installer binaries, auth, sessions, caches, generated runtime state, project runtime state, or `.no-mistakes/` evidence.
 - Host-mutating bootstrap execution, authentication, publication, push, and pull-request creation require explicit human approval.
 - Never use the em dash character. Use a plain dash `-` instead.
 - Never automatically add an agent name as a commit co-author.
 - Never manually modify `CHANGELOG.md` or auto-generated files.
 - Prefer quality, simplicity, robustness, scalability, and long-term maintainability over development cost.
 - For one-off operational work, use the simplest direct end-to-end path unless a repeated need justifies extra wrappers or automation.
-- Reproduce bugs end to end before fixing them. Treat UI quality, lint failures, test failures, and flaky tests as first-class engineering issues.
+- Reproduce bugs end to end before fixing them.
+- Treat UI quality, lint failures, test failures, and flaky tests as first-class engineering issues.
 - Explain tradeoffs and obtain explicit approval before dynamic workflows, ultra-code modes, or large subagent swarms.
 
-## Caveman shared skill
+## Harness and installation boundaries
 
-- The shared `caveman` skill is installed for Pi under `~/.agents/skills/caveman/` and for AGY under `~/.gemini/antigravity-cli/skills/caveman/`.
-- Use `/caveman ultra` for token-efficient coding-agent prompts unless the user asks for normal or full-detail output.
+- `agy`, `pi`, and `prime-agent` run directly from the regular Home Manager shell.
+- `gh-axi`, `lavish-axi`, `no-mistakes`, and Codebase Memory are reviewed user-owned installations. Their binaries and runtime state are not Nix-reproducible packages yet.
+- Run the reviewed installers from the regular Home Manager shell. Do not require `nix develop .#orca-prime` for installation or normal agent launch.
+- Never run any harness or installer as root.
+- Keep authentication, sessions, caches, logs, downloads, daemon sockets, and generated state outside this repository.
+- The dotfiles repository owns policy, settings, launchers, checksums, install scripts, and documentation only.
+
+## Prime safety
+
+- Prime is not a sandbox; generated Python, shell commands, skills, workers, and the persistent IPython kernel execute with the Ubuntu user's permissions.
+- Do not authenticate services, publish artifacts, upload traces, install software, modify GitHub, or expose a network listener without explicit approval.
+- Use `gh-axi` read-only initially: list, view, search, checks, logs, and repository context only. Do not create branches, merge, approve, release, edit workflows, or mutate repository settings.
+- Run Lavish only on `127.0.0.1` with `--no-open`. Never use `lavish-axi share`, hooks, plugins, public sharing, or non-loopback binding.
+
+## Shared skills
+
+- Caveman is available to AGY, Pi, and Prime through their client-compatible global skill roots.
+- `i-have-adhd` is pinned and available to all three harnesses, but it is never activated automatically.
+- Skills change presentation or workflow guidance only. They never grant permissions, suppress evidence, or change engineering scope.
+- Use `/caveman ultra` for token-efficient coding-agent prompts unless full-detail output is required.
 - Keep code, identifiers, API names, commands, and exact errors unchanged. Do not compress security warnings, irreversible confirmations, or ambiguous multi-step sequences.
 
-## Codebase Memory MCP - required graph-first workflow
+## Optional ADHD mode
 
-Codebase Memory is configured as the `codebase_memory` stdio MCP server for both AGY and Pi. It uses the pinned local binary `/home/ricardo/.local/bin/codebase-memory-mcp`, working directory `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, and allowed root `/home/ricardo/src`. Diagnostics remain disabled, and destructive tools remain disabled.
+- Activate only after `/skill:i-have-adhd` or an explicit request for ADHD mode.
+- `normal mode` or `stop adhd mode` disables it for the session.
+- Never omit safety warnings, uncertainty, blockers, failures, required steps, or validation evidence to satisfy brevity, list limits, or time-estimate rules.
+
+## Codebase Memory MCP - token-efficient workflow
+
+Codebase Memory is configured as the `codebase_memory` stdio MCP server for AGY, Pi, and Prime. It uses the pinned local binary `/home/ricardo/.local/bin/codebase-memory-mcp`, working directory `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, and allowed root `/home/ricardo/src`. Diagnostics remain disabled, and destructive tools remain disabled.
 
 Use Codebase Memory for unfamiliar, multi-file, or impact-analysis work. Skip it for trivial one-file edits, known paths, documentation-only changes, and simple commands.
 
@@ -52,7 +80,7 @@ Treat Codebase Memory as a discovery index, not the final source of truth. Verif
 
 If MCP is unavailable, say so and use bounded direct repository search rather than pretending that graph results exist.
 
-AGY can call the named `codebase_memory` tools directly. Pi normally exposes the same server through the `mcp` adapter tool: search the adapter catalog for the exact Codebase Memory tool name, then call it with the server's bounded arguments. Keep the server selection on `codebase_memory`; do not substitute an unrelated MCP server.
+AGY can call named Codebase Memory tools directly. Pi normally exposes the server through the `mcp` adapter tool. Prime exposes its generic MCP API. Keep server selection on `codebase_memory` and use bounded read-only calls.
 
 ## Required validation
 
@@ -64,6 +92,14 @@ Before proposing a commit or pull request:
 
 Also parse `scripts/windows-orca-bootstrap.ps1`, run ShellCheck on shell scripts, and run target smoke checks in Ubuntu WSL. If the current environment cannot execute a required boundary, report it as unverified rather than fabricating success.
 
+## General engineering rules
+
+- When writing commit messages, never automatically add the agent name as a co-author.
+- Never manually modify `CHANGELOG.md` files or files marked as auto-generated.
+- For bug fixes, first reproduce the bug in an end-to-end setting as closely aligned with the end-user experience as possible.
+- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection. If something clearly looks off, try to get it fixed along the way.
+- Apply the same high standard to engineering excellence: fix lint failures, test failures, and test flakiness encountered during work.
+
 ## Maintaining this file
 
-Keep only durable knowledge useful to both AGY and Pi. Point to authoritative files instead of duplicating implementation details. Prime-only policy belongs in `home/.prime/agent/AGENTS.md`.
+Keep only durable knowledge useful to all three harnesses. Client-specific syntax belongs in client-specific configuration and documentation. Firstmate's project-distro policy belongs in `~/firstmate/AGENTS.md`; do not duplicate its internal operational instructions here.
