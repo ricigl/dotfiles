@@ -1,16 +1,16 @@
-# Sprint Plan: Orca Prime Home Manager
+# Sprint Plan: Orca Agents Nix Packaging
 
-Planning only. No implementation until Ricardo approves coding start.
+The unified Home Manager migration is implemented on `orca-agents-nix`. This file retains earlier sprint history and records the current packaging boundary and validation gates.
 
 Hard gates:
 
-- Gate A: explicit approval before any source edit beyond this `SPRINT_PLAN.md`.
+- Gate A: explicit approval before broad source edits; the current Nix packaging implementation is approved.
 - Gate B: explicit approval before any host-mutating bootstrap run on Ubuntu or Windows.
-- Gate C: explicit approval before push or PR.
+- Gate C: explicit approval before push or PR. Ricardo explicitly approved the `orca-agents-nix` push.
 
 Constraints:
 
-- Branch stays `feat/orca-prime-codebase-memory`.
+- Branch is `orca-agents-nix`; `main` and the previous rollback branch remain unchanged.
 - `origin/main` remains unchanged backup.
 - Keep global Node 24 in default Home Manager profile.
 - `orca-prime` shell is optional and resolves Node 22 for validation only.
@@ -18,7 +18,7 @@ Constraints:
 - Root `AGENTS.md` is the single shared policy source for all three harnesses.
 - Firstmate root is `~/firstmate`; project and Treehouse worktree root is `~/firstmate/projects`.
 - Firstmate owns Linux Treehouse worktrees; Windows Orca connects over SSH without worktree lifecycle operations.
-- Tool binaries: `prime-agent`, `lavish-axi`, `gh-axi`, `codebase-memory-mcp`, and pinned Treehouse `2.0.1`.
+- Only `agy`, `pi`, and `prime-agent` are installed by scripts. Lavish, gh-axi, Codebase Memory, no-mistakes, Firstmate, Treehouse, Caveman, and `i-have-adhd` are Nix/Home Manager packages.
 - Windows SSH key: `%USERPROFILE%\.ssh\orca-wsl-ed25519`.
 - `gh auth status` currently fails because this environment is unauthenticated.
 - This host has no native `nix` executable. Use an available pinned container validator only if its daemon is running; do not claim target activation or Orca runtime acceptance until Ricardo verifies them in Ubuntu WSL.

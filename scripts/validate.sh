@@ -14,16 +14,11 @@ fi
 for script in \
   bootstrap.sh \
   rebuild.sh \
-  scripts/install-codebase-memory.sh \
-  scripts/install-firstmate.sh \
-  scripts/install-firstmate-treehouse.sh \
   scripts/install-home-agents.sh \
-  scripts/install-no-mistakes.sh \
   scripts/install-prime-tools.sh \
   scripts/ubuntu-bootstrap.sh \
   scripts/validate.sh \
   tests/smoke-orca-prime.sh \
-  tests/test-firstmate-install.sh \
   tests/test-prime-maintenance.sh; do
   bash -n "$script"
 done
@@ -53,8 +48,10 @@ tracked_agent_files="$(git ls-files -- '*AGENTS.md' | while IFS= read -r agent_f
 done | sort)"
 test "${tracked_agent_files}" = 'AGENTS.md'
 grep -F './modules/home-firstmate.nix' flake.nix >/dev/null
-grep -F 'FIRSTMATE_COMMIT="038d0f7ec6ba7238a151722931434dcf06ff37c4"' scripts/install-firstmate.sh >/dev/null
-grep -F 'TREEHOUSE_VERSION="2.0.1"' scripts/install-firstmate-treehouse.sh >/dev/null
+grep -F 'agentPackages = import ./packages' flake.nix >/dev/null
+grep -F 'version = "2.0.1"' packages/default.nix >/dev/null
+grep -F 'version = "0.10.8"' packages/default.nix >/dev/null
+grep -F 'version = "1.57.0"' packages/default.nix >/dev/null
 grep -F 'pkgs.tmux' modules/home-firstmate.nix >/dev/null
 grep -F 'export FM_BACKEND=' modules/home-firstmate.nix >/dev/null
 grep -F 'FM_BACKEND:-tmux' modules/home-firstmate.nix >/dev/null
@@ -62,14 +59,14 @@ grep -F 'exec pi "$@"' modules/home-firstmate.nix >/dev/null
 grep -F 'pi-mcp-adapter@2.27.0' home/.pi/agent/settings.json >/dev/null
 if command -v jq >/dev/null 2>&1; then
   jq -e '
-    .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+    .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
     .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
     (.mcpServers.codebase_memory.excludeTools | index("delete_project")) != null and
     (.mcpServers.codebase_memory.excludeTools | index("manage_adr")) != null and
     (.mcpServers.codebase_memory.excludeTools | index("ingest_traces")) != null
   ' home/.config/mcp/mcp.json >/dev/null
   jq -e '
-    .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+    .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
     .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
     (.mcpServers.codebase_memory.disabledTools | index("delete_project")) != null and
     (.mcpServers.codebase_memory.disabledTools | index("manage_adr")) != null and
@@ -81,7 +78,7 @@ else
     const required = ["delete_project", "manage_adr", "ingest_traces"];
     const check = (path, field) => {
       const server = JSON.parse(fs.readFileSync(path, "utf8")).mcpServers.codebase_memory;
-      if (server.command !== "/home/ricardo/.local/bin/codebase-memory-mcp" || server.cwd !== "/home/ricardo/src" || !required.every((name) => server[field].includes(name))) process.exit(1);
+      if (server.command !== "codebase-memory-mcp" || server.cwd !== "/home/ricardo/src" || !required.every((name) => server[field].includes(name))) process.exit(1);
     };
     check("home/.config/mcp/mcp.json", "excludeTools");
     check("home/.gemini/config/mcp_config.json", "disabledTools");

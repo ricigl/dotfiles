@@ -29,9 +29,9 @@ This is the single tracked shared policy for Antigravity CLI (`agy`), Pi, and Pr
 
 ## Harness and installation boundaries
 
-- `agy`, `pi`, and `prime-agent` run directly from the regular Home Manager shell.
-- `gh-axi`, `lavish-axi`, `no-mistakes`, and Codebase Memory are reviewed user-owned installations. Their binaries and runtime state are not Nix-reproducible packages yet.
-- Run the reviewed installers from the regular Home Manager shell. Do not require `nix develop .#orca-prime` for installation or normal agent launch.
+- `agy`, `pi`, and `prime-agent` run directly from the regular Home Manager shell and remain the only script-installed agents.
+- `gh-axi`, `lavish-axi`, `no-mistakes`, Codebase Memory, Firstmate, Treehouse, Caveman, and `i-have-adhd` are pinned Nix/Home Manager packages.
+- Run only `scripts/install-home-agents.sh` and `scripts/install-prime-tools.sh` for the three user-owned agent binaries. Do not require `nix develop .#orca-prime` for installation or normal agent launch.
 - Never run any harness or installer as root.
 - Keep authentication, sessions, caches, logs, downloads, daemon sockets, and generated state outside this repository.
 - The dotfiles repository owns policy, settings, launchers, checksums, install scripts, and documentation only.
@@ -59,7 +59,7 @@ This is the single tracked shared policy for Antigravity CLI (`agy`), Pi, and Pr
 
 ## Codebase Memory MCP - token-efficient workflow
 
-Codebase Memory is configured as the `codebase_memory` stdio MCP server for AGY, Pi, and Prime. It uses the pinned local binary `/home/ricardo/.local/bin/codebase-memory-mcp`, working directory `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, and allowed root `/home/ricardo/src`. Diagnostics remain disabled, and destructive tools remain disabled.
+Codebase Memory is configured as the `codebase_memory` stdio MCP server for AGY, Pi, and Prime. It uses the pinned Nix package `codebase-memory-mcp` on PATH, working directory `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, and allowed root `/home/ricardo/src`. Diagnostics remain disabled, and destructive tools remain disabled.
 
 Use Codebase Memory for unfamiliar, multi-file, or impact-analysis work. Skip it for trivial one-file edits, known paths, documentation-only changes, and simple commands.
 

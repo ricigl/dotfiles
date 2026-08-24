@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "codebase_memory": {
-      "command": "/home/ricardo/.local/bin/codebase-memory-mcp",
+      "command": "codebase-memory-mcp",
       "args": [],
       "cwd": "/home/ricardo/src",
       "startupTimeoutMs": 30000,

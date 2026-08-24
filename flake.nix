@@ -42,8 +42,14 @@
         config.allowUnfree = true;
       };
 
+      agentPackages = import ./packages {
+        inherit pkgs;
+        lib = pkgs.lib;
+        inherit i-have-adhd;
+      };
+
       specialArgs = {
-        inherit user herdr i-have-adhd unstablePkgs;
+        inherit user herdr i-have-adhd unstablePkgs agentPackages;
       };
 
       mkHome = modules:
@@ -54,6 +60,8 @@
         };
     in
     {
+      packages.${system} = agentPackages;
+
       homeConfigurations."${user}@wsl" = mkHome [
         ./home.nix
         ./modules/home-base.nix

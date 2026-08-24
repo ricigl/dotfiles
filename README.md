@@ -21,7 +21,7 @@ The previous WezTerm, Herdr, Claude Code, and Codex environment remains availabl
 | Layer | Owns |
 |---|---|
 | Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3` |
-| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, shared policy/skills/MCP config, Firstmate launcher and tmux |
+| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Nix-packaged support tools, `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, shared policy/skills/MCP config, Firstmate and Treehouse |
 | `.#orca-prime` | Optional Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, and build-validation environment |
 | Firstmate | Linux project-fleet coordination and Treehouse-managed project/crew worktrees under `~/firstmate/projects` |
 | Windows Orca | SSH client/control surface for selected WSL projects and Firstmate worktrees; no worktree lifecycle ownership |
@@ -44,10 +44,10 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - Pi bootstrapper SHA-256: `a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5b`
 - Pi MCP adapter: `2.27.0` (`npm:pi-mcp-adapter@2.27.0`)
 - Firstmate: commit `038d0f7ec6ba7238a151722931434dcf06ff37c4` from `kunchenguid/firstmate`
-- Treehouse: `2.0.1`, installed through the pinned Firstmate installer
+- Treehouse: `2.0.1`, Nix package
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
-`flake.lock` pins Nix inputs and the `i-have-adhd` source. `scripts/install-prime-tools.sh` verifies the reviewed Prime installer hash and npm package integrity before installation. `scripts/install-codebase-memory.sh` verifies the pinned Codebase Memory release archive before installing the portable binary. `scripts/install-no-mistakes.sh` verifies the pinned no-mistakes release archive before installing the user-owned binary. `scripts/install-firstmate-treehouse.sh` delegates only to the pinned Firstmate Treehouse installer and verifies Treehouse `2.0.1`.
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Only the AGY/Pi and Prime Agent binaries remain script-installed.
 
 ## Security model
 
@@ -60,7 +60,7 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - gh-axi begins read-only.
 - no-mistakes telemetry and automatic update checks are disabled by Home Manager. Its daemon, gate repositories, worktrees, logs, database, and evidence remain local mutable state.
 - AGY and Pi are user-owned transitional installs. Their reviewed bootstrap scripts are pinned, but upstream release payloads remain dynamic and may self-update; auth, sessions, caches, logs, and downloads remain local and untracked.
-- Firstmate is a separate user-owned checkout initialized at a reviewed commit. Its operational `data/`, `state/`, `config/`, `sessions`, caches, `projects/`, and Treehouse worktree state stay outside this repository; its own update flow is intentional mutable state.
+- Firstmate is packaged from a reviewed commit; its operational `data/`, `state/`, `config/`, `sessions`, caches, `projects/`, and Treehouse worktree state stay outside this repository.
 - Codebase Memory is local-only: allowed root `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact.
 - AGY, Pi, and Prime Codebase Memory MCP entries disable initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
 - `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
@@ -192,7 +192,7 @@ Expected Node major version inside the optional shell: `v22`.
 
 Return to a fresh regular shell before running the user-owned installers below. They do not require `nix develop`.
 
-### 5. Install the reviewed user-owned tools from the regular shell
+### 5. Install the three user-owned agent binaries from the regular shell
 
 Install AGY and Pi first:
 
@@ -204,43 +204,35 @@ pi --version
 pi list | grep pi-mcp-adapter
 ```
 
-Install Prime, Lavish, and gh-axi from the regular shell:
+Install Prime from the regular shell. It is the only support component still installed by a reviewed script:
 
 ```bash
 ./scripts/install-prime-tools.sh
 prime-agent --version
+```
+
+Codebase Memory, no-mistakes, Lavish, gh-axi, Firstmate, Treehouse, Caveman, and `i-have-adhd` are installed by the locked Nix/Home Manager profile during `./rebuild.sh`. Verify them directly:
+
+```bash
+codebase-memory-mcp --version
+no-mistakes --version
 lavish-axi --version
 gh-axi --version
+treehouse --version
+command -v fm-session-start.sh
 ```
 
-Install the pinned Codebase Memory MCP server:
+The Nix packages use fixed release hashes or committed lockfile integrity values. They do not initialize no-mistakes, start daemons, change Git remotes, authenticate services, or create Firstmate projects automatically. Runtime state remains user-owned under `~/firstmate`, `~/.cache`, and the relevant agent state directories.
+
+The repository policy is in `.no-mistakes.yaml`. Review the configuration and trusted-default-branch behavior before manually initializing this repository:
 
 ```bash
-./scripts/install-codebase-memory.sh
-codebase-memory-mcp --version
-```
-
-Install the pinned no-mistakes CLI without starting its daemon or changing Git remotes:
-
-```bash
-./scripts/install-no-mistakes.sh
-no-mistakes --version
 no-mistakes doctor
-```
-
-The no-mistakes installer uses a checksum-verified Linux x86_64 release, installs the real binary under `~/.no-mistakes/bin`, and links it from `~/.local/bin`. It does not run `no-mistakes init`, add a `no-mistakes` Git remote, start a daemon, or start a validation gate.
-
-The repository policy is in `.no-mistakes.yaml`. It selects targeted shell and Prime maintenance checks, keeps evidence outside Git, and leaves `allow_repo_commands` disabled. Review the configuration and the trusted-default-branch behavior before manually initializing this repository:
-
-```bash
 no-mistakes init
 git remote -v
-no-mistakes doctor
 ```
 
-Only after that review should you use `git push no-mistakes <branch>` or `/no-mistakes` from a supported coding agent. The no-mistakes remote forwards changes only after its configured pipeline passes.
-
-These installers use user-owned locations. They do not require root and must never be run with `sudo`.
+Only after that review should you use `git push no-mistakes <branch>` or `/no-mistakes` from a supported coding agent. These tools use user-owned locations and must never be run with `sudo`.
 
 ### Shared AGY, Pi, and Prime policy, skills, and Codebase Memory
 
@@ -255,7 +247,7 @@ Pi shared MCP config: ~/.config/mcp/mcp.json
 AGY global MCP config: ~/.gemini/config/mcp_config.json
 AGY compatibility MCP config: ~/.gemini/antigravity-cli/mcp_config.json
 Prime MCP config: ~/.prime/agent/settings.json
-Server: /home/ricardo/.local/bin/codebase-memory-mcp
+Server: codebase-memory-mcp (Nix package on PATH)
 Allowed root: /home/ricardo/src
 Cache: /home/ricardo/.cache/codebase-memory-mcp
 ```
@@ -264,29 +256,18 @@ Pi uses the pinned `pi-mcp-adapter@2.27.0`; AGY uses native stdio MCP support; P
 
 ### Firstmate project crew
 
-Firstmate is an agent distro rather than a conventional CLI or MCP server. Its cloned repository supplies the project-level `AGENTS.md`, skills, runtime scripts, and private fleet-state conventions. The dotfiles profile therefore keeps Firstmate in a separate user-owned checkout instead of copying its policy over the shared AGY/Pi policy.
-
-Install the reviewed commit after rebuilding Home Manager and opening a new shell:
+Firstmate is packaged from the pinned upstream commit and exposed through Home Manager. Its mutable root remains separate from the Nix store:
 
 ```bash
-cd ~/.dotfiles
-./scripts/install-firstmate.sh
-./scripts/install-firstmate.sh --check
-./scripts/install-firstmate-treehouse.sh
-./scripts/install-firstmate-treehouse.sh --check
-```
-
-The checkout is created at `~/firstmate` by default, with `~/firstmate/projects` created for project clones and Treehouse-managed crew worktrees. Its `data/`, `state/`, `config/`, sessions, caches, and projects remain outside this repository. The installer refuses root, symlinked or dirty existing checkouts, unexpected origins, and silent resets of an already-updated checkout. It installs the pinned commit as the initial baseline; Firstmate's own `/updatefirstmate` flow can intentionally fast-forward the checkout later.
-
-Install the pinned Linux Treehouse worktree provider separately:
-
-```bash
-./scripts/install-firstmate-treehouse.sh
-./scripts/install-firstmate-treehouse.sh --check
+firstmate --help
+command -v fm-session-start.sh
 treehouse --version
+test -d ~/firstmate/projects || mkdir -p ~/firstmate/projects
 ```
 
-The default Home Manager profile provides a `firstmate` launcher. It verifies the checkout shape, requires `tmux` and Treehouse, enters the Firstmate root, sets `FM_ROOT_OVERRIDE`, `FM_HOME`, and `FM_BACKEND=tmux`, and starts the already-installed Pi harness:
+The `firstmate` launcher creates `~/firstmate/projects` and copies the packaged project-level `AGENTS.md` into `~/firstmate` on first use. Its `data/`, `state/`, `config/`, sessions, caches, and projects remain outside this repository. Nix does not create project clones or start autonomous loops.
+
+The default Home Manager profile provides the `firstmate` launcher. It requires `tmux`, Treehouse, and the script-installed Pi harness, enters the Firstmate root, sets `FM_ROOT_OVERRIDE`, `FM_HOME`, and `FM_BACKEND=tmux`, and starts Pi:
 
 ```bash
 firstmate
@@ -347,7 +328,7 @@ Use `--session-dir` with disposable fixtures or a separately managed Prime sessi
 Codebase Memory is configured as a native stdio MCP server in `home/.prime/agent/settings.json`:
 
 ```text
-command: /home/ricardo/.local/bin/codebase-memory-mcp
+command: codebase-memory-mcp
 cwd: /home/ricardo/src
 ```
 
@@ -472,7 +453,7 @@ Run the `activate` program from the prior generation path shown by that command.
 
 ### Git branch
 
-The migration is developed on `feat/orca-prime-home-manager`. The original `main` branch remains the baseline until a reviewed pull request is merged.
+The migration is developed on `orca-agents-nix`. The original `main` branch remains the baseline until a reviewed pull request is merged.
 
 ### Ubuntu SSH
 
@@ -486,14 +467,11 @@ Before changing or removing it, keep an external shell open. Validate every edit
 
 ### Codebase Memory
 
-Remove the user-installed MCP binary and cache:
+Codebase Memory is Nix-managed. Remove it from `home.packages` and the three MCP configuration files, then rebuild Home Manager. Preserve or remove its mutable cache separately only after reviewing its contents:
 
 ```bash
-rm -f ~/.local/bin/codebase-memory-mcp
 rm -rf ~/.cache/codebase-memory-mcp
 ```
-
-Then remove or disable `mcpServers.codebase_memory` in `home/.prime/agent/settings.json` and rebuild Home Manager.
 
 ## Repository map
 
@@ -505,17 +483,13 @@ Then remove or disable `mcpServers.codebase_memory` in `home/.prime/agent/settin
 - `modules/home-legacy-agents.nix`: WezTerm, Herdr, Pi, Claude Code, and Codex fallback.
 - `scripts/ubuntu-bootstrap.sh`: Ubuntu system and sshd bootstrap.
 - `scripts/windows-orca-bootstrap.ps1`: Windows resources, dedicated SSH key, optional Orca installer.
-- `scripts/install-prime-tools.sh`: pinned transitional Prime/Lavish/gh-axi installation.
-- `scripts/install-codebase-memory.sh`: pinned Codebase Memory MCP portable binary installation.
-- `scripts/install-no-mistakes.sh`: pinned no-mistakes CLI installation with checksum verification.
+- `scripts/install-prime-tools.sh`: pinned Prime Agent installation; this is the only support installer remaining.
 - `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation for the regular Home Manager shell.
-- `scripts/install-firstmate.sh`: pinned, user-owned Firstmate checkout installation and verification.
-- `scripts/install-firstmate-treehouse.sh`: pinned Firstmate Treehouse prerequisite installation and verification.
+- `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, skills, Lavish, and gh-axi.
 - `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
 - `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
 - `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.
-- `tests/smoke-orca-prime.sh`: target-runtime acceptance checks, including Firstmate checkout verification.
-- `tests/test-firstmate-install.sh`: disposable Firstmate installer checks.
+- `tests/smoke-orca-prime.sh`: target-runtime acceptance checks for the Nix-managed support environment.
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `home/`: repository-authored configuration linked by Home Manager.
 

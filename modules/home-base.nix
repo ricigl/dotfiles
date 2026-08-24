@@ -1,4 +1,4 @@
-{ config, lib, pkgs, user, ... }:
+{ config, lib, pkgs, user, agentPackages, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
@@ -36,6 +36,10 @@ in
     setxkbmapPkg
     neovim
     nerd-fonts.hack
+    agentPackages.codebase-memory-mcp
+    agentPackages.no-mistakes
+    agentPackages.lavish-axi
+    agentPackages.gh-axi
     primeLauncher
     primeMaintenance
   ];

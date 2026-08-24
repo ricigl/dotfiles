@@ -17,7 +17,7 @@ Authority boundaries:
 
 - Repository owns declarative, reviewable configuration only.
 - Home Manager may own exact policy/config files for Prime/Lavish and public opt-in skill files.
-- Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, shared policy/skill/MCP links, and Nix-provided support packages such as tmux; transitional binaries, releases, auth, and runtime state remain user-owned mutable state.
+- Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, shared policy/skill/MCP links, and pinned Nix packages for support tools; only the three primary agent binaries remain transitional script installs.
 - The optional `orca-prime` shell owns Node 22, Python, uv, gh, jq, and build tooling for deterministic validation only. It is not required to launch Prime, AGY, Pi, or Firstmate.
 - Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Orca can relay over SSH, so they cannot live only inside a per-user Nix shell.
 - Windows PowerShell bootstrap owns Windows-side WSL name checks, `.wslconfig`, SSH key creation/copy, Orca installer verification, and terminal/node-pty prerequisite checks.
@@ -26,13 +26,13 @@ Authority boundaries:
 
 ## Current migration decision: unified regular Home Manager agents
 
-Status: architecture decisions approved in the current session; implementation remains gated on review of this migration contract.
+Status: implemented on `orca-agents-nix`; target WSL activation and smoke validation remain required.
 
 The regular Home Manager shell becomes the daily runtime for all three harnesses:
 
 - Home Manager keeps Zsh, Starship, Git, Neovim, fonts, ABNT2, shortcuts, Node 24, `~/.local/bin`, and the persistent npm global bin path.
 - AGY, Pi, and Prime are launched directly from that regular shell.
-- `gh-axi`, `lavish-axi`, `no-mistakes`, `codebase-memory-mcp`, and the reviewed user-owned agent installers are available from the same PATH.
+- `gh-axi`, `lavish-axi`, `no-mistakes`, `codebase-memory-mcp`, Firstmate, Treehouse, Caveman, and `i-have-adhd` are pinned Nix packages available from the same PATH.
 - Caveman and the pinned `i-have-adhd` skill are exposed to all three harnesses through client-compatible skill roots.
 - Pi, AGY, and Prime retain client-specific MCP configuration schemas but point at the same local Codebase Memory policy and binary.
 - `nix develop .#orca-prime` remains available only for Node 22, Python, uv, gh, jq, compiler, and package validation. It is not required by any agent launcher.
@@ -47,9 +47,9 @@ Implementation order:
 
 1. Update `PLAN.md`, `SPRINT_PLAN.md`, and the common policy contract.
 2. Move agent launchers and the npm global bin path into the regular Home Manager module.
-3. Make `install-prime-tools.sh` and Codebase Memory installation valid from the regular shell while keeping user-owned integrity checks.
+3. Package all support tools with fixed release hashes or lockfile integrity values; keep only AGY, Pi, and Prime Agent script-managed.
 4. Link the common policy and skills to all three clients and preserve client-specific MCP schemas.
-5. Move Firstmate's default root to `~/firstmate`, create/use `~/firstmate/projects`, install the pinned Treehouse provider, and expose the Linux worktree boundary to Orca over SSH.
+5. Package Firstmate and Treehouse while keeping `~/firstmate/projects` and all runtime state mutable outside the Nix store.
 6. Retain `.#orca-prime` as an optional validation shell and remove agent-runtime assumptions from its launcher/tests.
 7. Run static checks, activation builds, regular-shell smoke checks, direct harness version/help checks, MCP read-only checks, and Orca SSH acceptance on WSL.
 
@@ -62,6 +62,12 @@ Acceptance criteria:
 - `~/firstmate/projects` is reachable from Orca's WSL SSH terminal, and Firstmate's Linux Treehouse backend owns crew worktree lifecycle.
 - The Windows Orca client cannot create or remove Firstmate-owned worktrees through the SSH workflow.
 - No credentials, sessions, caches, generated state, or project runtime data enter the dotfiles repository.
+
+Nix packaging acceptance additions:
+
+- `packages/default.nix` exposes fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, Lavish, gh-axi, Caveman, and `i-have-adhd`.
+- The only installation scripts remaining for user agents are `install-home-agents.sh` and `install-prime-tools.sh`.
+- Nix package outputs use release hashes or committed npm lockfile integrity values; no `lib.fakeHash` remains.
 
 The earlier Prime-only shell, Prime-specific policy, and Prime-only skill-link requirements in Phases 3, 4, 7, 8, and 8C are historical records of the already-landed baseline. Where they conflict with this current migration decision, this unified Home Manager contract is authoritative.
 
@@ -100,15 +106,16 @@ The earlier Prime-only shell, Prime-specific policy, and Prime-only skill-link r
 |-- scripts/
 |   |-- ubuntu-bootstrap.sh               # apt + sshd loopback prerequisites
 |   |-- windows-orca-bootstrap.ps1        # WSL/Orca/SSH verification
-|   |-- install-prime-tools.sh            # regular-shell pinned Prime/AXI install
-|   |-- install-no-mistakes.sh            # reviewed pinned gate CLI install
-|   |-- install-home-agents.sh            # reviewed AGY/Pi bootstrap install
-|   |-- install-firstmate.sh              # reviewed pinned Firstmate checkout install
-|   `-- validate.sh                       # local validation wrapper, no evidence committed
+|   |-- install-prime-tools.sh             # regular-shell pinned Prime install
+|   |-- install-home-agents.sh             # reviewed AGY/Pi bootstrap install
+|   `-- validate.sh                        # local validation wrapper, no evidence committed
+|-- packages/
+|   |-- default.nix                        # fixed-output support packages
+|   `-- npm/                               # committed dependency lockfiles
 |-- .no-mistakes.yaml                     # targeted gate policy, local-only evidence
 `-- tests/
     |-- smoke-orca-prime.sh               # regular shell, optional dev shell, and SSH smoke checks
-    `-- test-firstmate-install.sh          # Firstmate installer checks
+    `-- test-prime-maintenance.sh          # Prime maintenance safety checks
 ```
 
 Tree can be flattened if Ricardo prefers fewer files, but module boundaries should stay clear: base, Orca Prime, legacy fallback, bootstrap, validation.

@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq prime prime-agent prime-maintenance no-mistakes agy pi firstmate treehouse lavish-axi gh-axi codebase-memory-mcp; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq prime prime-agent prime-maintenance no-mistakes agy pi firstmate treehouse fm-session-start.sh lavish-axi gh-axi codebase-memory-mcp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -84,29 +84,21 @@ for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_polic
   }
 done
 
-for firstmate_path in AGENTS.md bin/fm-bootstrap.sh bin/fm-session-start.sh bin/fm-install-treehouse.sh docs/configuration.md projects; do
-  test -e "$firstmate_root/$firstmate_path" || {
-    printf 'Missing Firstmate checkout path: %s/%s\n' "$firstmate_root" "$firstmate_path" >&2
-    exit 1
-  }
-done
-firstmate_remote="$(git -C "$firstmate_root" remote get-url origin 2>/dev/null || true)"
-case "$firstmate_remote" in
-  https://github.com/kunchenguid/firstmate.git|git@github.com:kunchenguid/firstmate.git) ;;
-  *)
-    printf 'Unexpected Firstmate origin: %s\n' "${firstmate_remote:-<missing>}" >&2
-    exit 1
-    ;;
-esac
-firstmate_commit="$(git -C "$firstmate_root" rev-parse HEAD)"
-test "$firstmate_commit" = "038d0f7ec6ba7238a151722931434dcf06ff37c4"
+if [ -d "$firstmate_root" ]; then
+  for firstmate_path in AGENTS.md projects; do
+    test -e "$firstmate_root/$firstmate_path" || {
+      printf 'Missing Firstmate runtime path: %s/%s\n' "$firstmate_root" "$firstmate_path" >&2
+      exit 1
+    }
+  done
+fi
 
 cmp -s "$shared_policy" "$agy_policy"
 cmp -s "$shared_policy" "$policy"
 pi list | grep -F 'pi-mcp-adapter' >/dev/null
 
 jq -e '
-  .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+  .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
   .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
   (.mcpServers.codebase_memory.excludeTools | index("delete_project")) != null and
   (.mcpServers.codebase_memory.excludeTools | index("manage_adr")) != null and
@@ -114,7 +106,7 @@ jq -e '
 ' "$pi_mcp" >/dev/null
 
 jq -e '
-  .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+  .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
   .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
   (.mcpServers.codebase_memory.disabledTools | index("delete_project")) != null and
   (.mcpServers.codebase_memory.disabledTools | index("manage_adr")) != null and
@@ -123,7 +115,7 @@ jq -e '
 
 jq -e '
   .mcpServers.codebase_memory.type == "stdio" and
-  .mcpServers.codebase_memory.command == "/home/ricardo/.local/bin/codebase-memory-mcp" and
+  .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
   .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
   .mcpServers.codebase_memory.env.CBM_ALLOWED_ROOT.env == "CBM_ALLOWED_ROOT" and
   .mcpServers.codebase_memory.env.CBM_CACHE_DIR.env == "CBM_CACHE_DIR" and

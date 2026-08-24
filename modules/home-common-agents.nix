@@ -1,9 +1,7 @@
-{ config, i-have-adhd, ... }:
+{ config, agentPackages, ... }:
 
 let
   home = config.home.homeDirectory;
-  mutableSkill = name:
-    config.lib.file.mkOutOfStoreSymlink "${home}/.agents/skills/${name}";
 in
 {
   # One tracked AGENTS.md is shared by AGY, Pi, and Prime.
@@ -11,26 +9,32 @@ in
   home.file.".gemini/GEMINI.md".source = ../AGENTS.md;
   home.file.".prime/agent/AGENTS.md".source = ../AGENTS.md;
 
-  # Authored skills are pinned or tracked and exposed to all three harnesses.
+  # Authored skills are Nix packages and exposed to all three harnesses.
   home.file.".agents/skills/caveman".source =
-    ../home/.agents/skills/caveman;
+    "${agentPackages.caveman}/share/skills/caveman";
   home.file.".agents/skills/i-have-adhd".source =
-    "${i-have-adhd}/skills/i-have-adhd";
+    "${agentPackages.i-have-adhd-skill}/share/skills/i-have-adhd";
   home.file.".gemini/antigravity-cli/skills/caveman".source =
-    ../home/.agents/skills/caveman;
+    "${agentPackages.caveman}/share/skills/caveman";
   home.file.".gemini/antigravity-cli/skills/i-have-adhd".source =
-    "${i-have-adhd}/skills/i-have-adhd";
+    "${agentPackages.i-have-adhd-skill}/share/skills/i-have-adhd";
   home.file.".prime/agent/skills/caveman".source =
-    ../home/.agents/skills/caveman;
+    "${agentPackages.caveman}/share/skills/caveman";
   home.file.".prime/agent/skills/i-have-adhd".source =
-    "${i-have-adhd}/skills/i-have-adhd";
+    "${agentPackages.i-have-adhd-skill}/share/skills/i-have-adhd";
 
-  # Lavish and gh-axi publish mutable skills during the reviewed regular-shell
-  # installer. Client-specific roots point at the shared user-global copies.
-  home.file.".gemini/antigravity-cli/skills/lavish".source = mutableSkill "lavish";
-  home.file.".gemini/antigravity-cli/skills/gh-axi".source = mutableSkill "gh-axi";
-  home.file.".prime/agent/skills/lavish".source = mutableSkill "lavish";
-  home.file.".prime/agent/skills/gh-axi".source = mutableSkill "gh-axi";
+  home.file.".agents/skills/lavish".source =
+    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
+  home.file.".agents/skills/gh-axi".source =
+    "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+  home.file.".gemini/antigravity-cli/skills/lavish".source =
+    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
+  home.file.".gemini/antigravity-cli/skills/gh-axi".source =
+    "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+  home.file.".prime/agent/skills/lavish".source =
+    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
+  home.file.".prime/agent/skills/gh-axi".source =
+    "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
 
   # Pi reads ~/.agents/skills directly. AGY and Prime use their client roots
   # above, while all three invoke the same user-owned binaries on PATH.
