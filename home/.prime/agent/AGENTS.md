@@ -17,7 +17,19 @@
 - It changes presentation only, never permissions or engineering scope.
 - Never omit safety warnings, uncertainty, blockers, failures, required steps, or validation evidence to satisfy brevity, list limits, or time-estimate rules.
 
-## Codebase Memory MCP — token-efficient workflow
+## General engineering rules
+
+- Never use the em dash character. Use a plain dash `-` instead.
+- When writing commit messages, never automatically add the agent name as a co-author.
+- Never manually modify `CHANGELOG.md` files or files marked as auto-generated.
+- When making technical decisions, prioritize quality, simplicity, robustness, scalability, and long-term maintainability over development cost.
+- For one-off or infrequent operational work, start with the simplest direct end-to-end path. Do not build wrappers, control planes, policy layers, custom verifiers, or automation unless the direct path exposes a concrete blocker or repeated need that justifies the added machinery.
+- For bug fixes, first reproduce the bug in an end-to-end setting as closely aligned with the end-user experience as possible.
+- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection. If something clearly looks off, even if it is not directly related to what you are doing, try to get it fixed along the way.
+- Apply that same high standard to engineering excellence: lint, test failures, and test flakiness. If you see one, even if it is not caused by what you are working on right now, still get it fixed.
+- Before using dynamic workflows, ultra code, or any harness feature that immediately spawns a large swarm of subagents, explain the tradeoffs and obtain explicit user approval.
+
+## Codebase Memory MCP - token-efficient workflow
 
 - Use Codebase Memory for unfamiliar, multi-file, or impact-analysis tasks.
 - Skip it for trivial one-file edits, known paths, documentation-only changes, and simple commands.
