@@ -269,6 +269,14 @@ Session deletion moves files to the desktop trash when `trash` or `gio` is avail
 prime-maintenance clean-all
 ```
 
+For the normal workflow where named sessions are active work, use the narrower cleanup command:
+
+```bash
+prime-maintenance clean-unnamed
+```
+
+It requires the phrase `CLEAN UNNAMED PRIME STATE`, stops all Prime agents through Prime's lifecycle command, re-reads session metadata, and moves only sessions with an empty name to trash. Named sessions are preserved. Active unnamed sessions are refused rather than deleted. Add `--permanent` only when permanent deletion is explicitly intended; `--yes` skips the confirmation phrase for this explicit command.
+
 Use `--session-dir` with disposable fixtures or a separately managed Prime session directory. Never commit the session directory or its contents.
 
 Codebase Memory is configured as a native stdio MCP server in `home/.prime/agent/settings.json`:
@@ -278,7 +286,7 @@ command: /home/ricardo/.local/bin/codebase-memory-mcp
 cwd: /home/ricardo/src
 ```
 
-Indexing is manual at first. Codebase Memory `0.10.8` defaults `auto_index` to false; this stdio configuration starts neither a watcher nor the optional UI. Keep that default until the target workflow is reviewed. Use Prime's MCP tools to index/query repositories under `/home/ricardo/src`; do not commit `.codebase-memory` directories, exported graph artifacts, or cache contents.
+Codebase Memory `0.10.8` uses the approved `auto_index=true` and `auto_watch=true` settings; this stdio configuration starts neither the optional UI nor any shared graph artifact. Use Prime's MCP tools to index/query repositories under `/home/ricardo/src`; do not commit `.codebase-memory` directories, exported graph artifacts, or cache contents.
 
 To inspect the connection from the shell:
 

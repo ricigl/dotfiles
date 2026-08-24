@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 COMMANDS = {
     "list-agents",
@@ -27,6 +27,7 @@ COMMANDS = {
     "stop-all-agents",
     "delete-session",
     "delete-all-sessions",
+    "clean-unnamed",
     "clean-all",
 }
 
@@ -480,6 +481,54 @@ def delete_all_sessions(root: Path, yes: bool, permanent: bool, phrase: str = "D
     return 0
 
 
+def clean_unnamed_sessions(
+    root: Path,
+    yes: bool,
+    permanent: bool,
+    phrase: str = "CLEAN UNNAMED PRIME STATE",
+) -> int:
+    action = "permanently delete" if permanent else "move to trash"
+    if not ask_phrase(
+        f"This stops every Prime agent and will {action} every unnamed saved session.",
+        phrase,
+        yes,
+    ):
+        print("Canceled.")
+        return 1
+
+    if stop_all_agents(True) != 0:
+        return fail("cleanup stopped because Prime shutdown could not be verified", 1)
+
+    records = session_records(root)
+    unnamed = [record for record in records if not record["name"].strip()]
+    if not unnamed:
+        print("No unnamed Prime sessions found.")
+        return 0
+
+    active = [record["id"] for record in unnamed if record["state"] == "active"]
+    if active:
+        return fail(
+            "unnamed sessions remain active after shutdown; no sessions were deleted: "
+            + ", ".join(active),
+            1,
+        )
+
+    failures: list[str] = []
+    removed = 0
+    for record in unnamed:
+        path = Path(record["path"])
+        ok, detail = trash_session(path, permanent)
+        if not ok or path.exists():
+            failures.append(record["id"])
+        else:
+            removed += 1
+    print(f"Unnamed sessions processed: {removed}/{len(unnamed)}.")
+    if failures:
+        print("Unnamed sessions not removed: " + ", ".join(failures), file=sys.stderr)
+        return 1
+    return 0
+
+
 def show_both(root: Path) -> int:
     agent_result = print_agent_listing()
     print()
@@ -498,6 +547,7 @@ def interactive(root: Path) -> int:
         "  6) Stop all agents\n"
         "  7) Delete all sessions\n"
         "  8) Stop all agents and delete all sessions\n"
+        "  9) Stop all agents and delete unnamed sessions\n"
         "  q) Quit"
     )
     while True:
@@ -541,6 +591,8 @@ def interactive(root: Path) -> int:
                     print("Cleanup stopped because Prime shutdown could not be verified.")
             else:
                 print("Canceled.")
+        elif choice == "9":
+            clean_unnamed_sessions(root, False, False)
         else:
             print("Unknown menu choice.")
 
@@ -591,6 +643,8 @@ def main(argv: list[str]) -> int:
         return delete_one_session(root, args.selector, args.yes, args.permanent)
     if args.command == "delete-all-sessions":
         return delete_all_sessions(root, args.yes, args.permanent)
+    if args.command == "clean-unnamed":
+        return clean_unnamed_sessions(root, args.yes, args.permanent)
     if args.command == "clean-all":
         if not ask_phrase(
             "This stops every Prime agent and deletes every saved session.",

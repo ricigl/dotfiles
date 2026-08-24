@@ -371,6 +371,7 @@ Expected changes:
 
 - Provide a `prime-maintenance` launcher for listing Prime agents and saved sessions.
 - Use Prime 0.8.0 lifecycle commands for stopping one agent or all agents.
+- Provide `prime-maintenance clean-unnamed` to stop all agents and clean only unnamed saved sessions while preserving named sessions.
 - Parse only session metadata from JSONL files. Never print prompts, transcripts, tool output, auth, or session contents.
 - Require explicit confirmation for destructive actions.
 - Prefer `trash` or `gio trash` for session deletion. Permit permanent deletion only with `--permanent`.
@@ -382,6 +383,7 @@ Acceptance:
 
 - `prime-maintenance --help` works after Home Manager activation.
 - `tests/test-prime-maintenance.sh` passes without invoking real Prime lifecycle commands.
+- `clean-unnamed` requires confirmation, verifies shutdown through the mocked lifecycle command, removes only unnamed disposable sessions, and preserves named sessions.
 - No session content or runtime state is committed.
 
 ### Phase 8B - no-mistakes Repository Integration
