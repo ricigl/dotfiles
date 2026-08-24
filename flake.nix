@@ -58,6 +58,7 @@
         ./home.nix
         ./modules/home-base.nix
         ./modules/home-common-agents.nix
+        ./modules/home-firstmate.nix
         ./modules/home-orca-prime.nix
       ];
 
@@ -65,6 +66,7 @@
         ./home.nix
         ./modules/home-base.nix
         ./modules/home-common-agents.nix
+        ./modules/home-firstmate.nix
         ./modules/home-orca-prime.nix
         ./modules/home-legacy-agents.nix
       ];

@@ -17,7 +17,7 @@ Authority boundaries:
 
 - Repository owns declarative, reviewable configuration only.
 - Home Manager may own exact policy/config files for Prime/Lavish and public opt-in skill files.
-- Home Manager owns the regular shell PATH and reviewed transitional install entry for AGY/Pi; their binaries, releases, auth, and runtime state remain user-owned mutable state.
+- Home Manager owns the regular shell PATH, the reviewed transitional install entries for AGY/Pi, and the separate Firstmate launcher; their binaries, releases, auth, and runtime state remain user-owned mutable state.
 - Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Orca can relay over SSH, so they cannot live only inside a per-user Nix shell.
 - Windows PowerShell bootstrap owns Windows-side WSL name checks, `.wslconfig`, SSH key creation/copy, Orca installer verification, and terminal/node-pty prerequisite checks.
 - User owns secrets and auth: OpenAI/Prime auth, GitHub auth, Windows account secrets, SSH private keys, `authorized_keys` material before copy, session dirs, caches, and runtime downloads.
@@ -51,6 +51,7 @@ Authority boundaries:
 |-- modules/
 |   |-- home-base.nix                     # Zsh, Starship, Git, CLI utils, Neovim, ABNT2
 |   |-- home-common-agents.nix             # shared AGY/Pi policy, Caveman, MCP links
+|   |-- home-firstmate.nix                 # separate Firstmate launcher and tmux
 |   |-- home-orca-prime.nix               # Prime/Lavish policy links, no auth/runtime
 |   `-- home-legacy-agents.nix            # optional WezTerm/Herdr/Pi fallback profile
 |-- scripts/
@@ -59,10 +60,12 @@ Authority boundaries:
 |   |-- install-prime-tools.sh            # reviewed pinned npm/prefix install, not Nix-packaged
 |   |-- install-no-mistakes.sh            # reviewed pinned gate CLI install, not Nix-packaged
 |   |-- install-home-agents.sh            # reviewed AGY/Pi bootstrap install, not Nix-packaged
+|   |-- install-firstmate.sh              # reviewed pinned Firstmate checkout install
 |   `-- validate.sh                       # local validation wrapper, no evidence committed
 |-- .no-mistakes.yaml                     # targeted gate policy, local-only evidence
 `-- tests/
-    `-- smoke-orca-prime.sh               # SSH/node-pty/version smoke checks
+    |-- smoke-orca-prime.sh               # SSH/node-pty/version smoke checks
+    `-- test-firstmate-install.sh          # Firstmate installer checks
 ```
 
 Tree can be flattened if Ricardo prefers fewer files, but module boundaries should stay clear: base, Orca Prime, legacy fallback, bootstrap, validation.
@@ -81,7 +84,8 @@ Known verified values:
 - Codebase Memory MCP release SHA256: `6eef49652bc0c7820f43114125044d40bf7f4d97c11b2592f6b0f6a307702325`.
 - no-mistakes `1.57.0` Linux x86_64 release SHA256: `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`.
 - AGY bootstrap script SHA256: `ee1ea43ce4e9e56356c4ab6dad907ef357ae4bdfcaadb682735909fb57c9c640`.
-- Pi bootstrap script SHA256: `a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5b`.
+- Pi bootstrap script SHA256: `a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5`.
+- Firstmate commit: `038d0f7ec6ba7238a151722931434dcf06ff37c4`.
 
 Approval choices before implementation:
 

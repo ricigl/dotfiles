@@ -15,12 +15,14 @@ for script in \
   bootstrap.sh \
   rebuild.sh \
   scripts/install-codebase-memory.sh \
+  scripts/install-firstmate.sh \
   scripts/install-home-agents.sh \
   scripts/install-no-mistakes.sh \
   scripts/install-prime-tools.sh \
   scripts/ubuntu-bootstrap.sh \
   scripts/validate.sh \
   tests/smoke-orca-prime.sh \
+  tests/test-firstmate-install.sh \
   tests/test-prime-maintenance.sh; do
   bash -n "$script"
 done
@@ -49,6 +51,10 @@ tracked_agent_files="$(git ls-files -- '*AGENTS.md' | while IFS= read -r agent_f
   fi
 done | sort)"
 test "${tracked_agent_files}" = $'AGENTS.md\nhome/.prime/agent/AGENTS.md'
+grep -F './modules/home-firstmate.nix' flake.nix >/dev/null
+grep -F 'FIRSTMATE_COMMIT="038d0f7ec6ba7238a151722931434dcf06ff37c4"' scripts/install-firstmate.sh >/dev/null
+grep -F 'pkgs.tmux' modules/home-firstmate.nix >/dev/null
+grep -F 'exec pi "$@"' modules/home-firstmate.nix >/dev/null
 grep -F 'pi-mcp-adapter@2.27.0' home/.pi/agent/settings.json >/dev/null
 if command -v jq >/dev/null 2>&1; then
   jq -e '

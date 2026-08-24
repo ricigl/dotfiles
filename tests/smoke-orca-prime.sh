@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq prime-maintenance no-mistakes agy pi codebase-memory-mcp; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq prime-maintenance no-mistakes agy pi firstmate codebase-memory-mcp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -68,12 +68,28 @@ pi_mcp="$HOME/.config/mcp/mcp.json"
 agy_mcp="$HOME/.gemini/config/mcp_config.json"
 shared_skill="$HOME/.agents/skills/caveman/SKILL.md"
 agy_skill="$HOME/.gemini/antigravity-cli/skills/caveman/SKILL.md"
+firstmate_root="${FIRSTMATE_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/firstmate}"
 for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$shared_skill" "$agy_skill"; do
   test -r "$required_file" || {
     printf 'Missing Home Manager file: %s\n' "$required_file" >&2
     exit 1
   }
 done
+
+for firstmate_path in AGENTS.md bin/fm-bootstrap.sh bin/fm-session-start.sh docs/configuration.md; do
+  test -e "$firstmate_root/$firstmate_path" || {
+    printf 'Missing Firstmate checkout path: %s/%s\n' "$firstmate_root" "$firstmate_path" >&2
+    exit 1
+  }
+done
+firstmate_remote="$(git -C "$firstmate_root" remote get-url origin 2>/dev/null || true)"
+case "$firstmate_remote" in
+  https://github.com/kunchenguid/firstmate.git|git@github.com:kunchenguid/firstmate.git) ;;
+  *)
+    printf 'Unexpected Firstmate origin: %s\n' "${firstmate_remote:-<missing>}" >&2
+    exit 1
+    ;;
+esac
 
 cmp -s "$shared_policy" "$agy_policy"
 pi list | grep -F 'pi-mcp-adapter' >/dev/null
