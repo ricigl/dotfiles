@@ -48,12 +48,14 @@ in
       url = "https://github.com/DeusData/codebase-memory-mcp/releases/download/v0.10.8/codebase-memory-mcp-linux-amd64-portable.tar.gz";
       hash = "sha256-bu9JZSvAx4IPQxFBJQRNQL9/TZfBGyWS9rD2owdwIyU=";
     };
-    sourceRoot = ".";
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
     installPhase = ''
       runHook preInstall
-      binary="$(find . -type f -name codebase-memory-mcp -perm /111 -print -quit)"
-      test -n "$binary"
-      install -Dm755 "$binary" "$out/bin/codebase-memory-mcp"
+      archive_dir="$TMPDIR/codebase-memory-extracted"
+      mkdir -p "$archive_dir"
+      tar -xzf "$src" -C "$archive_dir"
+      install -Dm755 "$archive_dir/codebase-memory-mcp" "$out/bin/codebase-memory-mcp"
       runHook postInstall
     '';
     meta = {
@@ -69,11 +71,14 @@ in
       url = "https://github.com/kunchenguid/no-mistakes/releases/download/v1.57.0/no-mistakes-v1.57.0-linux-amd64.tar.gz";
       hash = "sha256-EUXnvUGgEwE+rkuqUz0kEyLSDZF//vcyWVRg3b84W4Q=";
     };
-    sourceRoot = ".";
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
     installPhase = ''
       runHook preInstall
-      test -f no-mistakes
-      install -Dm755 no-mistakes "$out/bin/no-mistakes"
+      archive_dir="$TMPDIR/no-mistakes-extracted"
+      mkdir -p "$archive_dir"
+      tar -xzf "$src" -C "$archive_dir"
+      install -Dm755 "$archive_dir/no-mistakes" "$out/bin/no-mistakes"
       runHook postInstall
     '';
     meta = {
@@ -89,11 +94,14 @@ in
       url = "https://github.com/kunchenguid/treehouse/releases/download/v2.0.1/treehouse-v2.0.1-linux-amd64.tar.gz";
       hash = "sha256-HVoydRq5IWcBA/0gHdsrkbRzOMsTl29FZCuCfPiXavI=";
     };
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
     installPhase = ''
       runHook preInstall
-      binary="$(find . -type f -name treehouse -perm /111 -print -quit)"
-      test -n "$binary"
-      install -Dm755 "$binary" "$out/bin/treehouse"
+      archive_dir="$TMPDIR/treehouse-extracted"
+      mkdir -p "$archive_dir"
+      tar -xzf "$src" -C "$archive_dir"
+      install -Dm755 "$archive_dir/treehouse" "$out/bin/treehouse"
       runHook postInstall
     '';
     meta = {
