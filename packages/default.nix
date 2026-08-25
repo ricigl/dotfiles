@@ -96,6 +96,7 @@ in
     version = "1.57.0";
     src = noMistakesSource;
     sourceRoot = "no-mistakes-1.57.0";
+    dontBuild = true;
     installPhase = ''
       runHook preInstall
       mkdir -p "$out/share/skills/no-mistakes"
