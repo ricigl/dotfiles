@@ -19,6 +19,13 @@ if ! node -e 'const [major, minor, patch] = process.versions.node.split(".").map
   exit 1
 fi
 
+# The Home Manager session variable covers fresh shells, but this installer may
+# run from an existing shell whose npm prefix still points into the immutable
+# Nix store. Keep Prime's npm installation user-owned and writable.
+export NPM_CONFIG_PREFIX="$HOME/.local/share/npm"
+export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
+mkdir -p "$NPM_CONFIG_PREFIX/bin"
+
 installer="$(mktemp)"
 cleanup() {
   rm -f "$installer"
