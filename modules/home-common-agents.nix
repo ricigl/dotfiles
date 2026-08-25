@@ -27,14 +27,20 @@ in
     "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
   home.file.".agents/skills/gh-axi".source =
     "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+  home.file.".agents/skills/no-mistakes".source =
+    "${agentPackages.no-mistakes-skill}/share/skills/no-mistakes";
   home.file.".gemini/antigravity-cli/skills/lavish".source =
     "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
   home.file.".gemini/antigravity-cli/skills/gh-axi".source =
     "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+  home.file.".gemini/antigravity-cli/skills/no-mistakes".source =
+    "${agentPackages.no-mistakes-skill}/share/skills/no-mistakes";
   home.file.".prime/agent/skills/lavish".source =
     "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
   home.file.".prime/agent/skills/gh-axi".source =
     "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+  home.file.".prime/agent/skills/no-mistakes".source =
+    "${agentPackages.no-mistakes-skill}/share/skills/no-mistakes";
 
   # Pi reads ~/.agents/skills directly. AGY and Prime use their client roots
   # above, while all three invoke the same user-owned binaries on PATH.

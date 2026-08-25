@@ -75,9 +75,12 @@ agy_policy="$HOME/.gemini/GEMINI.md"
 pi_mcp="$HOME/.config/mcp/mcp.json"
 agy_mcp="$HOME/.gemini/config/mcp_config.json"
 shared_skill="$HOME/.agents/skills/caveman/SKILL.md"
+shared_no_mistakes_skill="$HOME/.agents/skills/no-mistakes/SKILL.md"
 agy_skill="$HOME/.gemini/antigravity-cli/skills/caveman/SKILL.md"
+no_mistakes_skill="$HOME/.gemini/antigravity-cli/skills/no-mistakes/SKILL.md"
+prime_no_mistakes_skill="$HOME/.prime/agent/skills/no-mistakes/SKILL.md"
 firstmate_root="${FIRSTMATE_ROOT:-$HOME/firstmate}"
-for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$shared_skill" "$agy_skill"; do
+for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$shared_skill" "$shared_no_mistakes_skill" "$agy_skill" "$no_mistakes_skill" "$prime_no_mistakes_skill"; do
   test -r "$required_file" || {
     printf 'Missing Home Manager file: %s\n' "$required_file" >&2
     exit 1

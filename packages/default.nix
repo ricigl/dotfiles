@@ -6,6 +6,10 @@ let
     url = "https://github.com/kunchenguid/firstmate/archive/${firstmateCommit}.tar.gz";
     hash = "sha256-LFOz/I2vOfWXAVyOmbho2J8gbhalJxlN1WzHSzgu1YA=";
   };
+  noMistakesSource = fetchurl {
+    url = "https://github.com/kunchenguid/no-mistakes/archive/refs/tags/v1.57.0.tar.gz";
+    hash = "sha256-lRkgF8sjAa1ND3WPaXHqIvSavmPgEZFrcci1bqZ5hLs=";
+  };
   npmDependencyClosure = name:
     let
       lock = builtins.fromJSON (builtins.readFile (builtins.toPath "${toString ./.}/npm/${name}/package-lock.json"));
@@ -84,6 +88,22 @@ in
     meta = {
       description = "Deterministic no-mistakes safety gate CLI";
       platforms = [ "x86_64-linux" ];
+    };
+  };
+
+  no-mistakes-skill = stdenvNoCC.mkDerivation {
+    pname = "no-mistakes-skill";
+    version = "1.57.0";
+    src = noMistakesSource;
+    sourceRoot = "no-mistakes-1.57.0";
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/share/skills/no-mistakes"
+      cp -R ./skills/no-mistakes/. "$out/share/skills/no-mistakes/"
+      runHook postInstall
+    '';
+    meta = {
+      description = "Pinned no-mistakes agent skill";
     };
   };
 

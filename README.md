@@ -246,7 +246,7 @@ Only after that review should you use `git push no-mistakes <branch>` or `/no-mi
 
 The repository root `AGENTS.md` is the single tracked shared policy for AGY, Pi, and Prime. Home Manager exposes that same source to Pi as `~/.pi/agent/AGENTS.md`, to AGY as `~/.gemini/GEMINI.md`, and to Prime as `~/.prime/agent/AGENTS.md`. Prime's safety, worktree, telemetry, and engineering rules are merged into the common file.
 
-The reviewed Caveman and pinned `i-have-adhd` skills are exposed to all three harnesses through their supported skill roots. Use `/caveman ultra` for token-efficient coding-agent prompts when full-detail output is not required. `i-have-adhd` remains opt-in.
+The reviewed Caveman, pinned `no-mistakes`, and pinned `i-have-adhd` skills are exposed to all three harnesses through their supported skill roots. Use `/caveman ultra` for token-efficient coding-agent prompts when full-detail output is not required. Use `/no-mistakes` to drive the local validation gate. `i-have-adhd` remains opt-in.
 
 Codebase Memory is available to all three harnesses after the pinned binary is installed:
 

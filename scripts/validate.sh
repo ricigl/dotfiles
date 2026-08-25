@@ -52,6 +52,7 @@ grep -F 'agentPackages = import ./packages' flake.nix >/dev/null
 grep -F 'version = "2.0.1"' packages/default.nix >/dev/null
 grep -F 'version = "0.10.8"' packages/default.nix >/dev/null
 grep -F 'version = "1.57.0"' packages/default.nix >/dev/null
+grep -F 'agentPackages.no-mistakes-skill' modules/home-common-agents.nix >/dev/null
 grep -F 'pkgs.tmux' modules/home-firstmate.nix >/dev/null
 grep -F 'export FM_BACKEND=' modules/home-firstmate.nix >/dev/null
 grep -F 'FM_BACKEND:-tmux' modules/home-firstmate.nix >/dev/null

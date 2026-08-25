@@ -19,18 +19,29 @@ BACKUP_SUFFIX="${HOME_MANAGER_BACKUP_SUFFIX:-home-manager-$(date +%Y%m%d-%H%M%S)
 relocate_stale_skill_backups() {
   local state_root="${XDG_STATE_HOME:-$HOME/.local/state}/orca-prime/skill-backups"
   local run_root="$state_root/home-manager-$(date +%Y%m%d-%H%M%S)"
-  local root_spec root_label skill_root backup destination
+  local root_spec root_label skill_root backup destination managed_skill existing
   local skill_roots=(
     "shared:$HOME/.agents/skills"
     "agy:$HOME/.gemini/antigravity-cli/skills"
     "prime:$HOME/.prime/agent/skills"
   )
+  local managed_skills=(caveman gh-axi i-have-adhd lavish no-mistakes)
 
   shopt -s nullglob
   for root_spec in "${skill_roots[@]}"; do
     root_label="${root_spec%%:*}"
     skill_root="${root_spec#*:}"
     [ -d "$skill_root" ] || continue
+
+    for managed_skill in "${managed_skills[@]}"; do
+      existing="$skill_root/$managed_skill"
+      if [ -d "$existing" ] && [ ! -L "$existing" ]; then
+        destination="$run_root/$root_label"
+        mkdir -p "$destination"
+        mv -- "$existing" "$destination/"
+        printf 'Relocated mutable managed skill: %s -> %s\n' "$existing" "$destination/"
+      fi
+    done
 
     for backup in \
       "$skill_root"/*.home-manager-* \
