@@ -170,6 +170,14 @@ cd ~/.dotfiles
 home-manager switch -b backup --flake "$HOME/.dotfiles#$(whoami)@wsl"
 ```
 
+After the first activation, start a fresh regular shell so Home Manager's PATH and session variables are loaded before installing agents or running smoke tests:
+
+```bash
+exec zsh -l
+```
+
+The rebuild wrapper also relocates stale Home Manager skill backups out of agent skill discovery roots into `~/.local/state/orca-prime/skill-backups/` without deleting them.
+
 ### 4. Use the optional Node 22 validation shell
 
 The regular Home Manager shell is the daily runtime for AGY, Pi, Prime, and Firstmate. Keep the development shell only for deterministic Node 22/build validation:

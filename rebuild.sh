@@ -16,6 +16,38 @@ esac
 DOTFILES_LINK="$HOME/.dotfiles"
 BACKUP_SUFFIX="${HOME_MANAGER_BACKUP_SUFFIX:-home-manager-$(date +%Y%m%d-%H%M%S)}"
 
+relocate_stale_skill_backups() {
+  local state_root="${XDG_STATE_HOME:-$HOME/.local/state}/orca-prime/skill-backups"
+  local run_root="$state_root/home-manager-$(date +%Y%m%d-%H%M%S)"
+  local root_spec root_label skill_root backup destination
+  local skill_roots=(
+    "shared:$HOME/.agents/skills"
+    "agy:$HOME/.gemini/antigravity-cli/skills"
+    "prime:$HOME/.prime/agent/skills"
+  )
+
+  shopt -s nullglob
+  for root_spec in "${skill_roots[@]}"; do
+    root_label="${root_spec%%:*}"
+    skill_root="${root_spec#*:}"
+    [ -d "$skill_root" ] || continue
+
+    for backup in \
+      "$skill_root"/*.home-manager-* \
+      "$skill_root"/*.pre-home-manager-* \
+      "$skill_root"/*.pre-orca-prime-*; do
+      [ -d "$backup" ] || continue
+      destination="$run_root/$root_label"
+      mkdir -p "$destination"
+      mv -- "$backup" "$destination/"
+      printf 'Relocated stale skill backup: %s -> %s\n' "$backup" "$destination/"
+    done
+  done
+  shopt -u nullglob
+}
+
+relocate_stale_skill_backups
+
 if [ "$DIR" != "$DOTFILES_LINK" ]; then
   if [ -L "$DOTFILES_LINK" ] && [ "$(readlink -f "$DOTFILES_LINK")" = "$DIR" ]; then
     : # The expected link already exists.
