@@ -62,6 +62,7 @@ if command -v jq >/dev/null 2>&1; then
   jq -e '
     .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
     .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+    .mcpServers.codebase_memory.env.CBM_ALLOWED_ROOT == "/home/ricardo" and
     (.mcpServers.codebase_memory.excludeTools | index("delete_project")) != null and
     (.mcpServers.codebase_memory.excludeTools | index("manage_adr")) != null and
     (.mcpServers.codebase_memory.excludeTools | index("ingest_traces")) != null
@@ -69,6 +70,7 @@ if command -v jq >/dev/null 2>&1; then
   jq -e '
     .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
     .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+    .mcpServers.codebase_memory.env.CBM_ALLOWED_ROOT == "/home/ricardo" and
     (.mcpServers.codebase_memory.disabledTools | index("delete_project")) != null and
     (.mcpServers.codebase_memory.disabledTools | index("manage_adr")) != null and
     (.mcpServers.codebase_memory.disabledTools | index("ingest_traces")) != null
@@ -79,7 +81,7 @@ else
     const required = ["delete_project", "manage_adr", "ingest_traces"];
     const check = (path, field) => {
       const server = JSON.parse(fs.readFileSync(path, "utf8")).mcpServers.codebase_memory;
-      if (server.command !== "codebase-memory-mcp" || server.cwd !== "/home/ricardo/src" || !required.every((name) => server[field].includes(name))) process.exit(1);
+      if (server.command !== "codebase-memory-mcp" || server.cwd !== "/home/ricardo/src" || server.env.CBM_ALLOWED_ROOT !== "/home/ricardo" || !required.every((name) => server[field].includes(name))) process.exit(1);
     };
     check("home/.config/mcp/mcp.json", "excludeTools");
     check("home/.gemini/config/mcp_config.json", "disabledTools");
@@ -137,7 +139,7 @@ run_nix_checks() {
       test "$LAVISH_AXI_HOST" = 127.0.0.1
       test "$NPM_CONFIG_PREFIX" = "$HOME/.local/share/npm"
       case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) exit 1 ;; esac
-      test "$CBM_ALLOWED_ROOT" = /home/ricardo/src
+      test "$CBM_ALLOWED_ROOT" = /home/ricardo
       test "$CBM_CACHE_DIR" = /home/ricardo/.cache/codebase-memory-mcp
       test "$CBM_DIAGNOSTICS" = 0
     '

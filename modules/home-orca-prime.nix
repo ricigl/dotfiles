@@ -1,7 +1,7 @@
 { ... }:
 {
   home.sessionVariables = {
-    CBM_ALLOWED_ROOT = "/home/ricardo/src";
+    CBM_ALLOWED_ROOT = "/home/ricardo";
     CBM_CACHE_DIR = "/home/ricardo/.cache/codebase-memory-mcp";
     CBM_DIAGNOSTICS = "0";
   };

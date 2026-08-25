@@ -61,7 +61,7 @@ Orca's SSH relay starts before `nix develop`. Therefore Ubuntu must provide `/us
 - no-mistakes telemetry and automatic update checks are disabled by Home Manager. Its daemon, gate repositories, worktrees, logs, database, and evidence remain local mutable state.
 - AGY and Pi are user-owned transitional installs. Their reviewed bootstrap scripts are pinned, but upstream release payloads remain dynamic and may self-update; auth, sessions, caches, logs, and downloads remain local and untracked.
 - Firstmate is packaged from a reviewed commit; its operational `data/`, `state/`, `config/`, `sessions`, caches, `projects/`, and Treehouse worktree state stay outside this repository.
-- Codebase Memory is local-only: allowed root `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact.
+- Codebase Memory is local-only: allowed root `/home/ricardo`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact. Index only explicit project directories such as `/home/ricardo/src/<project>` or `/home/ricardo/firstmate/projects/<project>`; never index `/home/ricardo` itself or credential/config directories.
 - AGY, Pi, and Prime Codebase Memory MCP entries disable initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
 - `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
 - Private keys, authorized keys, provider credentials, sessions, caches, and runtime state are never committed.
@@ -256,7 +256,7 @@ AGY global MCP config: ~/.gemini/config/mcp_config.json
 AGY compatibility MCP config: ~/.gemini/antigravity-cli/mcp_config.json
 Prime MCP config: ~/.prime/agent/settings.json
 Server: codebase-memory-mcp (Nix package on PATH)
-Allowed root: /home/ricardo/src
+Allowed root: /home/ricardo
 Cache: /home/ricardo/.cache/codebase-memory-mcp
 ```
 
@@ -340,7 +340,7 @@ command: codebase-memory-mcp
 cwd: /home/ricardo/src
 ```
 
-Codebase Memory `0.10.8` uses the approved `auto_index=true` and `auto_watch=true` settings; this stdio configuration starts neither the optional UI nor any shared graph artifact. Use Prime's MCP tools to index/query repositories under `/home/ricardo/src`; do not commit `.codebase-memory` directories, exported graph artifacts, or cache contents.
+Codebase Memory `0.10.8` uses the approved `auto_index=true` and `auto_watch=true` settings; this stdio configuration starts neither the optional UI nor any shared graph artifact. Use Prime's MCP tools to index/query explicit repositories under `/home/ricardo/src` or `/home/ricardo/firstmate/projects`; do not index `/home/ricardo` itself, credential/config directories, or commit `.codebase-memory` directories, exported graph artifacts, or cache contents.
 
 To inspect the connection from the shell:
 

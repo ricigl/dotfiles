@@ -231,7 +231,7 @@ Expected changes:
   - `LAVISH_AXI_TELEMETRY=0`
   - `LAVISH_AXI_NO_OPEN=1`
   - `LAVISH_AXI_HOST=127.0.0.1`
-  - `CBM_ALLOWED_ROOT=/home/ricardo/src`
+  - `CBM_ALLOWED_ROOT=/home/ricardo`
   - `CBM_CACHE_DIR=/home/ricardo/.cache/codebase-memory-mcp`
   - `CBM_DIAGNOSTICS=0`
 - Document that Node 22 from the shell is authoritative for Orca Prime work.

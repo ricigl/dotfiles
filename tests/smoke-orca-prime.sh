@@ -46,7 +46,7 @@ if [ "${IN_NIX_SHELL:-}" ]; then
   [ "${LAVISH_AXI_HOST:-}" = "127.0.0.1" ]
   [ "${NPM_CONFIG_PREFIX:-}" = "$HOME/.local/share/npm" ]
   case ":${PATH}:" in *":$HOME/.local/share/npm/bin:"*) ;; *) exit 1 ;; esac
-  [ "${CBM_ALLOWED_ROOT:-}" = "/home/ricardo/src" ]
+  [ "${CBM_ALLOWED_ROOT:-}" = "/home/ricardo" ]
   [ "${CBM_CACHE_DIR:-}" = "/home/ricardo/.cache/codebase-memory-mcp" ]
   [ "${CBM_DIAGNOSTICS:-}" = "0" ]
   codebase-memory-mcp --version | grep -Eq '0\.10\.8'
@@ -61,7 +61,7 @@ else
   [ "${LAVISH_AXI_HOST:-}" = "127.0.0.1" ]
   [ "${NPM_CONFIG_PREFIX:-}" = "$HOME/.local/share/npm" ]
   case ":${PATH}:" in *":$HOME/.local/share/npm/bin:"*) ;; *) exit 1 ;; esac
-  [ "${CBM_ALLOWED_ROOT:-}" = "/home/ricardo/src" ]
+  [ "${CBM_ALLOWED_ROOT:-}" = "/home/ricardo" ]
   [ "${CBM_CACHE_DIR:-}" = "/home/ricardo/.cache/codebase-memory-mcp" ]
   [ "${CBM_DIAGNOSTICS:-}" = "0" ]
   codebase-memory-mcp --version | grep -Eq '0\.10\.8'
@@ -103,6 +103,7 @@ pi list | grep -F 'pi-mcp-adapter' >/dev/null
 jq -e '
   .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
   .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+  .mcpServers.codebase_memory.env.CBM_ALLOWED_ROOT == "/home/ricardo" and
   (.mcpServers.codebase_memory.excludeTools | index("delete_project")) != null and
   (.mcpServers.codebase_memory.excludeTools | index("manage_adr")) != null and
   (.mcpServers.codebase_memory.excludeTools | index("ingest_traces")) != null
@@ -111,6 +112,7 @@ jq -e '
 jq -e '
   .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
   .mcpServers.codebase_memory.cwd == "/home/ricardo/src" and
+  .mcpServers.codebase_memory.env.CBM_ALLOWED_ROOT == "/home/ricardo" and
   (.mcpServers.codebase_memory.disabledTools | index("delete_project")) != null and
   (.mcpServers.codebase_memory.disabledTools | index("manage_adr")) != null and
   (.mcpServers.codebase_memory.disabledTools | index("ingest_traces")) != null
