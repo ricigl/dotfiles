@@ -1,6 +1,6 @@
-# Sprint Plan: Orca Agents Nix Packaging
+# Sprint Plan: Herdr Agents Nix Packaging
 
-The unified Home Manager migration is implemented on `orca-agents-nix`. This file retains earlier sprint history and records the current packaging boundary and validation gates.
+The unified Home Manager migration is implemented on `orca-agents-nix`. The Herdr thin-client variant is developed on `herdr-agents-nix`. This file retains earlier Orca sprint history and records the current packaging boundary and validation gates.
 
 Hard gates:
 
@@ -10,20 +10,40 @@ Hard gates:
 
 Constraints:
 
-- Branch is `orca-agents-nix`; `main` and the previous rollback branch remain unchanged.
+- Branch is `herdr-agents-nix`, based on `orca-agents-nix`; `main` and the previous rollback branch remain unchanged.
 - `origin/main` remains unchanged backup.
 - Keep global Node 24 in default Home Manager profile.
 - `orca-prime` shell is optional and resolves Node 22 for validation only.
 - Prime, Pi, and AGY launch from the regular Home Manager shell.
 - Root `AGENTS.md` is the single shared policy source for all three harnesses.
 - Firstmate root is `~/firstmate`; project and Treehouse worktree root is `~/firstmate/projects`.
-- Firstmate owns Linux Treehouse worktrees; Windows Orca connects over SSH without worktree lifecycle operations.
-- Only `agy`, `pi`, and `prime-agent` are installed by scripts. Lavish, gh-axi, Codebase Memory, no-mistakes, Firstmate, Treehouse, Caveman, and `i-have-adhd` are Nix/Home Manager packages.
+- Firstmate owns Linux Treehouse worktrees; Windows Herdr connects over SSH without worktree lifecycle operations.
+- Linux Herdr is a pinned Home Manager package in the regular profile. Only `agy`, `pi`, and `prime-agent` are installed by scripts. Lavish, gh-axi, Codebase Memory, no-mistakes, Firstmate, Treehouse, Caveman, and `i-have-adhd` remain Nix/Home Manager packages.
 - Windows SSH key: `%USERPROFILE%\.ssh\orca-wsl-ed25519`.
 - `gh auth status` currently fails because this environment is unauthenticated.
-- This host has no native `nix` executable. Use an available pinned container validator only if its daemon is running; do not claim target activation or Orca runtime acceptance until Ricardo verifies them in Ubuntu WSL.
+- This host has no native `nix` executable. Use an available pinned container validator only if its daemon is running; do not claim target activation or Herdr runtime acceptance until Ricardo verifies them in Ubuntu WSL.
 
-The earlier sprint sections document the already-landed baseline. Sprint 6 below supersedes conflicting Prime-policy, Prime-shell, and Orca-worktree assumptions.
+The earlier sprint sections document the already-landed baseline. Sprint 6 below supersedes conflicting Prime-policy, Prime-shell, and Orca-worktree assumptions. Sprint 7 below defines the Herdr thin-client variant.
+
+## Sprint 7: Herdr Thin Client and Linux Home-Agent Server
+
+1. Task: move Herdr into the regular Home Manager profile
+   - Goal: make the WSL regular home-agent shell the Herdr server runtime.
+   - Exact files: `flake.nix`, `flake.lock`, `modules/home-base.nix`, `modules/home-legacy-agents.nix`, `home/.config/herdr`, `README.md`, `PLAN.md`.
+   - Implementation contract: update the pinned Herdr input from `v0.7.5` to stable `v0.8.2`; add the package and authored config link to the regular profile; remove the direct Herdr package/config declaration from the legacy module; preserve user-owned Herdr sessions and caches outside Git.
+   - Forbidden scope: no host service changes; no Herdr daemon start during validation; no auth/session/cache ownership; no Windows Orca installation.
+   - Verification commands: `nix flake check`; `nix build '.#homeConfigurations."ricardo@wsl".activationPackage'`; `nix build '.#homeConfigurations."ricardo@wsl-legacy".activationPackage'`; `herdr --version` after target activation.
+   - Completion criteria: regular profile contains Herdr `0.8.2`; legacy module has no direct Herdr declaration; both profiles evaluate.
+   - Logical commit message: `feat: move herdr into regular home profile`.
+
+2. Task: replace Windows Orca bootstrap with Herdr SSH bootstrap
+   - Goal: install the Windows Herdr thin client and preserve the existing loopback SSH transport.
+   - Exact files: `scripts/windows-herdr-bootstrap.ps1`, `scripts/ubuntu-bootstrap.sh`, `README.md`, `AGENTS.md`, `scripts/validate.sh`, `tests/smoke-herdr-agents.sh`.
+   - Implementation contract: rename the Windows script; remove Orca download/install/checksum logic; add `-InstallHerdr` behind `-Apply`, verify the reviewed `https://herdr.dev/install.ps1` SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`, and invoke stable-channel installation. Keep WSL version checks, `.wslconfig` preservation, existing dedicated SSH key compatibility, `authorized_keys` handling, `sshd` reachability, `127.0.0.1:2222`, key-only auth, and native build checks.
+   - Forbidden scope: no `irm | iex` without installer verification; no Orca installer or executable; no public SSH binding; no password/root/keyboard-interactive auth; no key output.
+   - Verification commands: PowerShell parser; `bash -n` for shell scripts; `./scripts/ubuntu-bootstrap.sh --verify-only` and Windows `-VerifyOnly` only on the target host after approval.
+   - Completion criteria: Windows script contains no Orca installer path; Herdr install is explicit; SSH configuration remains loopback-only and key-only; `herdr --remote <user>@127.0.0.1:2222` is documented.
+   - Logical commit message: `feat: replace windows orca with herdr client`.
 
 ## Sprint 1: Home Manager Split, Default, Legacy
 

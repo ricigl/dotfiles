@@ -2,7 +2,7 @@
 param(
     [switch]$VerifyOnly,
     [switch]$Apply,
-    [switch]$InstallOrca,
+    [switch]$InstallHerdr,
     [string]$Distro = "Ubuntu"
 )
 
@@ -15,24 +15,46 @@ if ($VerifyOnly -and $Apply) {
 if (-not $VerifyOnly -and -not $Apply) {
     $VerifyOnly = $true
 }
-if ($InstallOrca -and -not $Apply) {
-    throw "-InstallOrca requires -Apply."
+if ($InstallHerdr -and -not $Apply) {
+    throw "-InstallHerdr requires -Apply."
 }
 if ($Distro -ne "Ubuntu") {
     throw "This repository requires the WSL distro name exactly 'Ubuntu'."
 }
 
-$OrcaVersion = "1.4.184"
-$OrcaUrl = "https://github.com/stablyai/orca/releases/download/v1.4.184/orca-windows-setup.exe"
-$OrcaSha256 = "7765f7f085d04b7fe662ec664825fedd81427dd586023f945182a46e0a0cf5be"
+$HerdrVersion = "0.8.2"
+$HerdrInstallerUrl = "https://herdr.dev/install.ps1"
+$HerdrInstallerSha256 = "3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7"
+$HerdrInstallDir = Join-Path $env:LOCALAPPDATA "Programs\Herdr\bin"
+$HerdrInstaller = Join-Path ([System.IO.Path]::GetTempPath()) ("herdr-install-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
 $Key = Join-Path $env:USERPROFILE ".ssh\orca-wsl-ed25519"
 $WslConfig = Join-Path $env:USERPROFILE ".wslconfig"
-$Installer = Join-Path $env:USERPROFILE "Downloads\orca-windows-setup-$OrcaVersion.exe"
 
 function Assert-Command {
     param([Parameter(Mandatory)][string]$Name)
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
         throw "Required command not found: $Name"
+    }
+}
+
+function Install-Herdr {
+    try {
+        Invoke-WebRequest -Uri $HerdrInstallerUrl -OutFile $HerdrInstaller
+        $actualHash = (Get-FileHash -LiteralPath $HerdrInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualHash -ne $HerdrInstallerSha256) {
+            throw "Herdr installer checksum mismatch. Expected $HerdrInstallerSha256, got $actualHash"
+        }
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $HerdrInstaller -Channel stable -InstallDir $HerdrInstallDir
+        if ($LASTEXITCODE -ne 0) {
+            throw "Herdr installer failed with exit code $LASTEXITCODE."
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $HerdrInstaller -Force -ErrorAction SilentlyContinue
+    }
+
+    if (Test-Path -LiteralPath $HerdrInstallDir) {
+        $env:Path = "$HerdrInstallDir;$env:Path"
     }
 }
 
@@ -92,6 +114,7 @@ function Set-IniValue {
 Assert-Command "wsl.exe"
 Assert-Command "ssh.exe"
 Assert-Command "ssh-keygen.exe"
+Assert-Command "powershell.exe"
 
 $Distros = @(
     & wsl.exe --list --quiet |
@@ -149,26 +172,36 @@ if ($Apply) {
     Get-Content -LiteralPath "$Key.pub" -Raw |
         & wsl.exe -d $Distro -- bash -lc 'set -eu; umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; IFS= read -r key; grep -qxF "$key" ~/.ssh/authorized_keys || printf "%s\n" "$key" >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
     if ($LASTEXITCODE -ne 0) {
-        throw "Could not authorize the Orca public key in Ubuntu."
+        throw "Could not authorize the dedicated WSL client public key in Ubuntu."
     }
 
-    if ($InstallOrca) {
-        Invoke-WebRequest -Uri $OrcaUrl -OutFile $Installer
-        $ActualHash = (Get-FileHash -LiteralPath $Installer -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ($ActualHash -ne $OrcaSha256) {
-            throw "Orca installer checksum mismatch. Expected $OrcaSha256, got $ActualHash"
-        }
-        Start-Process -FilePath $Installer -Wait
+    if ($InstallHerdr) {
+        Install-Herdr
     }
 
     Write-Host "Applied Windows-side configuration. Run 'wsl --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."
 }
 
 if (-not (Test-Path -LiteralPath $Key)) {
-    throw "Dedicated Orca key is missing: $Key. Run this script with -Apply first."
+    throw "Dedicated WSL client key is missing: $Key. Run this script with -Apply first."
 }
 if (-not (Test-Path -LiteralPath "$Key.pub")) {
-    throw "Dedicated Orca public key is missing: $Key.pub"
+    throw "Dedicated WSL client public key is missing: $Key.pub"
+}
+
+if (Test-Path -LiteralPath $HerdrInstallDir) {
+    $env:Path = "$HerdrInstallDir;$env:Path"
+}
+$HerdrCommand = Get-Command herdr -ErrorAction SilentlyContinue
+if ($null -eq $HerdrCommand) {
+    throw "Herdr is not installed. Run this script with -Apply -InstallHerdr first."
+}
+$HerdrDetectedVersion = (& $HerdrCommand.Source --version | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($HerdrDetectedVersion)) {
+    throw "Installed Herdr command failed verification: herdr --version"
+}
+if ($HerdrDetectedVersion -notmatch [regex]::Escape($HerdrVersion)) {
+    throw "Expected Herdr $HerdrVersion, got: $HerdrDetectedVersion"
 }
 
 $PortTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 2222 -WarningAction SilentlyContinue
@@ -188,10 +221,10 @@ $SshArgs = @(
 )
 & ssh.exe @SshArgs
 if ($LASTEXITCODE -ne 0) {
-    throw "Loopback SSH or Orca node-pty prerequisites failed verification."
+    throw "Loopback SSH or Herdr node-pty prerequisites failed verification."
 }
 
 Write-Host "Verified WSL distro: $Distro"
 Write-Host "Verified SSH target: $Target on 127.0.0.1:2222"
 Write-Host "Verified dedicated key: $Key"
-Write-Host "Expected Orca version: $OrcaVersion"
+Write-Host "Verified Herdr client: $HerdrDetectedVersion"

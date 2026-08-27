@@ -10,8 +10,8 @@
     home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Legacy fallback only; not loaded by the default Orca/Prime profile.
-    herdr.url = "github:herdrdev/herdr/v0.7.5";
+    # Stable Herdr server/client, shared by the regular WSL shell and Windows.
+    herdr.url = "github:herdrdev/herdr/v0.8.2";
 
     # Opt-in presentation skill only. The lockfile records the exact commit.
     i-have-adhd = {

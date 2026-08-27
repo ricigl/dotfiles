@@ -1,4 +1,4 @@
-{ config, lib, pkgs, user, agentPackages, ... }:
+{ config, lib, pkgs, user, herdr, agentPackages, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
@@ -24,7 +24,7 @@ let
   '';
 in
 {
-  home.packages = with pkgs; [
+  home.packages = (with pkgs; [
     ripgrep
     fd
     fzf
@@ -42,6 +42,8 @@ in
     agentPackages.gh-axi
     primeLauncher
     primeMaintenance
+  ]) ++ [
+    herdr.packages.${pkgs.system}.default
   ];
 
   fonts.fontconfig.enable = true;
@@ -73,7 +75,7 @@ in
     syntaxHighlighting.enable = true;
 
     initContent = lib.mkBefore ''
-      # Keep Orca relay and other noninteractive SSH sessions quiet.
+      # Keep Herdr relay and other noninteractive SSH sessions quiet.
       [[ -o interactive ]] || return
 
       # Configure the WSLg X server for a Brazilian ABNT2 keyboard.
@@ -109,4 +111,8 @@ in
   home.file.".config/nvim".source =
     config.lib.file.mkOutOfStoreSymlink
       "${dotfiles}/home/.config/nvim";
+
+  home.file.".config/herdr".source =
+    config.lib.file.mkOutOfStoreSymlink
+      "${dotfiles}/home/.config/herdr";
 }

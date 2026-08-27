@@ -1,4 +1,4 @@
-{ config, pkgs, herdr, unstablePkgs, ... }:
+{ config, pkgs, unstablePkgs, ... }:
 
 let
   dotfiles = "${config.home.homeDirectory}/.dotfiles";
@@ -10,16 +10,11 @@ in
     wezterm
   ]) ++ [
     unstablePkgs.pi-coding-agent
-    herdr.packages.${pkgs.system}.default
   ];
 
   home.file.".config/wezterm".source =
     config.lib.file.mkOutOfStoreSymlink
       "${dotfiles}/home/.config/wezterm";
-
-  home.file.".config/herdr".source =
-    config.lib.file.mkOutOfStoreSymlink
-      "${dotfiles}/home/.config/herdr";
 
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink

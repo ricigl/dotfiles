@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepare Ubuntu WSL for Orca's loopback-only SSH relay.
+# Prepare Ubuntu WSL for Herdr's loopback-only SSH relay.
 set -euo pipefail
 
 VERIFY_ONLY=0
@@ -158,7 +158,7 @@ if ! ss -ltn | grep -Eq '127\.0\.0\.1:2222([[:space:]]|$)'; then
 fi
 
 printf '%s\n' \
-  "Ubuntu WSL Orca prerequisites verified." \
+  "Ubuntu WSL Herdr SSH prerequisites verified." \
   "User: $WSL_USER" \
   "SSH: 127.0.0.1:2222, key-only" \
   "Relay tools: $(command -v make), $(command -v g++), $(command -v python3)"

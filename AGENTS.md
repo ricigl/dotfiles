@@ -5,13 +5,13 @@ This is the single tracked shared policy for Antigravity CLI (`agy`), Pi, and Pr
 ## Durable repository decisions
 
 - The target is Ubuntu WSL2 with the registered distro name exactly `Ubuntu`.
-- Windows Orca reaches Ubuntu only through key-authenticated SSH on `127.0.0.1:2222`.
+- Windows Herdr reaches Ubuntu only through key-authenticated SSH on `127.0.0.1:2222`.
 - Repositories and worktrees belong under `/home/...`, never `/mnt/c`. Use Linux Git only.
 - Firstmate owns creation, reuse, movement, and removal of project and crew worktrees under `~/firstmate/projects` through its reviewed Linux Treehouse backend.
-- Windows Orca connects to WSL over SSH and may inspect or operate inside an explicitly selected Firstmate worktree, but it must not create, move, remove, or prune those worktrees.
+- Windows Herdr connects to WSL over SSH and may inspect or operate inside an explicitly selected Firstmate worktree, but it must not create, move, remove, or prune those worktrees.
 - AGY, Pi, and Prime must never run `git worktree add`, `git worktree remove`, `git worktree prune`, Treehouse allocation, or another worktree manager. Only Firstmate's orchestrator may allocate its crew worktrees.
-- Agents may operate only inside a worktree explicitly assigned by Firstmate and exposed through the Orca/SSH workflow.
-- The regular Home Manager shell owns daily shell UX, Node 24, the three harness launchers, shared paths, and Nix-provided support tools.
+- Agents may operate only inside a worktree explicitly assigned by Firstmate and exposed through the Herdr/SSH workflow.
+- The regular Home Manager shell owns daily shell UX, Node 24, the three harness launchers, Herdr, shared paths, and Nix-provided support tools.
 - `nix develop .#orca-prime` is an optional Node 22/build-validation shell. It is not required to launch AGY, Pi, Prime, or Firstmate.
 - Firstmate's project coordination home is `~/firstmate`; project roots are under `~/firstmate/projects`.
 - Firstmate must use its reviewed Linux `tmux`/Treehouse backend for project and crew worktrees. Do not select its macOS-only `orca` backend in this WSL/Windows topology.
@@ -59,7 +59,7 @@ This is the single tracked shared policy for Antigravity CLI (`agy`), Pi, and Pr
 
 ## Codebase Memory MCP - token-efficient workflow
 
-Codebase Memory is configured as the `codebase_memory` stdio MCP server for AGY, Pi, and Prime. It uses the pinned Nix package `codebase-memory-mcp` on PATH, working directory `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, and allowed root `/home/ricardo/src`. Diagnostics remain disabled, and destructive tools remain disabled.
+Codebase Memory is configured as the `codebase_memory` stdio MCP server for AGY, Pi, and Prime. It uses the pinned Nix package `codebase-memory-mcp` on PATH, working directory `/home/ricardo/src`, cache `/home/ricardo/.cache/codebase-memory-mcp`, and allowed root `/home/ricardo`. Diagnostics remain disabled, and destructive tools remain disabled. Index only explicit repositories under `/home/ricardo/src` or `/home/ricardo/firstmate/projects`; never index `/home/ricardo` itself or credential/config directories.
 
 Use Codebase Memory for unfamiliar, multi-file, or impact-analysis work. Skip it for trivial one-file edits, known paths, documentation-only changes, and simple commands.
 
@@ -90,7 +90,7 @@ Before proposing a commit or pull request:
 ./scripts/validate.sh
 ```
 
-Also parse `scripts/windows-orca-bootstrap.ps1`, run ShellCheck on shell scripts, and run target smoke checks in Ubuntu WSL. If the current environment cannot execute a required boundary, report it as unverified rather than fabricating success.
+- Also parse `scripts/windows-herdr-bootstrap.ps1`, run ShellCheck on shell scripts, and run target smoke checks in Ubuntu WSL. If the current environment cannot execute a required boundary, report it as unverified rather than fabricating success.
 
 ## General engineering rules
 

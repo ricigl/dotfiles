@@ -1,32 +1,32 @@
-# Orca Prime Home Manager Plan
+# Herdr Thin-Client Home Manager Plan
 
 ## Scope
 
-Goal: maintain a single regular Ubuntu WSL Home Manager environment for AGY, Pi, and Prime Agent, with an optional `orca-prime` Node 22/build-validation shell and Windows Orca access through loopback SSH on branch `feat/orca-prime-codebase-memory`.
+Goal: maintain a single regular Ubuntu WSL Home Manager environment for AGY, Pi, Prime Agent, and Herdr, with an optional `orca-prime` Node 22/build-validation shell and Windows Herdr access through loopback SSH on branch `herdr-agents-nix`.
 
 Non-goals:
 
 - Do not change `origin/main`.
 - Do not commit or push during planning.
 - Do not run installers or package managers during planning.
-- Do not commit credentials, SSH keys, Prime auth, sessions, daemon state, caches, npm cache, downloaded runtime packages, Orca installers, or validation evidence.
+- Do not commit credentials, SSH keys, Prime auth, sessions, daemon state, caches, npm cache, downloaded runtime packages, Orca or Herdr installers, or validation evidence.
 - Do not claim Prime, Lavish, gh-axi, AGY, Pi, or Codebase Memory are reproducibly Nix-packaged until fixed-output Nix packaging exists and is validated.
-- Do not allow AGY, Pi, Prime, or Firstmate to create, remove, move, or prune Orca-owned worktrees. Agents may operate only inside an Orca-assigned worktree.
+- Do not allow AGY, Pi, Prime, or Firstmate to create, remove, move, or prune Herdr-owned worktrees. Agents may operate only inside a Herdr-assigned worktree.
 
 Authority boundaries:
 
 - Repository owns declarative, reviewable configuration only.
 - Home Manager may own exact policy/config files for Prime/Lavish and public opt-in skill files.
-- Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, shared policy/skill/MCP links, and pinned Nix packages for support tools; only the three primary agent binaries remain transitional script installs.
+- Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, Herdr, shared policy/skill/MCP links, and pinned Nix packages for support tools; only the three primary agent binaries remain transitional script installs.
 - The optional `orca-prime` shell owns Node 22, Python, uv, gh, jq, and build tooling for deterministic validation only. It is not required to launch Prime, AGY, Pi, or Firstmate.
-- Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Orca can relay over SSH, so they cannot live only inside a per-user Nix shell.
-- Windows PowerShell bootstrap owns Windows-side WSL name checks, `.wslconfig`, SSH key creation/copy, Orca installer verification, and terminal/node-pty prerequisite checks.
+- Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Herdr can relay over SSH, so they cannot live only inside a per-user Nix shell.
+- Windows PowerShell bootstrap owns Windows-side WSL name checks, `.wslconfig`, SSH key creation/copy, Herdr installer verification, and terminal/node-pty prerequisite checks.
 - User owns secrets and auth: OpenAI/Prime auth, GitHub auth, Windows account secrets, SSH private keys, `authorized_keys` material before copy, session dirs, caches, and runtime downloads.
-- Ricardo's verified Windows Orca workflow is the source of truth for installer URL/checksum, expected Orca version `1.4.184`, and smoke-test behavior. If repo text conflicts, use Ricardo's verified values after approval.
+- Ricardo's verified Windows Herdr workflow is the source of truth for installer URL/checksum, expected Herdr version `0.8.2`, and smoke-test behavior. If repo text conflicts, use Ricardo's verified values after approval.
 
 ## Current migration decision: unified regular Home Manager agents
 
-Status: implemented on `orca-agents-nix`; target WSL activation and smoke validation remain required.
+Status: inherited from `orca-agents-nix`; the Herdr branch-specific architecture below is authoritative. Target WSL activation and smoke validation remain required.
 
 The regular Home Manager shell becomes the daily runtime for all three harnesses:
 
@@ -37,11 +37,11 @@ The regular Home Manager shell becomes the daily runtime for all three harnesses
 - Pi, AGY, and Prime retain client-specific MCP configuration schemas but point at the same local Codebase Memory policy and binary.
 - `nix develop .#orca-prime` remains available only for Node 22, Python, uv, gh, jq, compiler, and package validation. It is not required by any agent launcher.
 
-The policy surface becomes one tracked root `AGENTS.md` linked to Pi, AGY, and Prime. Prime-specific safety, Firstmate worktree authority, Orca SSH boundaries, Codebase Memory rules, telemetry boundaries, and engineering rules are merged into that common source. The tracked `home/.prime/agent/AGENTS.md` file is removed; Prime settings remain separately managed in `home/.prime/agent/settings.json`.
+The policy surface becomes one tracked root `AGENTS.md` linked to Pi, AGY, and Prime. Prime-specific safety, Firstmate worktree authority, Herdr SSH boundaries, Codebase Memory rules, telemetry boundaries, and engineering rules are merged into that common source. The tracked `home/.prime/agent/AGENTS.md` file is removed; Prime settings remain separately managed in `home/.prime/agent/settings.json`.
 
 Firstmate becomes the user-owned project coordination home at `~/firstmate`, with project clones and Treehouse-managed crew worktrees under `~/firstmate/projects`. The dotfiles repository remains the installer and policy source; Firstmate's `data/`, `state/`, `config/`, sessions, caches, and project runtime state remain outside Git.
 
-Firstmate owns project and crew worktree lifecycle through its reviewed Linux `tmux`/Treehouse backend. Windows Orca connects to WSL over SSH and may inspect or operate inside an explicitly selected Firstmate worktree, but it does not create, move, remove, or prune worktrees. The pinned Firstmate macOS-only `orca` backend is not used in this topology.
+Firstmate owns project and crew worktree lifecycle through its reviewed Linux `tmux`/Treehouse backend. Windows Herdr connects to WSL over SSH and may inspect or operate inside an explicitly selected Firstmate worktree, but it does not create, move, remove, or prune worktrees. The pinned Firstmate macOS-only `orca` backend is not used in this topology.
 
 Implementation order:
 
@@ -51,16 +51,16 @@ Implementation order:
 4. Link the common policy and skills to all three clients and preserve client-specific MCP schemas.
 5. Package Firstmate and Treehouse while keeping `~/firstmate/projects` and all runtime state mutable outside the Nix store.
 6. Retain `.#orca-prime` as an optional validation shell and remove agent-runtime assumptions from its launcher/tests.
-7. Run static checks, activation builds, regular-shell smoke checks, direct harness version/help checks, MCP read-only checks, and Orca SSH acceptance on WSL.
+7. Run static checks, activation builds, regular-shell smoke checks, direct harness version/help checks, MCP read-only checks, and Herdr SSH acceptance on WSL.
 
 Acceptance criteria:
 
-- A fresh regular Home Manager shell resolves `agy`, `pi`, `prime`, `prime-agent`, `gh-axi`, `lavish-axi`, `no-mistakes`, and `codebase-memory-mcp` without entering `nix develop`.
+- A fresh regular Home Manager shell resolves `herdr`, `agy`, `pi`, `prime`, `prime-agent`, `gh-axi`, `lavish-axi`, `no-mistakes`, and `codebase-memory-mcp` without entering `nix develop`.
 - All three harnesses load the same common `AGENTS.md`, Caveman, and pinned `i-have-adhd` skill through their supported paths.
 - All three harnesses can perform a bounded read-only Codebase Memory query with the same local safety boundary.
 - `nix develop .#orca-prime` still provides the pinned Node 22/build-validation toolchain.
-- `~/firstmate/projects` is reachable from Orca's WSL SSH terminal, and Firstmate's Linux Treehouse backend owns crew worktree lifecycle.
-- The Windows Orca client cannot create or remove Firstmate-owned worktrees through the SSH workflow.
+- `~/firstmate/projects` is reachable from Herdr's WSL SSH terminal, and Firstmate's Linux Treehouse backend owns crew worktree lifecycle.
+- The Windows Herdr client cannot create or remove Firstmate-owned worktrees through the SSH workflow.
 - No credentials, sessions, caches, generated state, or project runtime data enter the dotfiles repository.
 
 Nix packaging acceptance additions:
@@ -70,6 +70,36 @@ Nix packaging acceptance additions:
 - Nix package outputs use release hashes or committed npm lockfile integrity values; no `lib.fakeHash` remains.
 
 The earlier Prime-only shell, Prime-specific policy, and Prime-only skill-link requirements in Phases 3, 4, 7, 8, and 8C are historical records of the already-landed baseline. Where they conflict with this current migration decision, this unified Home Manager contract is authoritative.
+
+## Herdr Thin-Client Migration - `herdr-agents-nix`
+
+Branch `herdr-agents-nix` is based on `orca-agents-nix`. This variant replaces the Windows Orca client with Herdr while preserving the Ubuntu WSL SSH transport.
+
+### Architecture
+
+- The regular Home Manager profile owns the Linux Herdr package and authored `~/.config/herdr` link. The package moves out of the legacy-only module and is available in the normal home-agent shell.
+- Update the pinned Herdr flake input from `v0.7.5` to the current stable `v0.8.2`, so the Linux server and Windows client share the release/protocol generation that supports Windows `herdr --remote`.
+- Windows uses the reviewed official Herdr PowerShell installer from `https://herdr.dev/install.ps1`, with stable-channel behavior. Do not install Orca on Windows and remove the Orca installer option and Orca-specific documentation from this branch.
+- Retain Ubuntu systemd, OpenSSH, key-only authentication, loopback binding, port `2222`, `AllowUsers`, and the existing managed sshd configuration. Herdr remote attach uses normal OpenSSH authentication and must not require a new server or public listener.
+- Keep `~/firstmate/projects` as the Linux project root. The intended client command is `herdr --remote user@server:2222` or an SSH-config alias.
+- User credentials, private keys, `authorized_keys`, Herdr sessions, caches, and runtime state remain outside Git.
+
+### Implementation order
+
+1. Move Herdr package/config ownership into the regular Home Manager module and remove its direct legacy declaration.
+2. Update the locked Herdr input to stable `v0.8.2` and verify the flake lock changes are limited to that input and required dependencies.
+3. Rename the Windows bootstrap to a Herdr/SSH bootstrap, remove Orca download/install/checksum logic, and add an explicit stable Herdr installation option using the reviewed official PowerShell installer. Preserve the WSL and SSH verification flow.
+4. Update README, common policy, validation, smoke tests, repository map, and rollback text from Orca to Herdr where this branch changes the client. Keep the SSH server path and safety guarantees unchanged.
+5. Run shell, PowerShell parser, JSON, Nix evaluation/build, and target WSL SSH/Herdr checks. Do not run the Windows installer or change host SSH state from the assistant environment.
+
+### Acceptance criteria
+
+- `herdr --version` resolves from the regular WSL Home Manager shell at stable `0.8.2` after activation.
+- The legacy profile no longer declares a separate Herdr package/config link; it inherits the regular profile’s Herdr ownership.
+- The Windows bootstrap has no Orca installation path and offers Herdr installation only behind explicit apply/install flags.
+- Ubuntu sshd remains configured and validated at `127.0.0.1:2222`, with key-only authentication and no root login.
+- Windows installation instructions use the official Herdr PowerShell installer, and remote attach is documented as `herdr --remote user@server:2222`.
+- No Orca installer, credentials, private keys, sessions, caches, or generated runtime state is tracked.
 
 ## Proposed Repository Tree
 
@@ -91,21 +121,21 @@ The earlier Prime-only shell, Prime-specific policy, and Prime-only skill-link r
 |   |   |-- mcp/mcp.json                  # Pi shared MCP config
 |   |   |-- nvim/                         # retained base editor config
 |   |   |-- wezterm/                       # legacy module only
-|   |   `-- herdr/                         # legacy module only
+|   |   `-- herdr/                         # regular Home Manager Herdr config
 |   |-- .gemini/config/mcp_config.json    # AGY MCP config
 |   |-- .prime/
 |   |   `-- agent/
 |   |       `-- settings.json             # reviewed Prime settings only
 |   `-- .pi/agent/                        # legacy module only
 |-- modules/
-|   |-- home-base.nix                     # shell UX, Node 24, all agent launchers and PATH
+|   |-- home-base.nix                     # shell UX, Node 24, Herdr, launchers and PATH
 |   |-- home-common-agents.nix            # common AGENTS.md, skills, and MCP links
 |   |-- home-firstmate.nix                # Firstmate launcher and tmux
 |   |-- home-orca-prime.nix               # optional Prime settings and build-shell support
-|   `-- home-legacy-agents.nix            # optional WezTerm/Herdr fallback profile
+|   `-- home-legacy-agents.nix            # optional WezTerm/Pi/Claude/Codex fallback additions
 |-- scripts/
 |   |-- ubuntu-bootstrap.sh               # apt + sshd loopback prerequisites
-|   |-- windows-orca-bootstrap.ps1        # WSL/Orca/SSH verification
+|   |-- windows-herdr-bootstrap.ps1       # WSL/Herdr/SSH verification
 |   |-- install-prime-tools.sh             # regular-shell pinned Prime install
 |   |-- install-home-agents.sh             # reviewed AGY/Pi bootstrap install
 |   `-- validate.sh                        # local validation wrapper, no evidence committed
@@ -114,11 +144,11 @@ The earlier Prime-only shell, Prime-specific policy, and Prime-only skill-link r
 |   `-- npm/                               # committed dependency lockfiles
 |-- .no-mistakes.yaml                     # targeted gate policy, local-only evidence
 `-- tests/
-    |-- smoke-orca-prime.sh               # regular shell, optional dev shell, and SSH smoke checks
+    |-- smoke-herdr-agents.sh               # regular shell and optional dev-shell checks
     `-- test-prime-maintenance.sh          # Prime maintenance safety checks
 ```
 
-Tree can be flattened if Ricardo prefers fewer files, but module boundaries should stay clear: base, Orca Prime, legacy fallback, bootstrap, validation.
+The original Orca migration phases below are retained as historical baseline only. They do not authorize a Windows Orca installation or replace the Herdr variant above.
 
 ## Decisions Needing Ricardo Approval
 
@@ -127,8 +157,8 @@ Known verified values:
 - Common policy path: `AGENTS.md`, linked to `~/.pi/agent/AGENTS.md`, `~/.gemini/GEMINI.md`, and `~/.prime/agent/AGENTS.md`.
 - Prime settings path: `~/.prime/agent/settings.json`.
 - Shared skill paths: `~/.agents/skills/{caveman,i-have-adhd}`, plus client-compatible AGY and Prime links.
-- Orca `1.4.184` installer URL: `https://github.com/stablyai/orca/releases/download/v1.4.184/orca-windows-setup.exe`.
-- Orca installer SHA256: `7765f7f085d04b7fe662ec664825fedd81427dd586023f945182a46e0a0cf5be`.
+- Herdr stable release: `0.8.2`; Windows installer script: `https://herdr.dev/install.ps1`.
+- Herdr Windows installer script SHA256: `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`.
 - Prime installer source: `https://app.primeintellect.ai/prime-agent/install.sh`, invoked with version `0.8.0` only after review.
 - npm packages: `lavish-axi@0.1.50` and `gh-axi@0.1.30`, installed with `--ignore-scripts --no-audit --no-fund` during the transitional phase.
 - Codebase Memory MCP `0.10.8` portable Linux x86_64 release: `https://github.com/DeusData/codebase-memory-mcp/releases/download/v0.10.8/codebase-memory-mcp-linux-amd64-portable.tar.gz`.
@@ -145,7 +175,7 @@ Approval choices before implementation:
 - WSL distro handling: recommended verify exact registered name `Ubuntu` and fail closed; never rename an existing distro automatically.
 - Shared policy: use the repository-root `AGENTS.md` for AGY, Pi, and Prime; merge Prime safety/worktree rules into that common source and remove the separate tracked Prime `AGENTS.md`.
 - Firstmate home: use `~/firstmate` with `~/firstmate/projects`; Treehouse owns Linux project/crew worktrees.
-- Worktree authority: Firstmate owns Linux Treehouse worktrees; Windows Orca connects over SSH and does not create, move, remove, or prune them.
+- Worktree authority: Firstmate owns Linux Treehouse worktrees; Windows Herdr connects over SSH and does not create, move, remove, or prune them.
 
 ## Phased Tasks
 

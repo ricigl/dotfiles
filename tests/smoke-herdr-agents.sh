@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq prime prime-agent prime-maintenance no-mistakes agy pi firstmate treehouse fm-session-start.sh lavish-axi gh-axi codebase-memory-mcp; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq herdr prime prime-agent prime-maintenance no-mistakes agy pi firstmate treehouse fm-session-start.sh lavish-axi gh-axi codebase-memory-mcp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -15,6 +15,7 @@ for command_name in git make g++ python3 node npm nvim zsh starship jq prime pri
 done
 
 prime-maintenance --help >/dev/null
+herdr --version
 prime --version
 prime-agent --version
 no-mistakes --version
@@ -131,7 +132,7 @@ jq -e '
 ' "$settings" >/dev/null
 
 printf '%s\n' \
-  "Ubuntu WSL runtime smoke passed." \
+  "Ubuntu WSL Herdr runtime smoke passed." \
   "Repository: $(git rev-parse --show-toplevel 2>/dev/null || printf 'not inside Git')" \
   "Node: $(node --version)" \
   "Python: $(python3 --version)"

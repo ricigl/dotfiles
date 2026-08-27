@@ -18,7 +18,7 @@ for script in \
   scripts/install-prime-tools.sh \
   scripts/ubuntu-bootstrap.sh \
   scripts/validate.sh \
-  tests/smoke-orca-prime.sh \
+  tests/smoke-herdr-agents.sh \
   tests/test-prime-maintenance.sh; do
   bash -n "$script"
 done
@@ -57,6 +57,31 @@ grep -F 'pkgs.tmux' modules/home-firstmate.nix >/dev/null
 grep -F 'export FM_BACKEND=' modules/home-firstmate.nix >/dev/null
 grep -F 'FM_BACKEND:-tmux' modules/home-firstmate.nix >/dev/null
 grep -F 'exec pi "$@"' modules/home-firstmate.nix >/dev/null
+grep -F 'herdr.url = "github:herdrdev/herdr/v0.8.2"' flake.nix >/dev/null
+grep -F 'herdr.packages.${pkgs.system}.default' modules/home-base.nix >/dev/null
+grep -F 'home.file.".config/herdr"' modules/home-base.nix >/dev/null
+if grep -qi 'herdr' modules/home-legacy-agents.nix; then
+  printf '%s\n' "Legacy module must not declare Herdr directly." >&2
+  exit 1
+fi
+test -f scripts/windows-herdr-bootstrap.ps1
+test ! -e scripts/windows-orca-bootstrap.ps1
+if grep -nE 'InstallOrca|OrcaVersion|OrcaUrl|OrcaSha256|orca-windows-setup|windows-orca-bootstrap' scripts/windows-herdr-bootstrap.ps1; then
+  printf '%s\n' "Windows Herdr bootstrap still contains an Orca installation path." >&2
+  exit 1
+fi
+grep -F 'Install-Herdr' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'https://herdr.dev/install.ps1' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'herdr --remote user@server:2222' README.md >/dev/null
+for ssh_policy in \
+  'port 2222' \
+  'listenaddress 127.0.0.1:2222' \
+  'passwordauthentication no' \
+  'kbdinteractiveauthentication no' \
+  'pubkeyauthentication yes' \
+  'permitrootlogin no'; do
+  grep -F "$ssh_policy" scripts/ubuntu-bootstrap.sh >/dev/null
+done
 grep -F 'pi-mcp-adapter@2.27.0' home/.pi/agent/settings.json >/dev/null
 if command -v jq >/dev/null 2>&1; then
   jq -e '
