@@ -71,8 +71,25 @@ if grep -nE 'InstallOrca|OrcaVersion|OrcaUrl|OrcaSha256|orca-windows-setup|windo
   exit 1
 fi
 grep -F 'Install-Herdr' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Install-WezTerm' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'https://herdr.dev/install.ps1' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'wez.wezterm' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Microsoft.DesktopAppInstaller_8wekyb3d8bbwe' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Ensure-WinGet' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'AllowRegister' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Ensure-WinGet -AllowRegister' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F '$WinGetCommand = Ensure-WinGet' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Get-WezTermCommand' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+if grep -q 'weztermCheck' scripts/windows-herdr-bootstrap.ps1; then
+  printf '%s\n' "Install-WezTerm must not mask failed winget exit codes." >&2
+  exit 1
+fi
 grep -F 'herdr --remote user@server:2222' README.md >/dev/null
+grep -F 'windows-herdr-bootstrap.ps1" -Apply -InstallHerdr -InstallWezTerm' README.md >/dev/null
+grep -F 'wez.wezterm' README.md >/dev/null
+grep -F 'https://wezterm.org/install/windows.html#installing-on-windows' README.md >/dev/null
+grep -F 'https://learn.microsoft.com/windows/package-manager/winget/' README.md >/dev/null
+grep -F 'Microsoft.DesktopAppInstaller_8wekyb3d8bbwe' README.md >/dev/null
 for ssh_policy in \
   'port 2222' \
   'listenaddress 127.0.0.1:2222' \

@@ -3,6 +3,7 @@ param(
     [switch]$VerifyOnly,
     [switch]$Apply,
     [switch]$InstallHerdr,
+    [switch]$InstallWezTerm,
     [string]$Distro = "Ubuntu"
 )
 
@@ -18,6 +19,9 @@ if (-not $VerifyOnly -and -not $Apply) {
 if ($InstallHerdr -and -not $Apply) {
     throw "-InstallHerdr requires -Apply."
 }
+if ($InstallWezTerm -and -not $Apply) {
+    throw "-InstallWezTerm requires -Apply."
+}
 if ($Distro -ne "Ubuntu") {
     throw "This repository requires the WSL distro name exactly 'Ubuntu'."
 }
@@ -27,6 +31,7 @@ $HerdrInstallerUrl = "https://herdr.dev/install.ps1"
 $HerdrInstallerSha256 = "3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7"
 $HerdrInstallDir = Join-Path $env:LOCALAPPDATA "Programs\Herdr\bin"
 $HerdrInstaller = Join-Path ([System.IO.Path]::GetTempPath()) ("herdr-install-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
+$WezTermPackageId = "wez.wezterm"
 $Key = Join-Path $env:USERPROFILE ".ssh\orca-wsl-ed25519"
 $WslConfig = Join-Path $env:USERPROFILE ".wslconfig"
 
@@ -35,6 +40,117 @@ function Assert-Command {
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
         throw "Required command not found: $Name"
     }
+}
+
+function Ensure-WinGet {
+    param(
+        [switch]$AllowRegister
+    )
+
+    $windowsAppsDir = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
+    if ((Test-Path -LiteralPath $windowsAppsDir) -and ($env:Path -notlike "*$windowsAppsDir*")) {
+        $env:Path = "$windowsAppsDir;$env:Path"
+    }
+
+    $cmd = Get-Command winget.exe -ErrorAction SilentlyContinue
+    if (-not $cmd) {
+        $cmd = Get-Command winget -ErrorAction SilentlyContinue
+    }
+    if ($cmd) {
+        return $cmd
+    }
+
+    if ($AllowRegister) {
+        $appInstallerPkg = Get-AppxPackage -Name "Microsoft.DesktopAppInstaller" -ErrorAction SilentlyContinue
+        if ($appInstallerPkg) {
+            try {
+                Add-AppxPackage -RegisterByFamilyName -MainPackage "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe" -ErrorAction Stop
+            }
+            catch {
+            }
+
+            if ((Test-Path -LiteralPath $windowsAppsDir) -and ($env:Path -notlike "*$windowsAppsDir*")) {
+                $env:Path = "$windowsAppsDir;$env:Path"
+            }
+            $cmd = Get-Command winget.exe -ErrorAction SilentlyContinue
+            if (-not $cmd) {
+                $cmd = Get-Command winget -ErrorAction SilentlyContinue
+            }
+            if ($cmd) {
+                return $cmd
+            }
+        }
+    }
+
+    throw @"
+WinGet (winget.exe) is required but not found.
+WinGet is delivered through Windows App Installer and may require first-login registration.
+Official references:
+- Microsoft Store App Installer: https://apps.microsoft.com/detail/9nblggh4nns1 or https://aka.ms/getwinget
+- Microsoft Learn WinGet documentation: https://learn.microsoft.com/windows/package-manager/winget/
+If App Installer is already installed, try running:
+  Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+"@
+}
+
+function Get-WezTermCommand {
+    $knownDirs = @(
+        (Join-Path $env:ProgramFiles "WezTerm"),
+        (Join-Path $env:LOCALAPPDATA "Programs\WezTerm")
+    )
+    if (Test-Path "Env:ProgramFiles(x86)") {
+        $progFilesX86 = ${env:ProgramFiles(x86)}
+        if ($progFilesX86) {
+            $knownDirs += (Join-Path $progFilesX86 "WezTerm")
+        }
+    }
+
+    foreach ($dir in $knownDirs) {
+        if ($dir -and (Test-Path -LiteralPath $dir)) {
+            if ($env:Path -notlike "*$dir*") {
+                $env:Path = "$dir;$env:Path"
+            }
+        }
+    }
+
+    $cmd = Get-Command wezterm.exe -ErrorAction SilentlyContinue
+    if (-not $cmd) {
+        $cmd = Get-Command wezterm -ErrorAction SilentlyContinue
+    }
+    if (-not $cmd) {
+        $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+        $combined = "$userPath;$machinePath"
+        foreach ($p in ($combined -split ';')) {
+            if ($p -and (Test-Path -LiteralPath $p)) {
+                $candidate = Join-Path $p "wezterm.exe"
+                if (Test-Path -LiteralPath $candidate) {
+                    $env:Path = "$p;$env:Path"
+                    $cmd = Get-Command wezterm.exe -ErrorAction SilentlyContinue
+                    if ($cmd) { break }
+                }
+            }
+        }
+    }
+    return $cmd
+}
+
+function Install-WezTerm {
+    $winget = Ensure-WinGet -AllowRegister
+    $wingetArgs = @(
+        "install",
+        "--exact",
+        "--id", $WezTermPackageId,
+        "--source", "winget",
+        "--accept-source-agreements",
+        "--accept-package-agreements"
+    )
+    & $winget.Source @wingetArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "WinGet failed to install WezTerm ($WezTermPackageId) with exit code $LASTEXITCODE."
+    }
+
+    $null = Get-WezTermCommand
 }
 
 function Install-Herdr {
@@ -179,6 +295,10 @@ if ($Apply) {
         Install-Herdr
     }
 
+    if ($InstallWezTerm) {
+        Install-WezTerm
+    }
+
     Write-Host "Applied Windows-side configuration. Run 'wsl --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."
 }
 
@@ -202,6 +322,25 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($HerdrDetectedVersion))
 }
 if ($HerdrDetectedVersion -notmatch [regex]::Escape($HerdrVersion)) {
     throw "Expected Herdr $HerdrVersion, got: $HerdrDetectedVersion"
+}
+
+$WinGetCommand = Ensure-WinGet
+$WinGetDetectedVersion = (& $WinGetCommand.Source --version | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($WinGetDetectedVersion)) {
+    throw "WinGet verification failed: winget --version"
+}
+
+$WezTermCommand = Get-WezTermCommand
+if ($null -eq $WezTermCommand) {
+    $wingetList = & $WinGetCommand.Source list --exact --id $WezTermPackageId --source winget | Out-String
+    if ($LASTEXITCODE -eq 0 -and $wingetList -match [regex]::Escape($WezTermPackageId)) {
+        throw "WezTerm package '$WezTermPackageId' is installed via WinGet but 'wezterm.exe' was not found on PATH. A shell restart or PATH refresh may be required."
+    }
+    throw "WezTerm is not installed. Run this script with -Apply -InstallWezTerm first."
+}
+$WezTermDetectedVersion = (& $WezTermCommand.Source --version | Out-String).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($WezTermDetectedVersion)) {
+    throw "Installed WezTerm command failed verification: wezterm --version"
 }
 
 $PortTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 2222 -WarningAction SilentlyContinue
@@ -228,3 +367,5 @@ Write-Host "Verified WSL distro: $Distro"
 Write-Host "Verified SSH target: $Target on 127.0.0.1:2222"
 Write-Host "Verified dedicated key: $Key"
 Write-Host "Verified Herdr client: $HerdrDetectedVersion"
+Write-Host "Verified WinGet: $WinGetDetectedVersion"
+Write-Host "Verified WezTerm: $WezTermDetectedVersion"

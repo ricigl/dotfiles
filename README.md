@@ -20,7 +20,7 @@ The previous WezTerm, Claude Code, and Codex environment remains available as th
 
 | Layer | Owns |
 |---|---|
-| Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3` |
+| Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3`, Windows WezTerm terminal emulator, WinGet/App Installer |
 | Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Nix-packaged support tools including Herdr, `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, Herdr command, shared policy/skills/MCP config, Firstmate and Treehouse |
 | `.#orca-prime` | Optional Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, and build-validation environment |
 | Firstmate | Linux project-fleet coordination and Treehouse-managed project/crew worktrees under `~/firstmate/projects` |
@@ -34,6 +34,7 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - WSL distro name: `Ubuntu`
 - Herdr: `0.8.2`
 - Herdr Windows installer script SHA-256: `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`
+- Windows WezTerm WinGet package: `wez.wezterm`
 - Prime Agent: `0.8.0`
 - Lavish AXI: `0.1.50`
 - gh-axi: `0.1.30`
@@ -116,17 +117,36 @@ PermitRootLogin no
 AllowUsers <current Ubuntu user>
 ```
 
-### 2. Install Windows Herdr and create the dedicated SSH identity
+### 2. Install Windows Herdr, WezTerm, and create the dedicated SSH identity
 
 From PowerShell, locate the script through WSL and apply the Windows-side configuration:
 
 ```powershell
 $WslUser = (wsl.exe -d Ubuntu -- bash -lc 'printf %s "$USER"').Trim()
 $Repo = "\\wsl.localhost\Ubuntu\home\$WslUser\.dotfiles"
-& "$Repo\scripts\windows-herdr-bootstrap.ps1" -Apply -InstallHerdr
+& "$Repo\scripts\windows-herdr-bootstrap.ps1" -Apply -InstallHerdr -InstallWezTerm
 ```
 
-This preserves existing `.wslconfig` sections while setting conservative defaults, creates or reuses `%USERPROFILE%\.ssh\orca-wsl-ed25519`, authorizes only its public key in Ubuntu, installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1`, and verifies the loopback SSH connection and native build prerequisites. The installer script is verified against the recorded SHA-256 before execution.
+This preserves existing `.wslconfig` sections while setting conservative defaults, creates or reuses `%USERPROFILE%\.ssh\orca-wsl-ed25519`, authorizes only its public key in Ubuntu, installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1`, installs WezTerm on Windows via WinGet using exact package ID `wez.wezterm`, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. The Herdr installer script is verified against the recorded SHA-256 before execution.
+
+#### WezTerm and WinGet on Windows
+
+WezTerm is the Windows terminal emulator prerequisite for this environment. It is installed via WinGet with:
+
+```powershell
+winget install --exact --id wez.wezterm --source winget --accept-source-agreements --accept-package-agreements
+```
+
+Official references:
+- WezTerm installation guide: https://wezterm.org/install/windows.html#installing-on-windows
+- Microsoft Learn WinGet documentation: https://learn.microsoft.com/windows/package-manager/winget/
+- Microsoft Store App Installer: https://apps.microsoft.com/detail/9nblggh4nns1 (or https://aka.ms/getwinget)
+
+WinGet (`winget.exe`) is delivered through Windows App Installer and may require first-login registration. If WinGet is absent but App Installer is installed, register it using:
+
+```powershell
+Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+```
 
 To verify without applying changes:
 
@@ -491,7 +511,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `modules/home-firstmate.nix`: Firstmate launcher, explicit Linux backend guard, and tmux runtime dependency.
 - `modules/home-legacy-agents.nix`: WezTerm, Pi, Claude Code, and Codex fallback additions.
 - `scripts/ubuntu-bootstrap.sh`: Ubuntu system and sshd bootstrap.
-- `scripts/windows-herdr-bootstrap.ps1`: Windows Herdr installer, WSL resources, dedicated SSH key, and SSH verification.
+- `scripts/windows-herdr-bootstrap.ps1`: Windows Herdr installer, WezTerm installer via WinGet, WSL resources, dedicated SSH key, and SSH verification.
 - `scripts/install-prime-tools.sh`: pinned Prime Agent installation; this is the only support installer remaining.
 - `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation for the regular Home Manager shell.
 - `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, skills, Lavish, and gh-axi.
