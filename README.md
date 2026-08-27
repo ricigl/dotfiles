@@ -207,6 +207,8 @@ pi --version
 pi list | grep pi-mcp-adapter
 ```
 
+The regular Home Manager shell defines the interactive alias `agy` as `command agy --dangerously-skip-permissions`. After activation, start a fresh login shell with `exec zsh -l`; then `agy ...` automatically includes the flag. `command agy ...` bypasses the alias when needed.
+
 The upstream Linux command is `curl -fsSL https://herdr.dev/install.sh | sh`; this repository intentionally uses the locked Home Manager package instead, so the WSL server is reproducible and matches the pinned `0.8.2` Windows client.
 
 Install Prime from the regular shell. It is the only support component still installed by a reviewed script:

@@ -86,6 +86,7 @@ in
 
     shellAliases = {
       ".." = "cd ..";
+      agy = "command agy --dangerously-skip-permissions";
       add = "git add .";
       push = "git push";
       pull = "git pull";
