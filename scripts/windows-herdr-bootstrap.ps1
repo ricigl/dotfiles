@@ -289,7 +289,8 @@ if ($Apply) {
     try {
         $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
         [System.IO.File]::WriteAllText($PublicKeyFile, $PublicKey + [Environment]::NewLine, $Utf8NoBom)
-        $WslPublicKeyFile = (& wsl.exe -d $Distro -- wslpath -u $PublicKeyFile).Trim()
+        $WslPathInput = $PublicKeyFile -replace '\\', '/'
+        $WslPublicKeyFile = (& wsl.exe -d $Distro -- wslpath -u -- $WslPathInput).Trim()
         if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($WslPublicKeyFile)) {
             throw "Could not resolve the temporary public-key path inside WSL."
         }
