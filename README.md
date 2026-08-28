@@ -164,11 +164,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -Apply -InstallHerdr -InstallWezTerm -ConfigureHerdrAlias -ConfigureWezTerm -InstallHackNerdFont
 ```
 
-This preserves existing `.wslconfig` sections while setting conservative defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, configures an idempotent PowerShell-profile `herdr` function, copies the tracked WezTerm configuration to `%USERPROFILE%\.config\wezterm\wezterm.lua` with a timestamped backup of differing existing content, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. After opening a new PowerShell or WezTerm window, `herdr` connects to Ubuntu automatically; additional arguments such as `herdr --session agents` are forwarded.
+This preserves existing `.wslconfig` sections while setting conservative defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, configures an idempotent PowerShell-profile `herdr` function, creates a shell-independent command shim in `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` and adds it to the current user PATH, copies the tracked WezTerm configuration to `%USERPROFILE%\.config\wezterm\wezterm.lua` with a timestamped backup of differing existing content, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. After opening a new PowerShell, cmd.exe, or WezTerm window, bare `herdr` connects to Ubuntu automatically; additional arguments such as `herdr --session agents` are forwarded.
 
 The tracked WezTerm configuration is based on [Kun Cheng's example](https://github.com/kunchenguid/dotfiles/blob/main/home/.config/wezterm/wezterm.lua). It keeps the native Windows title bar and resize borders with `window_decorations = "TITLE | RESIZE"`, so the window remains draggable. `-InstallHackNerdFont` installs Hack Nerd Font v3.5.1 from the official Nerd Fonts release into the current user's Windows font directory after verifying SHA-256 `fa24da7de7cefe7766614d27762570b20453c852fc1d5b657111666df9a5e449`.
 
-When `-ConfigureHerdrAlias` is used, the bootstrap also creates the marked `wsl-herdr` entry in `%USERPROFILE%\.ssh\config`, selecting the dedicated `orca-wsl-ed25519` key and a stable `%USERPROFILE%\.ssh\orca-wsl-known-hosts` file. The PowerShell `herdr` function uses this target, so it does not depend on default SSH key discovery.
+When `-ConfigureHerdrAlias` is used, the bootstrap creates the marked `wsl-herdr` entry in `%USERPROFILE%\.ssh\config`, selecting the dedicated `orca-wsl-ed25519` key and a stable `%USERPROFILE%\.ssh\orca-wsl-known-hosts` file. It installs a dedicated command shim at `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` (which invokes the installed `herdr.exe --remote wsl-herdr %*` without recursing), adds `%LOCALAPPDATA%\Programs\Herdr\remote-bin` to the current user PATH idempotently without touching machine-wide PATH, and writes the marked PowerShell profile function. Both cmd.exe (such as default WezTerm sessions) and PowerShell sessions use this target, so bare `herdr` does not depend on default SSH key discovery or fall back to Windows-local sessions.
 
 #### Troubleshooting a crates.io HTTP 403
 
@@ -455,13 +455,13 @@ User: <your Ubuntu username>
 Private key: %USERPROFILE%\.ssh\orca-wsl-ed25519
 ```
 
-After `-ConfigureHerdrAlias`, the configured PowerShell function connects through the dedicated SSH target:
+After `-ConfigureHerdrAlias`, running bare `herdr` from either PowerShell or cmd.exe (including default WezTerm windows) connects through the dedicated SSH target:
 
-```powershell
+```cmd
 herdr
 ```
 
-The function invokes `herdr.exe --remote wsl-herdr`, preserving additional arguments such as `herdr --session agents`. To bypass the function and invoke the binary directly, use `herdr.exe --remote wsl-herdr`. Do not use the raw `ssh://user@127.0.0.1:2222` form unless that host has its own matching `IdentityFile` entry in the OpenSSH config.
+The command shim (`%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd`) and the PowerShell profile function both invoke `herdr.exe --remote wsl-herdr`, preserving additional arguments such as `herdr --session agents` without recursing. To bypass the alias and invoke the binary directly, use `herdr.exe --remote wsl-herdr`. Do not use the raw `ssh://user@127.0.0.1:2222` form unless that host has its own matching `IdentityFile` entry in the OpenSSH config.
 
 For repeat use, configure an SSH alias such as `wsl-herdr` and attach with `herdr --remote wsl-herdr`. Add projects by selecting explicit Linux paths such as `/home/<user>/src/<repository>` or `/home/<user>/firstmate/projects/<project>`.
 
@@ -584,6 +584,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.
 - `tests/smoke-herdr-agents.sh`: target-runtime acceptance checks for the Herdr/Nix-managed support environment.
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
+- `tests/test-windows-herdr-shim.sh`: contract tests for the Windows Herdr command shim and PATH handling.
 - `home/`: repository-authored configuration linked by Home Manager.
 
 ## Notes

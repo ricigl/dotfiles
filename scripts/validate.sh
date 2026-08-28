@@ -20,9 +20,11 @@ for script in \
   scripts/ubuntu-authorize-windows-key.sh \
   scripts/validate.sh \
   tests/smoke-herdr-agents.sh \
-  tests/test-prime-maintenance.sh; do
+  tests/test-prime-maintenance.sh \
+  tests/test-windows-herdr-shim.sh; do
   bash -n "$script"
 done
+./tests/test-windows-herdr-shim.sh >/dev/null
 python3 -c 'import ast, pathlib; path = pathlib.Path("scripts/prime-maintenance.py"); ast.parse(path.read_text(encoding="utf-8"), filename=str(path))'
 
 json_files=(
@@ -124,6 +126,11 @@ fi
 grep -F 'Install-Herdr' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'Install-WezTerm' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'ConfigureHerdrAlias' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Programs\Herdr\remote-bin' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'herdr.cmd' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F -- '--remote wsl-herdr %*' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F '[Environment]::GetEnvironmentVariable("Path", "User")' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F '[Environment]::SetEnvironmentVariable("Path",' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F '# >>> herdr WSL remote alias >>>' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F '# <<< herdr WSL remote alias <<<' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F '# >>> herdr WSL SSH config >>>' scripts/windows-herdr-bootstrap.ps1 >/dev/null
@@ -133,6 +140,16 @@ grep -F 'IdentityFile $keyPath' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'UserKnownHostsFile $knownHostsPath' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'Get-Command herdr.exe -CommandType Application' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F -- '--remote wsl-herdr @args' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+python3 -c '
+from pathlib import Path
+content = Path("scripts/windows-herdr-bootstrap.ps1").read_text(encoding="utf-8")
+assert "Programs\\Herdr\\remote-bin" in content
+assert "herdr.cmd" in content
+assert "@\"%~dp0..\\bin\\herdr.exe\" --remote wsl-herdr %*" in content
+assert "[Environment]::SetEnvironmentVariable(\"Path\", $newUserPath, \"User\")" in content
+assert "Get-Command herdr.exe -CommandType Application" in content
+assert "Get-Command herdr " not in content
+'
 grep -F 'https://herdr.dev/install.ps1' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'wez.wezterm' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'Microsoft.DesktopAppInstaller_8wekyb3d8bbwe' scripts/windows-herdr-bootstrap.ps1 >/dev/null
@@ -159,6 +176,8 @@ grep -F 'Public key fingerprint' scripts/windows-herdr-key-bootstrap.ps1 >/dev/n
 grep -F 'ssh-keygen -lf -' scripts/ubuntu-authorize-windows-key.sh >/dev/null
 grep -F 'getent passwd' scripts/ubuntu-authorize-windows-key.sh >/dev/null
 grep -F 'herdr.exe --remote wsl-herdr' README.md >/dev/null
+grep -F 'Programs\Herdr\remote-bin' README.md >/dev/null
+grep -F 'herdr.cmd' README.md >/dev/null
 grep -F 'powershell.exe -NoProfile -ExecutionPolicy Bypass' README.md >/dev/null
 grep -F 'windows-herdr-key-bootstrap.ps1' README.md >/dev/null
 grep -F 'ubuntu-authorize-windows-key.sh' README.md >/dev/null

@@ -42,6 +42,8 @@ $HerdrVersion = "0.8.2"
 $HerdrInstallerUrl = "https://herdr.dev/install.ps1"
 $HerdrInstallerSha256 = "3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7"
 $HerdrInstallDir = Join-Path $env:LOCALAPPDATA "Programs\Herdr\bin"
+$HerdrRemoteBinDir = Join-Path $env:LOCALAPPDATA "Programs\Herdr\remote-bin"
+$HerdrShimFile = Join-Path $HerdrRemoteBinDir "herdr.cmd"
 $HerdrInstaller = Join-Path ([System.IO.Path]::GetTempPath()) ("herdr-install-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
 $WezTermPackageId = "wez.wezterm"
 $HackNerdFontVersion = "3.5.1"
@@ -345,6 +347,34 @@ function Set-HerdrPowerShellAlias {
     }
     [System.IO.File]::WriteAllText($HerdrSshConfig, $updatedSshConfig, [System.Text.UTF8Encoding]::new($false))
 
+    $remoteBinParent = Split-Path -Parent -Path $HerdrShimFile
+    if ($remoteBinParent -and -not (Test-Path -LiteralPath $remoteBinParent)) {
+        New-Item -ItemType Directory -Path $remoteBinParent -Force | Out-Null
+    }
+
+    $shimContent = '@"%~dp0..\bin\herdr.exe" --remote wsl-herdr %*' + "`r`n"
+    [System.IO.File]::WriteAllText($HerdrShimFile, $shimContent, [System.Text.UTF8Encoding]::new($false))
+
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $pathEntries = if ($userPath) { @($userPath -split ';' | Where-Object { [string]::IsNullOrWhiteSpace($_) -eq $false }) } else { @() }
+    $remoteBinNormalized = $HerdrRemoteBinDir.TrimEnd('\')
+    $alreadyInUserPath = $false
+    foreach ($entry in $pathEntries) {
+        if ($entry.Trim().TrimEnd('\') -ieq $remoteBinNormalized) {
+            $alreadyInUserPath = $true
+            break
+        }
+    }
+    if (-not $alreadyInUserPath) {
+        $newUserEntries = @($HerdrRemoteBinDir) + $pathEntries
+        $newUserPath = $newUserEntries -join ';'
+        [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
+    }
+
+    if ($env:Path -notlike "*$HerdrRemoteBinDir*") {
+        $env:Path = "$HerdrRemoteBinDir;$env:Path"
+    }
+
     $profilePath = [string]$PROFILE
     $profileParent = Split-Path -Parent -Path $profilePath
     if ($profileParent -and -not (Test-Path -LiteralPath $profileParent)) {
@@ -378,6 +408,7 @@ function Set-HerdrPowerShellAlias {
     }
     [System.IO.File]::WriteAllText($profilePath, $updated, [System.Text.UTF8Encoding]::new($false))
     Write-Host "Configured Herdr SSH target wsl-herdr in $HerdrSshConfig"
+    Write-Host "Configured Herdr command shim in $HerdrShimFile and added to User PATH"
     Write-Host "Configured PowerShell Herdr alias in $profilePath. Open a new PowerShell or WezTerm window to use it."
 }
 
@@ -454,16 +485,38 @@ if ($Apply) {
     Write-Host "Applied Windows-side configuration. Run 'wsl.exe --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."
 }
 
-if (Test-Path -LiteralPath $HerdrInstallDir) {
-    $env:Path = "$HerdrInstallDir;$env:Path"
+if (Test-Path -LiteralPath $HerdrRemoteBinDir) {
+    if ($env:Path -notlike "*$HerdrRemoteBinDir*") {
+        $env:Path = "$HerdrRemoteBinDir;$env:Path"
+    }
 }
-$HerdrCommand = Get-Command herdr -ErrorAction SilentlyContinue
+if (Test-Path -LiteralPath $HerdrInstallDir) {
+    if ($env:Path -notlike "*$HerdrInstallDir*") {
+        $env:Path = "$HerdrInstallDir;$env:Path"
+    }
+}
+$HerdrCommand = Get-Command herdr.exe -CommandType Application -ErrorAction SilentlyContinue
+if ($null -eq $HerdrCommand) {
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $combined = "$userPath;$machinePath"
+    foreach ($p in ($combined -split ';')) {
+        if ($p -and (Test-Path -LiteralPath $p)) {
+            $candidate = Join-Path $p "herdr.exe"
+            if (Test-Path -LiteralPath $candidate) {
+                $env:Path = "$p;$env:Path"
+                $HerdrCommand = Get-Command herdr.exe -CommandType Application -ErrorAction SilentlyContinue
+                if ($HerdrCommand) { break }
+            }
+        }
+    }
+}
 if ($null -eq $HerdrCommand) {
     throw "Herdr is not installed. Run this script with -Apply -InstallHerdr first."
 }
 $HerdrDetectedVersion = (& $HerdrCommand.Source --version | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($HerdrDetectedVersion)) {
-    throw "Installed Herdr command failed verification: herdr --version"
+    throw "Installed Herdr command failed verification: herdr.exe --version"
 }
 if ($HerdrDetectedVersion -notmatch [regex]::Escape($HerdrVersion)) {
     throw "Expected Herdr $HerdrVersion, got: $HerdrDetectedVersion"
