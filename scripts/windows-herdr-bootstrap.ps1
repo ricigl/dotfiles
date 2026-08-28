@@ -285,8 +285,13 @@ if ($Apply) {
         throw "Missing public key: $Key.pub"
     }
 
-    Get-Content -LiteralPath "$Key.pub" -Raw |
-        & wsl.exe -d $Distro -- bash -lc 'set -eu; umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; IFS= read -r key; grep -qxF "$key" ~/.ssh/authorized_keys || printf "%s\n" "$key" >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
+    $PublicKey = [System.IO.File]::ReadAllText("$Key.pub").Trim()
+    if ([string]::IsNullOrWhiteSpace($PublicKey)) {
+        throw "The dedicated WSL client public key is empty: $Key.pub"
+    }
+    $PublicKeyBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($PublicKey))
+    $AuthorizeKeyScript = 'set -eu; umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; key="$(printf "%s" "$1" | base64 -d)"; grep -qxF "$key" ~/.ssh/authorized_keys || printf "%s\n" "$key" >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
+    & wsl.exe -d $Distro -- bash -lc $AuthorizeKeyScript -- $PublicKeyBase64
     if ($LASTEXITCODE -ne 0) {
         throw "Could not authorize the dedicated WSL client public key in Ubuntu."
     }
@@ -351,6 +356,7 @@ if (-not $PortTest.TcpTestSucceeded) {
 $KnownHosts = Join-Path $env:TEMP "orca-wsl-known-hosts"
 $SshArgs = @(
     "-o", "BatchMode=yes",
+    "-o", "IdentitiesOnly=yes",
     "-o", "StrictHostKeyChecking=accept-new",
     "-o", "UserKnownHostsFile=$KnownHosts",
     "-i", $Key,
