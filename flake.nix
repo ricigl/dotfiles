@@ -12,6 +12,7 @@
 
     # Stable Herdr server/client, shared by the regular WSL shell and Windows.
     herdr.url = "github:herdrdev/herdr/v0.8.2";
+    herdr.inputs.nixpkgs.follows = "nixpkgs";
 
     # Opt-in presentation skill only. The lockfile records the exact commit.
     i-have-adhd = {

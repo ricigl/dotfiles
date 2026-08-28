@@ -93,6 +93,8 @@ grep -F 'export FM_BACKEND=' modules/home-firstmate.nix >/dev/null
 grep -F 'FM_BACKEND:-tmux' modules/home-firstmate.nix >/dev/null
 grep -F 'exec pi "$@"' modules/home-firstmate.nix >/dev/null
 grep -F 'herdr.url = "github:herdrdev/herdr/v0.8.2"' flake.nix >/dev/null
+grep -F 'herdr.inputs.nixpkgs.follows = "nixpkgs";' flake.nix >/dev/null
+python3 -c 'import json; from pathlib import Path; lock=json.loads(Path("flake.lock").read_text()); assert lock["nodes"]["herdr"]["inputs"]["nixpkgs"] == ["nixpkgs"]; assert "nixpkgs" not in lock["nodes"]'
 grep -F 'herdr.packages.${pkgs.system}.default' modules/home-base.nix >/dev/null
 grep -F 'home.file.".config/herdr"' modules/home-base.nix >/dev/null
 if grep -qi 'herdr' modules/home-legacy-agents.nix; then

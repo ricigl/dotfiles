@@ -166,6 +166,18 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 
 This preserves existing `.wslconfig` sections while setting conservative defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation.
 
+#### Troubleshooting a crates.io HTTP 403
+
+If `./bootstrap.sh` reports a 403 for `https://crates.io/api/v1/crates/.../download` while building Herdr, the checkout is using an outdated nested nixpkgs lock. Pull the current branch and retry; Herdr is deliberately locked to the repository's root nixpkgs input, whose cargo importer uses the static crates.io CDN with the same Cargo checksums:
+
+```bash
+cd ~/.dotfiles
+git pull --ff-only origin herdr-agents-nix
+./bootstrap.sh
+```
+
+Do not disable Nix hashes or replace the locked Herdr dependency with an unpinned source. If the error still names the API endpoint after pulling, verify the checkout with `git log -1 --oneline` and `git status --short --branch` before changing the lockfile.
+
 #### WezTerm and WinGet on Windows
 
 WezTerm is the Windows terminal emulator prerequisite for this environment. It is installed via WinGet with:
