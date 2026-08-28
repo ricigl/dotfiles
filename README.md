@@ -455,13 +455,13 @@ User: <your Ubuntu username>
 Private key: %USERPROFILE%\.ssh\orca-wsl-ed25519
 ```
 
-For a direct attach from PowerShell, use:
+After `-ConfigureHerdrAlias`, the configured PowerShell function connects through the dedicated SSH target:
 
 ```powershell
-herdr --remote ssh://<your Ubuntu username>@127.0.0.1:2222
+herdr
 ```
 
-For a direct host and port, use the SSH URI form: `herdr --remote ssh://user@server:2222`.
+The function invokes `herdr.exe --remote wsl-herdr`, preserving additional arguments such as `herdr --session agents`. To bypass the function and invoke the binary directly, use `herdr.exe --remote wsl-herdr`. Do not use the raw `ssh://user@127.0.0.1:2222` form unless that host has its own matching `IdentityFile` entry in the OpenSSH config.
 
 For repeat use, configure an SSH alias such as `wsl-herdr` and attach with `herdr --remote wsl-herdr`. Add projects by selecting explicit Linux paths such as `/home/<user>/src/<repository>` or `/home/<user>/firstmate/projects/<project>`.
 

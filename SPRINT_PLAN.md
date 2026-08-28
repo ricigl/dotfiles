@@ -42,7 +42,7 @@ The earlier sprint sections document the already-landed baseline. Sprint 6 below
    - Implementation contract: rename the Windows script; remove Orca download/install/checksum logic; add `-InstallHerdr` behind `-Apply`, verify the reviewed `https://herdr.dev/install.ps1` SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`, and invoke stable-channel installation. Keep WSL version checks, `.wslconfig` preservation, existing dedicated SSH key compatibility, `authorized_keys` handling, `sshd` reachability, `127.0.0.1:2222`, key-only auth, and native build checks.
    - Forbidden scope: no `irm | iex` without installer verification; no Orca installer or executable; no public SSH binding; no password/root/keyboard-interactive auth; no key output.
    - Verification commands: PowerShell parser; `bash -n` for shell scripts; `./scripts/ubuntu-bootstrap.sh --verify-only` and Windows `-VerifyOnly` only on the target host after approval.
-   - Completion criteria: Windows script contains no Orca installer path; Herdr install is explicit; SSH configuration remains loopback-only and key-only; `herdr --remote ssh://<user>@127.0.0.1:2222` is documented.
+   - Completion criteria: Windows script contains no Orca installer path; Herdr install is explicit; SSH configuration remains loopback-only and key-only; the configured `herdr` function uses the `wsl-herdr` SSH target.
    - Logical commit message: `feat: replace windows orca with herdr client`.
 
 ## Sprint 1: Home Manager Split, Default, Legacy
