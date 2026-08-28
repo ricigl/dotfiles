@@ -140,7 +140,7 @@ grep -F 'ssh-keygen.exe -y -f' scripts/windows-herdr-key-bootstrap.ps1 >/dev/nul
 grep -F 'Public key fingerprint' scripts/windows-herdr-key-bootstrap.ps1 >/dev/null
 grep -F 'ssh-keygen -lf -' scripts/ubuntu-authorize-windows-key.sh >/dev/null
 grep -F 'getent passwd' scripts/ubuntu-authorize-windows-key.sh >/dev/null
-grep -F 'herdr --remote user@server:2222' README.md >/dev/null
+grep -F 'herdr --remote ssh://user@server:2222' README.md >/dev/null
 grep -F 'powershell.exe -NoProfile -ExecutionPolicy Bypass' README.md >/dev/null
 grep -F 'windows-herdr-key-bootstrap.ps1' README.md >/dev/null
 grep -F 'ubuntu-authorize-windows-key.sh' README.md >/dev/null

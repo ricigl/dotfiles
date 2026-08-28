@@ -81,7 +81,7 @@ Branch `herdr-agents-nix` is based on `orca-agents-nix`. This variant replaces t
 - Update the pinned Herdr flake input from `v0.7.5` to the current stable `v0.8.2`, so the Linux server and Windows client share the release/protocol generation that supports Windows `herdr --remote`.
 - Windows uses the reviewed official Herdr PowerShell installer from `https://herdr.dev/install.ps1`, with stable-channel behavior. Do not install Orca on Windows and remove the Orca installer option and Orca-specific documentation from this branch.
 - Retain Ubuntu systemd, OpenSSH, key-only authentication, loopback binding, port `2222`, `AllowUsers`, and the existing managed sshd configuration. Herdr remote attach uses normal OpenSSH authentication and must not require a new server or public listener.
-- Keep `~/firstmate/projects` as the Linux project root. The intended client command is `herdr --remote user@server:2222` or an SSH-config alias.
+- Keep `~/firstmate/projects` as the Linux project root. The intended client command is `herdr --remote ssh://user@server:2222` or an SSH-config alias.
 - User credentials, private keys, `authorized_keys`, Herdr sessions, caches, and runtime state remain outside Git.
 
 ### Implementation order
@@ -98,7 +98,7 @@ Branch `herdr-agents-nix` is based on `orca-agents-nix`. This variant replaces t
 - The legacy profile no longer declares a separate Herdr package/config link; it inherits the regular profile’s Herdr ownership.
 - The Windows bootstrap has no Orca installation path and offers Herdr installation only behind explicit apply/install flags.
 - Ubuntu sshd remains configured and validated at `127.0.0.1:2222`, with key-only authentication and no root login.
-- Windows installation instructions use the official Herdr PowerShell installer, and remote attach is documented as `herdr --remote user@server:2222`.
+- Windows installation instructions use the official Herdr PowerShell installer, and remote attach is documented as `herdr --remote ssh://user@server:2222`.
 - No Orca installer, credentials, private keys, sessions, caches, or generated runtime state is tracked.
 
 ## Proposed Repository Tree
