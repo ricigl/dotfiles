@@ -168,6 +168,8 @@ This preserves existing `.wslconfig` sections while setting conservative default
 
 The tracked WezTerm configuration is based on [Kun Cheng's example](https://github.com/kunchenguid/dotfiles/blob/main/home/.config/wezterm/wezterm.lua). It keeps the native Windows title bar and resize borders with `window_decorations = "TITLE | RESIZE"`, so the window remains draggable. `-InstallHackNerdFont` installs Hack Nerd Font v3.5.1 from the official Nerd Fonts release into the current user's Windows font directory after verifying SHA-256 `fa24da7de7cefe7766614d27762570b20453c852fc1d5b657111666df9a5e449`.
 
+When `-ConfigureHerdrAlias` is used, the bootstrap also creates the marked `wsl-herdr` entry in `%USERPROFILE%\.ssh\config`, selecting the dedicated `orca-wsl-ed25519` key and a stable `%USERPROFILE%\.ssh\orca-wsl-known-hosts` file. The PowerShell `herdr` function uses this target, so it does not depend on default SSH key discovery.
+
 #### Troubleshooting a crates.io HTTP 403
 
 If `./bootstrap.sh` reports a 403 for `https://crates.io/api/v1/crates/.../download` while building Herdr, the checkout is using an outdated nested nixpkgs lock. Pull the current branch and retry; Herdr is deliberately locked to the repository's root nixpkgs input, whose cargo importer uses the static crates.io CDN with the same Cargo checksums:

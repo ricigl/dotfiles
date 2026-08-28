@@ -52,6 +52,8 @@ $HackNerdFontRegistryPath = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\
 $WezTermConfigSource = Join-Path $PSScriptRoot "..\home\.config\wezterm\wezterm.lua"
 $WezTermConfigTarget = Join-Path $env:USERPROFILE ".config\wezterm\wezterm.lua"
 $Key = Join-Path $env:USERPROFILE ".ssh\orca-wsl-ed25519"
+$HerdrSshConfig = Join-Path $env:USERPROFILE ".ssh\config"
+$HerdrSshKnownHosts = Join-Path $env:USERPROFILE ".ssh\orca-wsl-known-hosts"
 $WslConfig = Join-Path $env:USERPROFILE ".wslconfig"
 
 function Assert-Command {
@@ -306,6 +308,43 @@ function Set-HerdrPowerShellAlias {
         [Parameter(Mandatory)][string]$WslUser
     )
 
+    $sshParent = Split-Path -Parent -Path $HerdrSshConfig
+    if ($sshParent -and -not (Test-Path -LiteralPath $sshParent)) {
+        New-Item -ItemType Directory -Path $sshParent -Force | Out-Null
+    }
+
+    $sshConfigStartMarker = "# >>> herdr WSL SSH config >>>"
+    $sshConfigEndMarker = "# <<< herdr WSL SSH config <<<"
+    $keyPath = $Key.Replace("\", "/")
+    $knownHostsPath = $HerdrSshKnownHosts.Replace("\", "/")
+    $sshConfigBlock = @(
+        $sshConfigStartMarker
+        "Host wsl-herdr"
+        "    HostName 127.0.0.1"
+        "    Port 2222"
+        "    User $WslUser"
+        "    IdentityFile $keyPath"
+        "    IdentitiesOnly yes"
+        "    StrictHostKeyChecking accept-new"
+        "    UserKnownHostsFile $knownHostsPath"
+        $sshConfigEndMarker
+    ) -join [Environment]::NewLine
+    $sshConfig = if (Test-Path -LiteralPath $HerdrSshConfig) {
+        [System.IO.File]::ReadAllText($HerdrSshConfig)
+    }
+    else {
+        ""
+    }
+    $sshConfigPattern = "(?ms)^" + [regex]::Escape($sshConfigStartMarker) + ".*?^" + [regex]::Escape($sshConfigEndMarker) + "\r?\n?"
+    if ([regex]::IsMatch($sshConfig, $sshConfigPattern)) {
+        $updatedSshConfig = [regex]::Replace($sshConfig, $sshConfigPattern, "$sshConfigBlock`r`n")
+    }
+    else {
+        $separator = if ($sshConfig.Length -gt 0 -and -not $sshConfig.EndsWith("`n")) { "`r`n" } else { "" }
+        $updatedSshConfig = $sshConfig + $separator + $sshConfigBlock + "`r`n"
+    }
+    [System.IO.File]::WriteAllText($HerdrSshConfig, $updatedSshConfig, [System.Text.UTF8Encoding]::new($false))
+
     $profilePath = [string]$PROFILE
     $profileParent = Split-Path -Parent -Path $profilePath
     if ($profileParent -and -not (Test-Path -LiteralPath $profileParent)) {
@@ -318,7 +357,7 @@ function Set-HerdrPowerShellAlias {
         $startMarker
         "function herdr {"
         '    $herdrExe = Get-Command herdr.exe -CommandType Application -ErrorAction Stop'
-        "    & `$herdrExe.Source --remote ssh://$WslUser@127.0.0.1:2222 @args"
+        "    & `$herdrExe.Source --remote wsl-herdr @args"
         "}"
         $endMarker
     ) -join [Environment]::NewLine
@@ -338,6 +377,7 @@ function Set-HerdrPowerShellAlias {
         $updated = $existing + $separator + $block + "`r`n"
     }
     [System.IO.File]::WriteAllText($profilePath, $updated, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "Configured Herdr SSH target wsl-herdr in $HerdrSshConfig"
     Write-Host "Configured PowerShell Herdr alias in $profilePath. Open a new PowerShell or WezTerm window to use it."
 }
 
