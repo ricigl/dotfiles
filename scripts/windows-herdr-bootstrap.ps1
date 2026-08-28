@@ -281,7 +281,7 @@ if ($Apply) {
         }
     }
 
-    $PublicKey = (& ssh-keygen.exe -y -P "" -f $Key | Out-String).Trim()
+    $PublicKey = (& ssh-keygen.exe -y -f $Key | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($PublicKey)) {
         throw "Could not derive the dedicated WSL client public key from $Key"
     }
