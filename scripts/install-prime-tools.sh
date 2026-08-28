@@ -5,7 +5,7 @@ set -euo pipefail
 
 PRIME_VERSION="0.8.0"
 PRIME_INSTALLER_URL="https://app.primeintellect.ai/prime-agent/install.sh"
-PRIME_INSTALLER_SHA256="38d14a1be73b325652c7ce8342e3bf19335721837192855a7907732caf8e6d04"
+PRIME_INSTALLER_SHA256="f29d5fed686509c1b18017d631856544d44e6df5896ddd007cd150e53696f677"
 
 for command_name in curl sha256sum node npm python3; do
   command -v "$command_name" >/dev/null 2>&1 || {

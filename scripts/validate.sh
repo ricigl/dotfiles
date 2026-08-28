@@ -163,6 +163,7 @@ for ssh_policy in \
   grep -F "$ssh_policy" scripts/ubuntu-bootstrap.sh >/dev/null
 done
 grep -F 'pi-mcp-adapter@2.27.0' home/.pi/agent/settings.json >/dev/null
+grep -F 'PRIME_INSTALLER_SHA256="f29d5fed686509c1b18017d631856544d44e6df5896ddd007cd150e53696f677"' scripts/install-prime-tools.sh >/dev/null
 if command -v jq >/dev/null 2>&1; then
   jq -e '
     .mcpServers.codebase_memory.command == "codebase-memory-mcp" and
