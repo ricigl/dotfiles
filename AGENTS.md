@@ -1,5 +1,3 @@
-# Shared instructions for Antigravity CLI, Pi, and Prime Agent
-
 This is the single tracked shared policy for Antigravity CLI (`agy`), Pi, and Prime Agent. Home Manager exposes this same source to each harness's global policy path. Firstmate has its own project-level `AGENTS.md` inside `~/firstmate`; this file governs the shared WSL agent environment and must not be replaced by Firstmate's distro policy.
 
 ## Durable repository decisions
@@ -17,20 +15,19 @@ This is the single tracked shared policy for Antigravity CLI (`agy`), Pi, and Pr
 - Never manually modify `CHANGELOG.md` or auto-generated files.
 - Prefer quality, simplicity, robustness, scalability, and long-term maintainability over development cost.
 - For one-off operational work, use the simplest direct end-to-end path unless a repeated need justifies extra wrappers or automation.
-- Reproduce bugs end to end before fixing them.
+- For bug fixes, first reproduce the bug in an end-to-end setting as closely aligned with the end-user experience as possible.
 - Treat UI quality, lint failures, test failures, and flaky tests as first-class engineering issues.
 - Explain tradeoffs and obtain explicit approval before dynamic workflows, ultra-code modes, or large subagent swarms.
-
-## Harness and installation boundaries
-
-- Never run any harness or installer as root.
-- Keep authentication, sessions, caches, logs, downloads, daemon sockets, and generated state outside this repository.
+- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection. If something clearly looks off, try to get it fixed along the way.
+- Apply the same high standard to engineering excellence: fix lint failures, test failures, and test flakiness encountered during work.
 
 ## Safety
 
 - Do not authenticate services, publish artifacts, upload traces, install software, modify GitHub, or expose a network listener without explicit approval.
 - Use `gh-axi` read-only initially: list, view, search, checks, logs, and repository context only. Do not create branches, merge, approve, release, edit workflows, or mutate repository settings, unless explicitly requested.
 - Run Lavish only on `127.0.0.1` with `--no-open`. Never use `lavish-axi share`, hooks, plugins, public sharing, or non-loopback binding.
+- Never run any harness or installer as root.
+- Keep authentication, sessions, caches, logs, downloads, daemon sockets, and generated state outside this repository.
 
 ## Optional ADHD mode
 
@@ -64,14 +61,3 @@ If MCP is unavailable, say so and use bounded direct repository search rather th
 AGY can call named Codebase Memory tools directly. Pi normally exposes the server through the `mcp` adapter tool. Prime exposes its generic MCP API. Keep server selection on `codebase_memory` and use bounded read-only calls.
 
 
-## General engineering rules
-
-- When writing commit messages, never automatically add the agent name as a co-author.
-- Never manually modify `CHANGELOG.md` files or files marked as auto-generated.
-- For bug fixes, first reproduce the bug in an end-to-end setting as closely aligned with the end-user experience as possible.
-- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection. If something clearly looks off, try to get it fixed along the way.
-- Apply the same high standard to engineering excellence: fix lint failures, test failures, and test flakiness encountered during work.
-
-## Maintaining this file
-
-Keep only durable knowledge useful to all three harnesses. Client-specific syntax belongs in client-specific configuration and documentation. Firstmate's project-distro policy belongs in `~/firstmate/AGENTS.md`; do not duplicate its internal operational instructions here.
