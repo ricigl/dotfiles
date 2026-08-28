@@ -286,6 +286,7 @@ if ($Apply) {
         throw "Could not derive the dedicated WSL client public key from $Key"
     }
     $PublicKeyFile = Join-Path ([System.IO.Path]::GetTempPath()) ("orca-wsl-public-" + [System.Guid]::NewGuid().ToString("N") + ".pub")
+    $AuthorizeScriptFile = Join-Path ([System.IO.Path]::GetTempPath()) ("orca-wsl-authorize-" + [System.Guid]::NewGuid().ToString("N") + ".sh")
     try {
         $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
         [System.IO.File]::WriteAllText($PublicKeyFile, $PublicKey + [Environment]::NewLine, $Utf8NoBom)
@@ -296,14 +297,34 @@ if ($Apply) {
         }
         Write-Host "Authorizing the dedicated WSL client public key in Ubuntu..."
         $QuotedWslPublicKeyFile = "'" + $WslPublicKeyFile.Replace("'", "'\''") + "'"
-        $AuthorizeKeyScript = 'set -eu; user="$(id -un)"; home="$(getent passwd "$user" | cut -d: -f6)"; test -n "$home"; umask 077; mkdir -p "$home/.ssh"; touch "$home/.ssh/authorized_keys"; key="$(tr -d "\r\n" < __ORCA_WSL_PUBLIC_KEY_FILE__)"; printf "%s\n" "$key" | ssh-keygen -lf - >/dev/null; grep -qxF "$key" "$home/.ssh/authorized_keys" || printf "%s\n" "$key" >> "$home/.ssh/authorized_keys"; chmod 700 "$home/.ssh"; chmod 600 "$home/.ssh/authorized_keys"'
+        $AuthorizeKeyScript = @'
+set -eu
+user="$(id -un)"
+home="$(getent passwd "$user" | cut -d: -f6)"
+test -n "$home"
+umask 077
+mkdir -p "$home/.ssh"
+touch "$home/.ssh/authorized_keys"
+key="$(tr -d "\r\n" < __ORCA_WSL_PUBLIC_KEY_FILE__)"
+printf "%s\n" "$key" | ssh-keygen -lf - >/dev/null
+grep -qxF "$key" "$home/.ssh/authorized_keys" || printf "%s\n" "$key" >> "$home/.ssh/authorized_keys"
+chmod 700 "$home/.ssh"
+chmod 600 "$home/.ssh/authorized_keys"
+'@
         $AuthorizeKeyScript = $AuthorizeKeyScript.Replace('__ORCA_WSL_PUBLIC_KEY_FILE__', $QuotedWslPublicKeyFile)
-        & wsl.exe -d $Distro --user $WslUser -- bash -lc $AuthorizeKeyScript
+        [System.IO.File]::WriteAllText($AuthorizeScriptFile, $AuthorizeKeyScript + [Environment]::NewLine, $Utf8NoBom)
+        $WslScriptPathInput = $AuthorizeScriptFile -replace '\\', '/'
+        $WslAuthorizeScriptFile = (& wsl.exe -d $Distro -- wslpath -u -- $WslScriptPathInput).Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($WslAuthorizeScriptFile)) {
+            throw "Could not resolve the temporary authorization script path inside WSL."
+        }
+        & wsl.exe -d $Distro --user $WslUser -- bash $WslAuthorizeScriptFile
         if ($LASTEXITCODE -ne 0) {
             throw "Could not authorize the dedicated WSL client public key in Ubuntu."
         }
     }
     finally {
+        Remove-Item -LiteralPath $AuthorizeScriptFile -Force -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath $PublicKeyFile -Force -ErrorAction SilentlyContinue
     }
 
