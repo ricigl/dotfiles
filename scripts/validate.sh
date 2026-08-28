@@ -17,6 +17,7 @@ for script in \
   scripts/install-home-agents.sh \
   scripts/install-prime-tools.sh \
   scripts/ubuntu-bootstrap.sh \
+  scripts/ubuntu-authorize-windows-key.sh \
   scripts/validate.sh \
   tests/smoke-herdr-agents.sh \
   tests/test-prime-maintenance.sh; do
@@ -99,9 +100,15 @@ if grep -qi 'herdr' modules/home-legacy-agents.nix; then
   exit 1
 fi
 test -f scripts/windows-herdr-bootstrap.ps1
+test -f scripts/windows-herdr-key-bootstrap.ps1
+test -f scripts/ubuntu-authorize-windows-key.sh
 test ! -e scripts/windows-orca-bootstrap.ps1
 if grep -nE 'InstallOrca|OrcaVersion|OrcaUrl|OrcaSha256|orca-windows-setup|windows-orca-bootstrap' scripts/windows-herdr-bootstrap.ps1; then
   printf '%s\n' "Windows Herdr bootstrap still contains an Orca installation path." >&2
+  exit 1
+fi
+if grep -nE 'orca-wsl-authorize-|orca-wsl-public-|WslAuthorizeScriptFile|WslPublicKeyFile|AuthorizeKeyScript|__ORCA_WSL_PUBLIC_KEY_FILE__' scripts/windows-herdr-bootstrap.ps1; then
+  printf '%s\n' "Windows Herdr bootstrap still contains stale cross-boundary key authorization logic." >&2
   exit 1
 fi
 grep -F 'Install-Herdr' scripts/windows-herdr-bootstrap.ps1 >/dev/null
@@ -118,8 +125,20 @@ if grep -q 'weztermCheck' scripts/windows-herdr-bootstrap.ps1; then
   printf '%s\n' "Install-WezTerm must not mask failed winget exit codes." >&2
   exit 1
 fi
+grep -F 'orca-wsl-manual.pub' scripts/windows-herdr-key-bootstrap.ps1 >/dev/null
+grep -F 'ssh-keygen.exe -y -f' scripts/windows-herdr-key-bootstrap.ps1 >/dev/null
+grep -F 'Public key fingerprint' scripts/windows-herdr-key-bootstrap.ps1 >/dev/null
+grep -F 'ssh-keygen -lf -' scripts/ubuntu-authorize-windows-key.sh >/dev/null
+grep -F 'getent passwd' scripts/ubuntu-authorize-windows-key.sh >/dev/null
 grep -F 'herdr --remote user@server:2222' README.md >/dev/null
-grep -F 'windows-herdr-bootstrap.ps1" -Apply -InstallHerdr -InstallWezTerm' README.md >/dev/null
+grep -F 'powershell.exe -NoProfile -ExecutionPolicy Bypass' README.md >/dev/null
+grep -F 'windows-herdr-key-bootstrap.ps1' README.md >/dev/null
+grep -F 'ubuntu-authorize-windows-key.sh' README.md >/dev/null
+grep -F '%TEMP%\orca-wsl-manual.pub' README.md >/dev/null
+grep -F '/mnt/c/Users/Ricardo/AppData/Local/Temp/orca-wsl-manual.pub' README.md >/dev/null
+grep -F 'windows-herdr-bootstrap.ps1' README.md >/dev/null
+grep -F -- '-Apply -InstallHerdr -InstallWezTerm' README.md >/dev/null
+grep -F -- '-VerifyOnly' README.md >/dev/null
 grep -F 'wez.wezterm' README.md >/dev/null
 grep -F 'https://wezterm.org/install/windows.html#installing-on-windows' README.md >/dev/null
 grep -F 'https://learn.microsoft.com/windows/package-manager/winget/' README.md >/dev/null

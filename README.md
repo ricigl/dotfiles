@@ -123,19 +123,48 @@ PermitRootLogin no
 AllowUsers <current Ubuntu user>
 ```
 
-### 2. Install Windows Herdr, WezTerm, and create the dedicated SSH identity
+### 2. Prepare Windows client key, authorize in Ubuntu, and bootstrap Windows Herdr
 
-From PowerShell, locate the script through WSL and apply the Windows-side configuration:
+Bootstrap SSH authentication and Windows tools in three explicit steps:
+
+#### Step 1: Generate or prepare the Windows client SSH key
+
+From Windows PowerShell, run the Windows key helper script:
 
 ```powershell
-$WslUser = (wsl.exe -d Ubuntu -- bash -lc 'printf %s "$USER"').Trim()
+$WslUser = (wsl.exe -d Ubuntu -- id -un).Trim()
 $Repo = "\\wsl.localhost\Ubuntu\home\$WslUser\.dotfiles"
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File "$Repo\scripts\windows-herdr-key-bootstrap.ps1"
+```
+
+This creates or reuses `%USERPROFILE%\.ssh\orca-wsl-ed25519`, derives the public key using `ssh-keygen -y -f`, and writes a clean LF-only UTF-8 public key to `%TEMP%\orca-wsl-manual.pub` without BOM or trailing carriage returns. It also prints the public-key fingerprint; do not paste the key contents.
+
+#### Step 2: Authorize the key inside Ubuntu WSL
+
+From the Ubuntu WSL terminal, authorize the exported Windows public key by passing its WSL mount path:
+
+```bash
+cd ~/.dotfiles
+./scripts/ubuntu-authorize-windows-key.sh /mnt/c/Users/Ricardo/AppData/Local/Temp/orca-wsl-manual.pub
+```
+
+The explicit Ubuntu step is intentional: separating key export from authorization avoids fragile cross-boundary scripting, validates key syntax with `ssh-keygen -lf -`, resolves the user home safely with `getent passwd`, ensures secure permissions (0700 `~/.ssh` and 0600 `~/.ssh/authorized_keys`), and appends the key only if absent without clobbering existing authorized keys or exposing private key material. Compare the fingerprint printed by this step with the fingerprint printed in Step 1; they must match.
+
+> [!WARNING]
+> The bootstrap verifies loopback SSH with `StrictHostKeyChecking=accept-new`. Accepting a changed host key is safe only after an intentional WSL reinstall. If an unexpected host key change occurs, investigate before accepting it.
+
+#### Step 3: Apply Windows configuration, install Herdr / WezTerm, and verify
+
+From Windows PowerShell, apply the `.wslconfig` resource settings, install Herdr and WezTerm, and verify the SSH relay connection:
+
+```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File "$Repo\scripts\windows-herdr-bootstrap.ps1" `
   -Apply -InstallHerdr -InstallWezTerm
 ```
 
-This preserves existing `.wslconfig` sections while setting conservative defaults, creates or reuses `%USERPROFILE%\.ssh\orca-wsl-ed25519`, authorizes only its public key in Ubuntu, installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1`, installs WezTerm on Windows via WinGet using exact package ID `wez.wezterm`, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. The Herdr installer script is verified against the recorded SHA-256 before execution.
+This preserves existing `.wslconfig` sections while setting conservative defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation.
 
 #### WezTerm and WinGet on Windows
 
@@ -528,7 +557,9 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `modules/home-firstmate.nix`: Firstmate launcher, explicit Linux backend guard, and tmux runtime dependency.
 - `modules/home-legacy-agents.nix`: WezTerm, Pi, Claude Code, and Codex fallback additions.
 - `scripts/ubuntu-bootstrap.sh`: Ubuntu system and sshd bootstrap.
-- `scripts/windows-herdr-bootstrap.ps1`: Windows Herdr installer, WezTerm installer via WinGet, WSL resources, dedicated SSH key, and SSH verification.
+- `scripts/ubuntu-authorize-windows-key.sh`: authorizes the Windows client public key in Ubuntu with permission and fingerprint checks.
+- `scripts/windows-herdr-key-bootstrap.ps1`: Windows client SSH key generation and export helper.
+- `scripts/windows-herdr-bootstrap.ps1`: Windows Herdr installer, WezTerm installer via WinGet, WSL resources, and SSH verification.
 - `scripts/install-prime-tools.sh`: pinned Prime Agent installation; this is the only support installer remaining.
 - `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation for the regular Home Manager shell.
 - `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, skills, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, and pi-openai-server-compaction.

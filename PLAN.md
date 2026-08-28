@@ -20,7 +20,7 @@ Authority boundaries:
 - Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, Herdr, shared policy/skill/MCP links, and pinned Nix packages for support tools; only the three primary agent binaries remain transitional script installs.
 - The optional `orca-prime` shell owns Node 22, Python, uv, gh, jq, and build tooling for deterministic validation only. It is not required to launch Prime, AGY, Pi, or Firstmate.
 - Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Herdr can relay over SSH, so they cannot live only inside a per-user Nix shell.
-- Windows PowerShell bootstrap owns Windows-side WSL name checks, `.wslconfig`, SSH key creation/copy, Herdr installer verification, and terminal/node-pty prerequisite checks.
+- Windows PowerShell key preparation owns the Windows private key and public-key export to `%TEMP%\\orca-wsl-manual.pub`; the Ubuntu authorization helper owns installing that public key into the WSL user's `authorized_keys`; the Windows Herdr bootstrap owns WSL name checks, `.wslconfig`, Herdr installer verification, and terminal/node-pty prerequisite checks.
 - User owns secrets and auth: OpenAI/Prime auth, GitHub auth, Windows account secrets, SSH private keys, `authorized_keys` material before copy, session dirs, caches, and runtime downloads.
 - Ricardo's verified Windows Herdr workflow is the source of truth for installer URL/checksum, expected Herdr version `0.8.2`, and smoke-test behavior. If repo text conflicts, use Ricardo's verified values after approval.
 

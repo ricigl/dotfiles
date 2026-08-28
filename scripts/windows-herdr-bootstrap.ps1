@@ -261,73 +261,21 @@ if ($LASTEXITCODE -ne 0) {
     throw "Unable to start WSL distro '$Distro'."
 }
 
-$WslUser = (& wsl.exe -d $Distro -- bash -lc 'printf %s "$USER"').Trim()
+$WslUser = ((& wsl.exe -d $Distro -- id -un) -replace "`0", "").Trim()
 if (-not $WslUser -or $WslUser -notmatch '^[A-Za-z0-9_.-]+$') {
     throw "Could not determine a safe Ubuntu username."
 }
 $Target = "{0}@127.0.0.1" -f $WslUser
+
+if (-not (Test-Path -LiteralPath $Key)) {
+    throw "Dedicated WSL client key is missing: $Key. Run scripts/windows-herdr-key-bootstrap.ps1 and scripts/ubuntu-authorize-windows-key.sh first."
+}
 
 if ($Apply) {
     Set-IniValue -Path $WslConfig -Section "wsl2" -Key "memory" -Value "8GB"
     Set-IniValue -Path $WslConfig -Section "wsl2" -Key "processors" -Value "6"
     Set-IniValue -Path $WslConfig -Section "wsl2" -Key "swap" -Value "4GB"
     Set-IniValue -Path $WslConfig -Section "wsl2" -Key "localhostForwarding" -Value "true"
-
-    New-Item -ItemType Directory -Force (Split-Path -Parent $Key) | Out-Null
-    if (-not (Test-Path -LiteralPath $Key)) {
-        & ssh-keygen.exe -t ed25519 -f $Key -C "orca-wsl" -N '""'
-        if ($LASTEXITCODE -ne 0) {
-            throw "ssh-keygen failed."
-        }
-    }
-
-    $PublicKey = (& ssh-keygen.exe -y -f $Key | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($PublicKey)) {
-        throw "Could not derive the dedicated WSL client public key from $Key"
-    }
-    $PublicKeyFile = Join-Path ([System.IO.Path]::GetTempPath()) ("orca-wsl-public-" + [System.Guid]::NewGuid().ToString("N") + ".pub")
-    $AuthorizeScriptFile = Join-Path ([System.IO.Path]::GetTempPath()) ("orca-wsl-authorize-" + [System.Guid]::NewGuid().ToString("N") + ".sh")
-    try {
-        $Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-        [System.IO.File]::WriteAllText($PublicKeyFile, $PublicKey + [Environment]::NewLine, $Utf8NoBom)
-        $WslPathInput = $PublicKeyFile -replace '\\', '/'
-        $WslPublicKeyFile = (& wsl.exe -d $Distro -- wslpath -u -- $WslPathInput).Trim()
-        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($WslPublicKeyFile)) {
-            throw "Could not resolve the temporary public-key path inside WSL."
-        }
-        Write-Host "Authorizing the dedicated WSL client public key in Ubuntu..."
-        $QuotedWslPublicKeyFile = "'" + $WslPublicKeyFile.Replace("'", "'\''") + "'"
-        $AuthorizeKeyScript = @'
-set -eu
-user="$(id -un)"
-home="$(getent passwd "$user" | cut -d: -f6)"
-test -n "$home"
-umask 077
-mkdir -p "$home/.ssh"
-touch "$home/.ssh/authorized_keys"
-key="$(tr -d "\r\n" < __ORCA_WSL_PUBLIC_KEY_FILE__)"
-printf "%s\n" "$key" | ssh-keygen -lf - >/dev/null
-grep -qxF "$key" "$home/.ssh/authorized_keys" || printf "%s\n" "$key" >> "$home/.ssh/authorized_keys"
-chmod 700 "$home/.ssh"
-chmod 600 "$home/.ssh/authorized_keys"
-'@
-        $AuthorizeKeyScript = $AuthorizeKeyScript.Replace('__ORCA_WSL_PUBLIC_KEY_FILE__', $QuotedWslPublicKeyFile)
-        $AuthorizeKeyScript = $AuthorizeKeyScript.Replace("`r`n", "`n").Replace("`r", "")
-        [System.IO.File]::WriteAllText($AuthorizeScriptFile, $AuthorizeKeyScript + "`n", $Utf8NoBom)
-        $WslScriptPathInput = $AuthorizeScriptFile -replace '\\', '/'
-        $WslAuthorizeScriptFile = (& wsl.exe -d $Distro -- wslpath -u -- $WslScriptPathInput).Trim()
-        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($WslAuthorizeScriptFile)) {
-            throw "Could not resolve the temporary authorization script path inside WSL."
-        }
-        & wsl.exe -d $Distro --user $WslUser -- bash $WslAuthorizeScriptFile
-        if ($LASTEXITCODE -ne 0) {
-            throw "Could not authorize the dedicated WSL client public key in Ubuntu."
-        }
-    }
-    finally {
-        Remove-Item -LiteralPath $AuthorizeScriptFile -Force -ErrorAction SilentlyContinue
-        Remove-Item -LiteralPath $PublicKeyFile -Force -ErrorAction SilentlyContinue
-    }
 
     if ($InstallHerdr) {
         Install-Herdr
@@ -337,11 +285,7 @@ chmod 600 "$home/.ssh/authorized_keys"
         Install-WezTerm
     }
 
-    Write-Host "Applied Windows-side configuration. Run 'wsl --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."
-}
-
-if (-not (Test-Path -LiteralPath $Key)) {
-    throw "Dedicated WSL client key is missing: $Key. Run this script with -Apply first."
+    Write-Host "Applied Windows-side configuration. Run 'wsl.exe --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."
 }
 
 if (Test-Path -LiteralPath $HerdrInstallDir) {
