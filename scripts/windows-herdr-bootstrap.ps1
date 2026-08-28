@@ -312,7 +312,8 @@ chmod 700 "$home/.ssh"
 chmod 600 "$home/.ssh/authorized_keys"
 '@
         $AuthorizeKeyScript = $AuthorizeKeyScript.Replace('__ORCA_WSL_PUBLIC_KEY_FILE__', $QuotedWslPublicKeyFile)
-        [System.IO.File]::WriteAllText($AuthorizeScriptFile, $AuthorizeKeyScript + [Environment]::NewLine, $Utf8NoBom)
+        $AuthorizeKeyScript = $AuthorizeKeyScript.Replace("`r`n", "`n").Replace("`r", "")
+        [System.IO.File]::WriteAllText($AuthorizeScriptFile, $AuthorizeKeyScript + "`n", $Utf8NoBom)
         $WslScriptPathInput = $AuthorizeScriptFile -replace '\\', '/'
         $WslAuthorizeScriptFile = (& wsl.exe -d $Distro -- wslpath -u -- $WslScriptPathInput).Trim()
         if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($WslAuthorizeScriptFile)) {
