@@ -107,6 +107,7 @@ EOF
   sudo install -d -o root -g root -m 0755 /etc/ssh/sshd_config.d
   sudo install -o root -g root -m 0644 \
     "$sshd_conf_tmp" /etc/ssh/sshd_config.d/99-orca-wsl.conf
+  sudo install -d -o root -g root -m 0755 /run/sshd
   sudo sshd -t
 
   if [ "$(ps -p 1 -o comm=)" = "systemd" ]; then
