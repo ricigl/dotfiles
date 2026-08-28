@@ -290,8 +290,9 @@ if ($Apply) {
         throw "The dedicated WSL client public key is empty: $Key.pub"
     }
     $PublicKeyBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($PublicKey))
-    $AuthorizeKeyScript = 'set -eu; umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; key="$(printf "%s" "$1" | base64 -d)"; grep -qxF "$key" ~/.ssh/authorized_keys || printf "%s\n" "$key" >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
-    & wsl.exe -d $Distro -- bash -lc $AuthorizeKeyScript -- $PublicKeyBase64
+    Write-Host "Authorizing the dedicated WSL client public key in Ubuntu..."
+    $AuthorizeKeyScript = 'set -eu; umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; key="$(base64 -d)"; grep -qxF "$key" ~/.ssh/authorized_keys || printf "%s\n" "$key" >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
+    $PublicKeyBase64 | & wsl.exe -d $Distro -- bash -lc $AuthorizeKeyScript
     if ($LASTEXITCODE -ne 0) {
         throw "Could not authorize the dedicated WSL client public key in Ubuntu."
     }
