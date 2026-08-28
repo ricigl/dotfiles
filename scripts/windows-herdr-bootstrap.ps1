@@ -6,6 +6,7 @@ param(
     [switch]$InstallWezTerm,
     [switch]$ConfigureHerdrAlias,
     [switch]$ConfigureWezTerm,
+    [switch]$InstallHackNerdFont,
     [string]$Distro = "Ubuntu"
 )
 
@@ -30,6 +31,9 @@ if ($ConfigureHerdrAlias -and -not $Apply) {
 if ($ConfigureWezTerm -and -not $Apply) {
     throw "-ConfigureWezTerm requires -Apply."
 }
+if ($InstallHackNerdFont -and -not $Apply) {
+    throw "-InstallHackNerdFont requires -Apply."
+}
 if ($Distro -ne "Ubuntu") {
     throw "This repository requires the WSL distro name exactly 'Ubuntu'."
 }
@@ -40,6 +44,11 @@ $HerdrInstallerSha256 = "3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae
 $HerdrInstallDir = Join-Path $env:LOCALAPPDATA "Programs\Herdr\bin"
 $HerdrInstaller = Join-Path ([System.IO.Path]::GetTempPath()) ("herdr-install-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
 $WezTermPackageId = "wez.wezterm"
+$HackNerdFontVersion = "3.5.1"
+$HackNerdFontUrl = "https://github.com/ryanoasis/nerd-fonts/releases/download/v$HackNerdFontVersion/Hack.zip"
+$HackNerdFontSha256 = "fa24da7de7cefe7766614d27762570b20453c852fc1d5b657111666df9a5e449"
+$HackNerdFontInstallDir = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
+$HackNerdFontRegistryPath = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts"
 $WezTermConfigSource = Join-Path $PSScriptRoot "..\home\.config\wezterm\wezterm.lua"
 $WezTermConfigTarget = Join-Path $env:USERPROFILE ".config\wezterm\wezterm.lua"
 $Key = Join-Path $env:USERPROFILE ".ssh\orca-wsl-ed25519"
@@ -185,6 +194,37 @@ function Install-WezTermConfig {
 
     Copy-Item -LiteralPath $WezTermConfigSource -Destination $WezTermConfigTarget -Force
     Write-Host "Configured WezTerm from $WezTermConfigSource"
+}
+
+function Install-HackNerdFont {
+    $archive = Join-Path ([System.IO.Path]::GetTempPath()) ("Hack-Nerd-Font-" + [System.Guid]::NewGuid().ToString("N") + ".zip")
+    $extractDir = Join-Path ([System.IO.Path]::GetTempPath()) ("Hack-Nerd-Font-" + [System.Guid]::NewGuid().ToString("N"))
+    try {
+        Invoke-WebRequest -Uri $HackNerdFontUrl -OutFile $archive
+        $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualHash -ne $HackNerdFontSha256) {
+            throw "Hack Nerd Font checksum mismatch. Expected $HackNerdFontSha256, got $actualHash"
+        }
+
+        Expand-Archive -LiteralPath $archive -DestinationPath $extractDir -Force
+        $fontFiles = @(Get-ChildItem -LiteralPath $extractDir -Recurse -File | Where-Object { $_.Extension -ieq ".ttf" })
+        if ($fontFiles.Count -eq 0) {
+            throw "Hack Nerd Font archive contained no TTF files."
+        }
+
+        New-Item -ItemType Directory -Path $HackNerdFontInstallDir -Force | Out-Null
+        New-Item -Path $HackNerdFontRegistryPath -Force | Out-Null
+        foreach ($fontFile in $fontFiles) {
+            $destination = Join-Path $HackNerdFontInstallDir $fontFile.Name
+            Copy-Item -LiteralPath $fontFile.FullName -Destination $destination -Force
+            New-ItemProperty -Path $HackNerdFontRegistryPath -Name "$($fontFile.BaseName) (TrueType)" -PropertyType String -Value $destination -Force | Out-Null
+        }
+        Write-Host "Installed Hack Nerd Font $HackNerdFontVersion for the current Windows user ($($fontFiles.Count) TTF files)."
+    }
+    finally {
+        Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $extractDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Install-Herdr {
@@ -365,6 +405,10 @@ if ($Apply) {
 
     if ($ConfigureWezTerm) {
         Install-WezTermConfig
+    }
+
+    if ($InstallHackNerdFont) {
+        Install-HackNerdFont
     }
 
     Write-Host "Applied Windows-side configuration. Run 'wsl.exe --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."
