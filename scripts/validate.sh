@@ -123,6 +123,11 @@ if grep -nE 'orca-wsl-authorize-|orca-wsl-public-|WslAuthorizeScriptFile|WslPubl
 fi
 grep -F 'Install-Herdr' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'Install-WezTerm' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'ConfigureHerdrAlias' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F '# >>> herdr WSL remote alias >>>' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F '# <<< herdr WSL remote alias <<<' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Get-Command herdr.exe -CommandType Application' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'ssh://$WslUser@127.0.0.1:2222 @args' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'https://herdr.dev/install.ps1' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'wez.wezterm' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'Microsoft.DesktopAppInstaller_8wekyb3d8bbwe' scripts/windows-herdr-bootstrap.ps1 >/dev/null
@@ -148,6 +153,8 @@ grep -F '%TEMP%\orca-wsl-manual.pub' README.md >/dev/null
 grep -F '/mnt/c/Users/Ricardo/AppData/Local/Temp/orca-wsl-manual.pub' README.md >/dev/null
 grep -F 'windows-herdr-bootstrap.ps1' README.md >/dev/null
 grep -F -- '-Apply -InstallHerdr -InstallWezTerm' README.md >/dev/null
+grep -F -- '-ConfigureHerdrAlias' README.md >/dev/null
+grep -F 'herdr --session agents' README.md >/dev/null
 grep -F -- '-VerifyOnly' README.md >/dev/null
 grep -F 'wez.wezterm' README.md >/dev/null
 grep -F 'https://wezterm.org/install/windows.html#installing-on-windows' README.md >/dev/null

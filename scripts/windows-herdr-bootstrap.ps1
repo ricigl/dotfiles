@@ -4,6 +4,7 @@ param(
     [switch]$Apply,
     [switch]$InstallHerdr,
     [switch]$InstallWezTerm,
+    [switch]$ConfigureHerdrAlias,
     [string]$Distro = "Ubuntu"
 )
 
@@ -21,6 +22,9 @@ if ($InstallHerdr -and -not $Apply) {
 }
 if ($InstallWezTerm -and -not $Apply) {
     throw "-InstallWezTerm requires -Apply."
+}
+if ($ConfigureHerdrAlias -and -not $Apply) {
+    throw "-ConfigureHerdrAlias requires -Apply."
 }
 if ($Distro -ne "Ubuntu") {
     throw "This repository requires the WSL distro name exactly 'Ubuntu'."
@@ -227,6 +231,46 @@ function Set-IniValue {
     [System.IO.File]::WriteAllLines($Path, $lines)
 }
 
+function Set-HerdrPowerShellAlias {
+    param(
+        [Parameter(Mandatory)][string]$WslUser
+    )
+
+    $profilePath = [string]$PROFILE
+    $profileParent = Split-Path -Parent -Path $profilePath
+    if ($profileParent -and -not (Test-Path -LiteralPath $profileParent)) {
+        New-Item -ItemType Directory -Path $profileParent -Force | Out-Null
+    }
+
+    $startMarker = "# >>> herdr WSL remote alias >>>"
+    $endMarker = "# <<< herdr WSL remote alias <<<"
+    $block = @(
+        $startMarker
+        "function herdr {"
+        '    $herdrExe = Get-Command herdr.exe -CommandType Application -ErrorAction Stop'
+        "    & `$herdrExe.Source --remote ssh://$WslUser@127.0.0.1:2222 @args"
+        "}"
+        $endMarker
+    ) -join [Environment]::NewLine
+
+    $existing = if (Test-Path -LiteralPath $profilePath) {
+        [System.IO.File]::ReadAllText($profilePath)
+    }
+    else {
+        ""
+    }
+    $pattern = "(?ms)^" + [regex]::Escape($startMarker) + ".*?^" + [regex]::Escape($endMarker) + "\r?\n?"
+    if ([regex]::IsMatch($existing, $pattern)) {
+        $updated = [regex]::Replace($existing, $pattern, "$block`r`n")
+    }
+    else {
+        $separator = if ($existing.Length -gt 0 -and -not $existing.EndsWith("`n")) { "`r`n" } else { "" }
+        $updated = $existing + $separator + $block + "`r`n"
+    }
+    [System.IO.File]::WriteAllText($profilePath, $updated, [System.Text.UTF8Encoding]::new($false))
+    Write-Host "Configured PowerShell Herdr alias in $profilePath. Open a new PowerShell or WezTerm window to use it."
+}
+
 Assert-Command "wsl.exe"
 Assert-Command "ssh.exe"
 Assert-Command "ssh-keygen.exe"
@@ -283,6 +327,10 @@ if ($Apply) {
 
     if ($InstallWezTerm) {
         Install-WezTerm
+    }
+
+    if ($ConfigureHerdrAlias) {
+        Set-HerdrPowerShellAlias -WslUser $WslUser
     }
 
     Write-Host "Applied Windows-side configuration. Run 'wsl.exe --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."
