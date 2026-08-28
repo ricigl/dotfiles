@@ -281,18 +281,14 @@ if ($Apply) {
         }
     }
 
-    if (-not (Test-Path -LiteralPath "$Key.pub")) {
-        throw "Missing public key: $Key.pub"
-    }
-
-    $PublicKey = [System.IO.File]::ReadAllText("$Key.pub").Trim()
-    if ([string]::IsNullOrWhiteSpace($PublicKey)) {
-        throw "The dedicated WSL client public key is empty: $Key.pub"
+    $PublicKey = (& ssh-keygen.exe -y -P "" -f $Key | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($PublicKey)) {
+        throw "Could not derive the dedicated WSL client public key from $Key"
     }
     $PublicKeyBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($PublicKey))
     Write-Host "Authorizing the dedicated WSL client public key in Ubuntu..."
     $AuthorizeKeyScript = 'set -eu; umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; key="$(base64 -d)"; grep -qxF "$key" ~/.ssh/authorized_keys || printf "%s\n" "$key" >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
-    $PublicKeyBase64 | & wsl.exe -d $Distro -- bash -lc $AuthorizeKeyScript
+    $PublicKeyBase64 | & wsl.exe -d $Distro --user $WslUser -- bash -lc $AuthorizeKeyScript
     if ($LASTEXITCODE -ne 0) {
         throw "Could not authorize the dedicated WSL client public key in Ubuntu."
     }
@@ -310,9 +306,6 @@ if ($Apply) {
 
 if (-not (Test-Path -LiteralPath $Key)) {
     throw "Dedicated WSL client key is missing: $Key. Run this script with -Apply first."
-}
-if (-not (Test-Path -LiteralPath "$Key.pub")) {
-    throw "Dedicated WSL client public key is missing: $Key.pub"
 }
 
 if (Test-Path -LiteralPath $HerdrInstallDir) {
