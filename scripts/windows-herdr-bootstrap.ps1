@@ -296,7 +296,7 @@ if ($Apply) {
         }
         Write-Host "Authorizing the dedicated WSL client public key in Ubuntu..."
         $QuotedWslPublicKeyFile = "'" + $WslPublicKeyFile.Replace("'", "'\''") + "'"
-        $AuthorizeKeyScript = 'set -eu; umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; key="$(tr -d "\r\n" < __ORCA_WSL_PUBLIC_KEY_FILE__)"; printf "%s\n" "$key" | ssh-keygen -lf - >/dev/null; grep -qxF "$key" ~/.ssh/authorized_keys || printf "%s\n" "$key" >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; chmod 600 ~/.ssh/authorized_keys'
+        $AuthorizeKeyScript = 'set -eu; user="$(id -un)"; home="$(getent passwd "$user" | cut -d: -f6)"; test -n "$home"; umask 077; mkdir -p "$home/.ssh"; touch "$home/.ssh/authorized_keys"; key="$(tr -d "\r\n" < __ORCA_WSL_PUBLIC_KEY_FILE__)"; printf "%s\n" "$key" | ssh-keygen -lf - >/dev/null; grep -qxF "$key" "$home/.ssh/authorized_keys" || printf "%s\n" "$key" >> "$home/.ssh/authorized_keys"; chmod 700 "$home/.ssh"; chmod 600 "$home/.ssh/authorized_keys"'
         $AuthorizeKeyScript = $AuthorizeKeyScript.Replace('__ORCA_WSL_PUBLIC_KEY_FILE__', $QuotedWslPublicKeyFile)
         & wsl.exe -d $Distro --user $WslUser -- bash -lc $AuthorizeKeyScript
         if ($LASTEXITCODE -ne 0) {
