@@ -130,7 +130,9 @@ From PowerShell, locate the script through WSL and apply the Windows-side config
 ```powershell
 $WslUser = (wsl.exe -d Ubuntu -- bash -lc 'printf %s "$USER"').Trim()
 $Repo = "\\wsl.localhost\Ubuntu\home\$WslUser\.dotfiles"
-& "$Repo\scripts\windows-herdr-bootstrap.ps1" -Apply -InstallHerdr -InstallWezTerm
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File "$Repo\scripts\windows-herdr-bootstrap.ps1" `
+  -Apply -InstallHerdr -InstallWezTerm
 ```
 
 This preserves existing `.wslconfig` sections while setting conservative defaults, creates or reuses `%USERPROFILE%\.ssh\orca-wsl-ed25519`, authorizes only its public key in Ubuntu, installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1`, installs WezTerm on Windows via WinGet using exact package ID `wez.wezterm`, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. The Herdr installer script is verified against the recorded SHA-256 before execution.
@@ -157,7 +159,9 @@ Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller
 To verify without applying changes:
 
 ```powershell
-& "$Repo\scripts\windows-herdr-bootstrap.ps1" -VerifyOnly
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File "$Repo\scripts\windows-herdr-bootstrap.ps1" `
+  -VerifyOnly
 ```
 
 ### 3. Install Nix and activate Home Manager
