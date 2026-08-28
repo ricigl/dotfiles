@@ -136,6 +136,10 @@ grep -F 'AllowRegister' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'Ensure-WinGet -AllowRegister' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F '$WinGetCommand = Ensure-WinGet' scripts/windows-herdr-bootstrap.ps1 >/dev/null
 grep -F 'Get-WezTermCommand' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'ConfigureWezTerm' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'Install-WezTermConfig' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'WezTermConfigTarget' scripts/windows-herdr-bootstrap.ps1 >/dev/null
+grep -F 'window_decorations = "TITLE | RESIZE"' home/.config/wezterm/wezterm.lua >/dev/null
 if grep -q 'weztermCheck' scripts/windows-herdr-bootstrap.ps1; then
   printf '%s\n' "Install-WezTerm must not mask failed winget exit codes." >&2
   exit 1
@@ -154,6 +158,8 @@ grep -F '/mnt/c/Users/Ricardo/AppData/Local/Temp/orca-wsl-manual.pub' README.md 
 grep -F 'windows-herdr-bootstrap.ps1' README.md >/dev/null
 grep -F -- '-Apply -InstallHerdr -InstallWezTerm' README.md >/dev/null
 grep -F -- '-ConfigureHerdrAlias' README.md >/dev/null
+grep -F -- '-ConfigureWezTerm' README.md >/dev/null
+grep -F 'TITLE | RESIZE' README.md >/dev/null
 grep -F 'herdr --session agents' README.md >/dev/null
 grep -F -- '-VerifyOnly' README.md >/dev/null
 grep -F 'wez.wezterm' README.md >/dev/null

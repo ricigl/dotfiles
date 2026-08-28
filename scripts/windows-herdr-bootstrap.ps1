@@ -5,6 +5,7 @@ param(
     [switch]$InstallHerdr,
     [switch]$InstallWezTerm,
     [switch]$ConfigureHerdrAlias,
+    [switch]$ConfigureWezTerm,
     [string]$Distro = "Ubuntu"
 )
 
@@ -26,6 +27,9 @@ if ($InstallWezTerm -and -not $Apply) {
 if ($ConfigureHerdrAlias -and -not $Apply) {
     throw "-ConfigureHerdrAlias requires -Apply."
 }
+if ($ConfigureWezTerm -and -not $Apply) {
+    throw "-ConfigureWezTerm requires -Apply."
+}
 if ($Distro -ne "Ubuntu") {
     throw "This repository requires the WSL distro name exactly 'Ubuntu'."
 }
@@ -36,6 +40,8 @@ $HerdrInstallerSha256 = "3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae
 $HerdrInstallDir = Join-Path $env:LOCALAPPDATA "Programs\Herdr\bin"
 $HerdrInstaller = Join-Path ([System.IO.Path]::GetTempPath()) ("herdr-install-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
 $WezTermPackageId = "wez.wezterm"
+$WezTermConfigSource = Join-Path $PSScriptRoot "..\home\.config\wezterm\wezterm.lua"
+$WezTermConfigTarget = Join-Path $env:USERPROFILE ".config\wezterm\wezterm.lua"
 $Key = Join-Path $env:USERPROFILE ".ssh\orca-wsl-ed25519"
 $WslConfig = Join-Path $env:USERPROFILE ".wslconfig"
 
@@ -155,6 +161,30 @@ function Install-WezTerm {
     }
 
     $null = Get-WezTermCommand
+}
+
+function Install-WezTermConfig {
+    if (-not (Test-Path -LiteralPath $WezTermConfigSource)) {
+        throw "Tracked WezTerm config is missing: $WezTermConfigSource"
+    }
+
+    $targetParent = Split-Path -Parent -Path $WezTermConfigTarget
+    if (-not (Test-Path -LiteralPath $targetParent)) {
+        New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
+    }
+
+    if (Test-Path -LiteralPath $WezTermConfigTarget) {
+        $sourceHash = (Get-FileHash -LiteralPath $WezTermConfigSource -Algorithm SHA256).Hash
+        $targetHash = (Get-FileHash -LiteralPath $WezTermConfigTarget -Algorithm SHA256).Hash
+        if ($sourceHash -ne $targetHash) {
+            $backup = "$WezTermConfigTarget.bak-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            Copy-Item -LiteralPath $WezTermConfigTarget -Destination $backup -Force
+            Write-Host "Backed up existing WezTerm config to $backup"
+        }
+    }
+
+    Copy-Item -LiteralPath $WezTermConfigSource -Destination $WezTermConfigTarget -Force
+    Write-Host "Configured WezTerm from $WezTermConfigSource"
 }
 
 function Install-Herdr {
@@ -331,6 +361,10 @@ if ($Apply) {
 
     if ($ConfigureHerdrAlias) {
         Set-HerdrPowerShellAlias -WslUser $WslUser
+    }
+
+    if ($ConfigureWezTerm) {
+        Install-WezTermConfig
     }
 
     Write-Host "Applied Windows-side configuration. Run 'wsl.exe --shutdown' once if .wslconfig changed, restart Ubuntu, and run this script with -VerifyOnly."

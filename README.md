@@ -161,10 +161,12 @@ From Windows PowerShell, apply the `.wslconfig` resource settings, install Herdr
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File "$Repo\scripts\windows-herdr-bootstrap.ps1" `
-  -Apply -InstallHerdr -InstallWezTerm -ConfigureHerdrAlias
+  -Apply -InstallHerdr -InstallWezTerm -ConfigureHerdrAlias -ConfigureWezTerm
 ```
 
-This preserves existing `.wslconfig` sections while setting conservative defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, configures an idempotent PowerShell-profile `herdr` function, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. After opening a new PowerShell or WezTerm window, `herdr` connects to Ubuntu automatically; additional arguments such as `herdr --session agents` are forwarded.
+This preserves existing `.wslconfig` sections while setting conservative defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, configures an idempotent PowerShell-profile `herdr` function, copies the tracked WezTerm configuration to `%USERPROFILE%\.config\wezterm\wezterm.lua` with a timestamped backup of differing existing content, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. After opening a new PowerShell or WezTerm window, `herdr` connects to Ubuntu automatically; additional arguments such as `herdr --session agents` are forwarded.
+
+The tracked WezTerm configuration is based on [Kun Cheng's example](https://github.com/kunchenguid/dotfiles/blob/main/home/.config/wezterm/wezterm.lua). It keeps the native Windows title bar and resize borders with `window_decorations = "TITLE | RESIZE"`, so the window remains draggable.
 
 #### Troubleshooting a crates.io HTTP 403
 
