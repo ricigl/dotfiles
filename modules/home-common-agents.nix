@@ -24,41 +24,41 @@ in
     "${agentPackages.i-have-adhd-skill}/share/skills/i-have-adhd";
 
   home.file.".agents/skills/lavish".source =
-    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
+    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi-runtime/node_modules/lavish-axi/skills/lavish";
   home.file.".agents/skills/gh-axi".source =
-    "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+    "${agentPackages.gh-axi}/lib/node_modules/gh-axi-runtime/node_modules/gh-axi/skills/gh-axi";
   home.file.".agents/skills/no-mistakes".source =
     "${agentPackages.no-mistakes-skill}/share/skills/no-mistakes";
   home.file.".agents/skills/quota-axi".source =
-    "${agentPackages.quota-axi}/lib/node_modules/quota-axi/skills/quota-axi";
+    "${agentPackages.quota-axi}/lib/node_modules/quota-axi-runtime/node_modules/quota-axi/skills/quota-axi";
   home.file.".agents/skills/tasks-axi".source =
-    "${agentPackages.tasks-axi}/lib/node_modules/tasks-axi/skills/tasks-axi";
+    "${agentPackages.tasks-axi}/lib/node_modules/tasks-axi-runtime/node_modules/tasks-axi/skills/tasks-axi";
   home.file.".agents/skills/chrome-devtools-axi".source =
-    "${agentPackages.chrome-devtools-axi}/lib/node_modules/chrome-devtools-axi/skills/chrome-devtools-axi";
+    "${agentPackages.chrome-devtools-axi}/lib/node_modules/chrome-devtools-axi-runtime/node_modules/chrome-devtools-axi/skills/chrome-devtools-axi";
   home.file.".gemini/antigravity-cli/skills/lavish".source =
-    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
+    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi-runtime/node_modules/lavish-axi/skills/lavish";
   home.file.".gemini/antigravity-cli/skills/gh-axi".source =
-    "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+    "${agentPackages.gh-axi}/lib/node_modules/gh-axi-runtime/node_modules/gh-axi/skills/gh-axi";
   home.file.".gemini/antigravity-cli/skills/no-mistakes".source =
     "${agentPackages.no-mistakes-skill}/share/skills/no-mistakes";
   home.file.".gemini/antigravity-cli/skills/quota-axi".source =
-    "${agentPackages.quota-axi}/lib/node_modules/quota-axi/skills/quota-axi";
+    "${agentPackages.quota-axi}/lib/node_modules/quota-axi-runtime/node_modules/quota-axi/skills/quota-axi";
   home.file.".gemini/antigravity-cli/skills/tasks-axi".source =
-    "${agentPackages.tasks-axi}/lib/node_modules/tasks-axi/skills/tasks-axi";
+    "${agentPackages.tasks-axi}/lib/node_modules/tasks-axi-runtime/node_modules/tasks-axi/skills/tasks-axi";
   home.file.".gemini/antigravity-cli/skills/chrome-devtools-axi".source =
-    "${agentPackages.chrome-devtools-axi}/lib/node_modules/chrome-devtools-axi/skills/chrome-devtools-axi";
+    "${agentPackages.chrome-devtools-axi}/lib/node_modules/chrome-devtools-axi-runtime/node_modules/chrome-devtools-axi/skills/chrome-devtools-axi";
   home.file.".prime/agent/skills/lavish".source =
-    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi/skills/lavish";
+    "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi-runtime/node_modules/lavish-axi/skills/lavish";
   home.file.".prime/agent/skills/gh-axi".source =
-    "${agentPackages.gh-axi}/lib/node_modules/gh-axi/skills/gh-axi";
+    "${agentPackages.gh-axi}/lib/node_modules/gh-axi-runtime/node_modules/gh-axi/skills/gh-axi";
   home.file.".prime/agent/skills/no-mistakes".source =
     "${agentPackages.no-mistakes-skill}/share/skills/no-mistakes";
   home.file.".prime/agent/skills/quota-axi".source =
-    "${agentPackages.quota-axi}/lib/node_modules/quota-axi/skills/quota-axi";
+    "${agentPackages.quota-axi}/lib/node_modules/quota-axi-runtime/node_modules/quota-axi/skills/quota-axi";
   home.file.".prime/agent/skills/tasks-axi".source =
-    "${agentPackages.tasks-axi}/lib/node_modules/tasks-axi/skills/tasks-axi";
+    "${agentPackages.tasks-axi}/lib/node_modules/tasks-axi-runtime/node_modules/tasks-axi/skills/tasks-axi";
   home.file.".prime/agent/skills/chrome-devtools-axi".source =
-    "${agentPackages.chrome-devtools-axi}/lib/node_modules/chrome-devtools-axi/skills/chrome-devtools-axi";
+    "${agentPackages.chrome-devtools-axi}/lib/node_modules/chrome-devtools-axi-runtime/node_modules/chrome-devtools-axi/skills/chrome-devtools-axi";
 
   # Pi reads ~/.agents/skills directly. AGY and Prime use their client roots
   # above, while all three invoke the same user-owned binaries on PATH.

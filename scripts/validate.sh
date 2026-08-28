@@ -73,6 +73,14 @@ grep -F 'agentPackages.no-mistakes-skill' modules/home-common-agents.nix >/dev/n
 grep -F 'home.file.".agents/skills/quota-axi"' modules/home-common-agents.nix >/dev/null
 grep -F 'home.file.".agents/skills/tasks-axi"' modules/home-common-agents.nix >/dev/null
 grep -F 'home.file.".agents/skills/chrome-devtools-axi"' modules/home-common-agents.nix >/dev/null
+for pkg_runtime in lavish-axi-runtime gh-axi-runtime quota-axi-runtime tasks-axi-runtime chrome-devtools-axi-runtime; do
+  grep -F "$pkg_runtime" packages/default.nix >/dev/null
+  grep -F "$pkg_runtime" modules/home-common-agents.nix >/dev/null
+done
+if grep -qF 'mkdir -p "$out/lib/node_modules" "$out/bin"' packages/default.nix; then
+  printf '%s\n' "CLI derivations must not install directly into shared \$out/lib/node_modules." >&2
+  exit 1
+fi
 grep -F 'home.file.".pi/agent/extensions/calm"' modules/home-common-agents.nix >/dev/null
 grep -F 'home.file.".pi/agent/extensions/terminal-status-title.js"' modules/home-common-agents.nix >/dev/null
 grep -F 'home.file.".pi/agent/extensions/pi-openai-server-compaction"' modules/home-common-agents.nix >/dev/null

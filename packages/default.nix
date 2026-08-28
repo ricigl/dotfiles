@@ -194,10 +194,10 @@ in
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/node_modules" "$out/bin"
-      cp -R "${lavishNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      mkdir -p "$out/lib/node_modules/lavish-axi-runtime" "$out/bin"
+      cp -R "${lavishNpmDeps}/node_modules" "$out/lib/node_modules/lavish-axi-runtime/"
       makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/lavish-axi" \
-        --add-flags "$out/lib/node_modules/lavish-axi/dist/cli.mjs"
+        --add-flags "$out/lib/node_modules/lavish-axi-runtime/node_modules/lavish-axi/dist/cli.mjs"
       runHook postInstall
     '';
   };
@@ -209,10 +209,10 @@ in
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/node_modules" "$out/bin"
-      cp -R "${ghNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      mkdir -p "$out/lib/node_modules/gh-axi-runtime" "$out/bin"
+      cp -R "${ghNpmDeps}/node_modules" "$out/lib/node_modules/gh-axi-runtime/"
       makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/gh-axi" \
-        --add-flags "$out/lib/node_modules/gh-axi/dist/bin/gh-axi.js"
+        --add-flags "$out/lib/node_modules/gh-axi-runtime/node_modules/gh-axi/dist/bin/gh-axi.js"
       runHook postInstall
     '';
   };
@@ -224,10 +224,10 @@ in
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/node_modules" "$out/bin"
-      cp -R "${quotaNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      mkdir -p "$out/lib/node_modules/quota-axi-runtime" "$out/bin"
+      cp -R "${quotaNpmDeps}/node_modules" "$out/lib/node_modules/quota-axi-runtime/"
       makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/quota-axi" \
-        --add-flags "$out/lib/node_modules/quota-axi/dist/bin/quota-axi.js"
+        --add-flags "$out/lib/node_modules/quota-axi-runtime/node_modules/quota-axi/dist/bin/quota-axi.js"
       runHook postInstall
     '';
   };
@@ -239,10 +239,10 @@ in
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/node_modules" "$out/bin"
-      cp -R "${tasksNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      mkdir -p "$out/lib/node_modules/tasks-axi-runtime" "$out/bin"
+      cp -R "${tasksNpmDeps}/node_modules" "$out/lib/node_modules/tasks-axi-runtime/"
       makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/tasks-axi" \
-        --add-flags "$out/lib/node_modules/tasks-axi/dist/bin/tasks-axi.js"
+        --add-flags "$out/lib/node_modules/tasks-axi-runtime/node_modules/tasks-axi/dist/bin/tasks-axi.js"
       runHook postInstall
     '';
   };
@@ -254,10 +254,10 @@ in
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/node_modules" "$out/bin"
-      cp -R "${chromeDevtoolsNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      mkdir -p "$out/lib/node_modules/chrome-devtools-axi-runtime" "$out/bin"
+      cp -R "${chromeDevtoolsNpmDeps}/node_modules" "$out/lib/node_modules/chrome-devtools-axi-runtime/"
       makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/chrome-devtools-axi" \
-        --add-flags "$out/lib/node_modules/chrome-devtools-axi/dist/bin/chrome-devtools-axi.js"
+        --add-flags "$out/lib/node_modules/chrome-devtools-axi-runtime/node_modules/chrome-devtools-axi/dist/bin/chrome-devtools-axi.js"
       runHook postInstall
     '';
   };
