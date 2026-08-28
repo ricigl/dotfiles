@@ -36,10 +36,14 @@ in
     setxkbmapPkg
     neovim
     nerd-fonts.hack
+    google-chrome
     agentPackages.codebase-memory-mcp
     agentPackages.no-mistakes
     agentPackages.lavish-axi
     agentPackages.gh-axi
+    agentPackages.quota-axi
+    agentPackages.tasks-axi
+    agentPackages.chrome-devtools-axi
     primeLauncher
     primeMaintenance
   ]) ++ [
@@ -59,7 +63,14 @@ in
     NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/.local/share/npm";
     NO_MISTAKES_TELEMETRY = "0";
     NO_MISTAKES_NO_UPDATE_CHECK = "1";
+    CHROME_DEVTOOLS_AXI_USER_DATA_DIR = "${config.home.homeDirectory}/.local/share/chrome-devtools-axi/dev-profile";
+    CHROME_DEVTOOLS_AXI_HEADED = "1";
   };
+
+  home.activation.createChromeDevtoolsProfileDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/.local/share/chrome-devtools-axi/dev-profile"
+    $DRY_RUN_CMD chmod 0700 "${config.home.homeDirectory}/.local/share/chrome-devtools-axi/dev-profile"
+  '';
 
   programs.git = {
     enable = true;

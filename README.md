@@ -21,7 +21,7 @@ The previous WezTerm, Claude Code, and Codex environment remains available as th
 | Layer | Owns |
 |---|---|
 | Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3`, Windows WezTerm terminal emulator, WinGet/App Installer |
-| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Nix-packaged support tools including Herdr, `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, Herdr command, shared policy/skills/MCP config, Firstmate and Treehouse |
+| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Google Chrome (`pkgs.google-chrome`), Nix-packaged support tools (`herdr`, `codebase-memory-mcp`, `no-mistakes`, `lavish-axi`, `gh-axi`, `quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`), `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, shared policy/skills/MCP config, Firstmate and Treehouse |
 | `.#orca-prime` | Optional Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, and build-validation environment |
 | Firstmate | Linux project-fleet coordination and Treehouse-managed project/crew worktrees under `~/firstmate/projects` |
 | Windows Herdr | SSH thin client for selected WSL projects and Firstmate worktrees; no worktree lifecycle ownership |
@@ -38,6 +38,11 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - Prime Agent: `0.8.0`
 - Lavish AXI: `0.1.50`
 - gh-axi: `0.1.30`
+- quota-axi: `0.1.32`
+- tasks-axi: `0.2.5`
+- chrome-devtools-axi: `0.1.31`
+- Google Chrome: Nix package (`pkgs.google-chrome`)
+- pi-openai-server-compaction: commit `8a3de2f3b0c178fdd6f73f2f94172dfc3943e466`
 - Codebase Memory MCP: `0.10.8`
 - no-mistakes: `1.57.0`
 - no-mistakes Linux x86_64 SHA-256: `1145e7bd41a013013eae4baa533d241322d20d917ffef732595460ddbf385b84`
@@ -48,7 +53,7 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - Treehouse: `2.0.1`, Nix package
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
-`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Only the AGY/Pi and Prime Agent binaries remain script-installed.
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Google Chrome and the four support tools (`quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`) are Nix/Home Manager managed. Only the AGY/Pi and Prime Agent binaries remain script-installed.
 
 ## Security model
 
@@ -59,6 +64,7 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - Prime telemetry is disabled in both the dev shell and `~/.prime/agent/settings.json`.
 - Lavish is restricted to `127.0.0.1` and must not publish or share artifacts.
 - gh-axi begins read-only.
+- Chrome and chrome-devtools-axi profile directory `~/.local/share/chrome-devtools-axi/dev-profile`, browser sessions, cookies, and local data are local mutable state created with mode 0700 during Home Manager activation and stay outside Git.
 - no-mistakes telemetry and automatic update checks are disabled by Home Manager. Its daemon, gate repositories, worktrees, logs, database, and evidence remain local mutable state.
 - AGY and Pi are user-owned transitional installs. Their reviewed bootstrap scripts are pinned, but upstream release payloads remain dynamic and may self-update; auth, sessions, caches, logs, and downloads remain local and untracked. Herdr is supplied by the pinned Home Manager package on Linux; its Windows client uses the reviewed official stable installer.
 - Firstmate is packaged from a reviewed commit; its operational `data/`, `state/`, `config/`, `sessions`, caches, `projects/`, and Treehouse worktree state stay outside this repository.
@@ -238,18 +244,23 @@ Install Prime from the regular shell. It is the only support component still ins
 prime-agent --version
 ```
 
-Codebase Memory, no-mistakes, Lavish, gh-axi, Firstmate, Treehouse, Caveman, and `i-have-adhd` are installed by the locked Nix/Home Manager profile during `./rebuild.sh`. Verify them directly:
+Codebase Memory, no-mistakes, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, Google Chrome, Firstmate, Treehouse, Caveman, and `i-have-adhd` are installed by the locked Nix/Home Manager profile during `./rebuild.sh`. Verify them directly:
 
 ```bash
 codebase-memory-mcp --version
 no-mistakes --version
 lavish-axi --version
 gh-axi --version
+quota-axi --version
+tasks-axi --version
+chrome-devtools-axi --help
+command -v google-chrome-stable
+printf '%s\n' "$CHROME_DEVTOOLS_AXI_USER_DATA_DIR" "$CHROME_DEVTOOLS_AXI_HEADED"
 treehouse --version
 command -v fm-session-start.sh
 ```
 
-The Nix packages use fixed release hashes or committed lockfile integrity values. They do not initialize no-mistakes, start daemons, change Git remotes, authenticate services, or create Firstmate projects automatically. Runtime state remains user-owned under `~/firstmate`, `~/.cache`, and the relevant agent state directories.
+The Nix packages use fixed release hashes or committed lockfile integrity values. Google Chrome is installed through Home Manager (`pkgs.google-chrome`). The `chrome-devtools-axi` profile directory (`~/.local/share/chrome-devtools-axi/dev-profile`) and browser cookies/sessions remain local mutable runtime state outside the repository. Automated checks verify configuration, derivations, environment exports, and directory permissions; they do not execute browser runtime logins or mutating actions.
 
 The repository policy is in `.no-mistakes.yaml`. Review the configuration and trusted-default-branch behavior before manually initializing this repository:
 
@@ -265,7 +276,9 @@ Only after that review should you use `git push no-mistakes <branch>` or `/no-mi
 
 The repository root `AGENTS.md` is the single tracked shared policy for AGY, Pi, and Prime. Home Manager exposes that same source to Pi as `~/.pi/agent/AGENTS.md`, to AGY as `~/.gemini/GEMINI.md`, and to Prime as `~/.prime/agent/AGENTS.md`. Prime's safety, worktree, telemetry, and engineering rules are merged into the common file.
 
-The reviewed Caveman, pinned `no-mistakes`, and pinned `i-have-adhd` skills are exposed to all three harnesses through their supported skill roots. Use `/caveman ultra` for token-efficient coding-agent prompts when full-detail output is not required. Use `/no-mistakes` to drive the local validation gate. `i-have-adhd` remains opt-in.
+The reviewed Caveman, pinned `no-mistakes`, `lavish`, `gh-axi`, `quota-axi`, `tasks-axi`, `chrome-devtools-axi`, and pinned `i-have-adhd` skills are exposed to all three harnesses through their supported skill roots (`~/.agents/skills`, `~/.gemini/antigravity-cli/skills`, and `~/.prime/agent/skills`). Use `/caveman ultra` for token-efficient coding-agent prompts when full-detail output is not required. Use `/no-mistakes` to drive the local validation gate. `i-have-adhd` remains opt-in.
+
+Pi loads its local extension `pi-openai-server-compaction` directly from `~/.pi/agent/extensions/pi-openai-server-compaction`, packaged by Nix from the pinned commit with locked dependencies.
 
 Codebase Memory is available to all three harnesses after the pinned binary is installed:
 
@@ -505,7 +518,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 ## Repository map
 
 - `flake.nix`: Home Manager profiles, optional Node 22/build-validation shell, and Home Manager app.
-- `modules/home-base.nix`: default user packages, shell/editor configuration, Node 24, npm PATH, Herdr, and direct Prime launcher.
+- `modules/home-base.nix`: default user packages, Google Chrome, shell/editor configuration, Node 24, npm PATH, Chrome devtools profile activation, Herdr, and direct Prime launcher.
 - `modules/home-common-agents.nix`: shared AGENTS.md, skills, and MCP links for AGY, Pi, and Prime.
 - `modules/home-orca-prime.nix`: reviewed Prime settings and Codebase Memory environment only.
 - `modules/home-firstmate.nix`: Firstmate launcher, explicit Linux backend guard, and tmux runtime dependency.
@@ -514,7 +527,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `scripts/windows-herdr-bootstrap.ps1`: Windows Herdr installer, WezTerm installer via WinGet, WSL resources, dedicated SSH key, and SSH verification.
 - `scripts/install-prime-tools.sh`: pinned Prime Agent installation; this is the only support installer remaining.
 - `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation for the regular Home Manager shell.
-- `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, skills, Lavish, and gh-axi.
+- `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, skills, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, and pi-openai-server-compaction.
 - `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
 - `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
 - `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.

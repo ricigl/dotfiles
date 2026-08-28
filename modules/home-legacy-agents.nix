@@ -25,10 +25,6 @@ in
     config.lib.file.mkOutOfStoreSymlink
       "${dotfiles}/home/.pi/agent/themes";
 
-  home.file.".pi/agent/extensions".source =
-    config.lib.file.mkOutOfStoreSymlink
-      "${dotfiles}/home/.pi/agent/extensions";
-
   home.file.".pi/agent/models.json".source =
     config.lib.file.mkOutOfStoreSymlink
       "${dotfiles}/home/.pi/agent/models.json";

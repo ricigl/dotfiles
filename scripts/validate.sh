@@ -52,7 +52,41 @@ grep -F 'agentPackages = import ./packages' flake.nix >/dev/null
 grep -F 'version = "2.0.1"' packages/default.nix >/dev/null
 grep -F 'version = "0.10.8"' packages/default.nix >/dev/null
 grep -F 'version = "1.57.0"' packages/default.nix >/dev/null
+grep -F 'pname = "quota-axi";' packages/default.nix >/dev/null
+grep -F 'version = "0.1.32";' packages/default.nix >/dev/null
+grep -F 'pname = "tasks-axi";' packages/default.nix >/dev/null
+grep -F 'version = "0.2.5";' packages/default.nix >/dev/null
+grep -F 'pname = "chrome-devtools-axi";' packages/default.nix >/dev/null
+grep -F 'version = "0.1.31";' packages/default.nix >/dev/null
+grep -F 'pname = "pi-openai-server-compaction";' packages/default.nix >/dev/null
+grep -F 'piCompactionCommit = "8a3de2f3b0c178fdd6f73f2f94172dfc3943e466"' packages/default.nix >/dev/null
+grep -F 'sha256-iNwxX81HRuAcUyB7ssI45azzN7PJYXLZ2BYqFh6MwV0=' packages/default.nix >/dev/null
+grep -F 'google-chrome' modules/home-base.nix >/dev/null
+grep -F 'CHROME_DEVTOOLS_AXI_USER_DATA_DIR' modules/home-base.nix >/dev/null
+grep -F 'CHROME_DEVTOOLS_AXI_HEADED' modules/home-base.nix >/dev/null
+grep -F '.local/share/chrome-devtools-axi/dev-profile' modules/home-base.nix >/dev/null
+grep -F 'agentPackages.quota-axi' modules/home-base.nix >/dev/null
+grep -F 'agentPackages.tasks-axi' modules/home-base.nix >/dev/null
+grep -F 'agentPackages.chrome-devtools-axi' modules/home-base.nix >/dev/null
 grep -F 'agentPackages.no-mistakes-skill' modules/home-common-agents.nix >/dev/null
+grep -F 'home.file.".agents/skills/quota-axi"' modules/home-common-agents.nix >/dev/null
+grep -F 'home.file.".agents/skills/tasks-axi"' modules/home-common-agents.nix >/dev/null
+grep -F 'home.file.".agents/skills/chrome-devtools-axi"' modules/home-common-agents.nix >/dev/null
+grep -F 'home.file.".pi/agent/extensions/calm"' modules/home-common-agents.nix >/dev/null
+grep -F 'home.file.".pi/agent/extensions/terminal-status-title.js"' modules/home-common-agents.nix >/dev/null
+grep -F 'home.file.".pi/agent/extensions/pi-openai-server-compaction"' modules/home-common-agents.nix >/dev/null
+if grep -qF 'home.file.".pi/agent/extensions"' modules/home-legacy-agents.nix; then
+  printf '%s\n' "Legacy module must not link .pi/agent/extensions as a whole directory." >&2
+  exit 1
+fi
+if grep -qF 'algal/pi-openai-server-compaction' home/.pi/agent/settings.json; then
+  printf '%s\n' "Tracked Pi settings must not contain algal git extension." >&2
+  exit 1
+fi
+if grep -nE 'google-chrome.*\.deb|apt.*google-chrome|wget.*chrome' README.md; then
+  printf '%s\n' "README must not instruct apt/.deb/wget installation of Chrome." >&2
+  exit 1
+fi
 grep -F 'pkgs.tmux' modules/home-firstmate.nix >/dev/null
 grep -F 'export FM_BACKEND=' modules/home-firstmate.nix >/dev/null
 grep -F 'FM_BACKEND:-tmux' modules/home-firstmate.nix >/dev/null

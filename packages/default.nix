@@ -10,6 +10,11 @@ let
     url = "https://github.com/kunchenguid/no-mistakes/archive/refs/tags/v1.57.0.tar.gz";
     hash = "sha256-lRkgF8sjAa1ND3WPaXHqIvSavmPgEZFrcci1bqZ5hLs=";
   };
+  piCompactionCommit = "8a3de2f3b0c178fdd6f73f2f94172dfc3943e466";
+  piCompactionSource = fetchurl {
+    url = "https://github.com/kunchenguid/pi-openai-server-compaction/archive/${piCompactionCommit}.tar.gz";
+    hash = "sha256-iNwxX81HRuAcUyB7ssI45azzN7PJYXLZ2BYqFh6MwV0=";
+  };
   npmDependencyClosure = name:
     let
       lock = builtins.fromJSON (builtins.readFile (builtins.toPath "${toString ./.}/npm/${name}/package-lock.json"));
@@ -43,6 +48,10 @@ let
 
   lavishNpmDeps = npmDependencyClosure "lavish-axi";
   ghNpmDeps = npmDependencyClosure "gh-axi";
+  quotaNpmDeps = npmDependencyClosure "quota-axi";
+  tasksNpmDeps = npmDependencyClosure "tasks-axi";
+  chromeDevtoolsNpmDeps = npmDependencyClosure "chrome-devtools-axi";
+  piCompactionNpmDeps = npmDependencyClosure "pi-openai-server-compaction";
 in
 {
   codebase-memory-mcp = stdenvNoCC.mkDerivation {
@@ -185,9 +194,9 @@ in
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/node_modules/lavish-axi" "$out/bin"
-      cp -R "${lavishNpmDeps}/node_modules/lavish-axi/." "$out/lib/node_modules/lavish-axi/"
-      makeWrapper "${pkgs.nodejs}/bin/node" "$out/bin/lavish-axi" \
+      mkdir -p "$out/lib/node_modules" "$out/bin"
+      cp -R "${lavishNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/lavish-axi" \
         --add-flags "$out/lib/node_modules/lavish-axi/dist/cli.mjs"
       runHook postInstall
     '';
@@ -200,11 +209,76 @@ in
     nativeBuildInputs = [ pkgs.makeWrapper ];
     installPhase = ''
       runHook preInstall
-      mkdir -p "$out/lib/node_modules/gh-axi" "$out/bin"
-      cp -R "${ghNpmDeps}/node_modules/gh-axi/." "$out/lib/node_modules/gh-axi/"
-      makeWrapper "${pkgs.nodejs}/bin/node" "$out/bin/gh-axi" \
+      mkdir -p "$out/lib/node_modules" "$out/bin"
+      cp -R "${ghNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/gh-axi" \
         --add-flags "$out/lib/node_modules/gh-axi/dist/bin/gh-axi.js"
       runHook postInstall
     '';
+  };
+
+  quota-axi = stdenvNoCC.mkDerivation {
+    pname = "quota-axi";
+    version = "0.1.32";
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/lib/node_modules" "$out/bin"
+      cp -R "${quotaNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/quota-axi" \
+        --add-flags "$out/lib/node_modules/quota-axi/dist/bin/quota-axi.js"
+      runHook postInstall
+    '';
+  };
+
+  tasks-axi = stdenvNoCC.mkDerivation {
+    pname = "tasks-axi";
+    version = "0.2.5";
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/lib/node_modules" "$out/bin"
+      cp -R "${tasksNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/tasks-axi" \
+        --add-flags "$out/lib/node_modules/tasks-axi/dist/bin/tasks-axi.js"
+      runHook postInstall
+    '';
+  };
+
+  chrome-devtools-axi = stdenvNoCC.mkDerivation {
+    pname = "chrome-devtools-axi";
+    version = "0.1.31";
+    dontUnpack = true;
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/lib/node_modules" "$out/bin"
+      cp -R "${chromeDevtoolsNpmDeps}/node_modules/." "$out/lib/node_modules/"
+      makeWrapper "${pkgs.nodejs_24}/bin/node" "$out/bin/chrome-devtools-axi" \
+        --add-flags "$out/lib/node_modules/chrome-devtools-axi/dist/bin/chrome-devtools-axi.js"
+      runHook postInstall
+    '';
+  };
+
+  pi-openai-server-compaction = stdenvNoCC.mkDerivation {
+    pname = "pi-openai-server-compaction";
+    version = piCompactionCommit;
+    src = piCompactionSource;
+    sourceRoot = "pi-openai-server-compaction-${piCompactionCommit}";
+    dontBuild = true;
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out"
+      cp -R ./. "$out/"
+      mkdir -p "$out/node_modules"
+      cp -R "${piCompactionNpmDeps}/node_modules/." "$out/node_modules/"
+      runHook postInstall
+    '';
+    meta = {
+      description = "Pi extension for OpenAI server-side compaction";
+      homepage = "https://github.com/kunchenguid/pi-openai-server-compaction";
+    };
   };
 }
