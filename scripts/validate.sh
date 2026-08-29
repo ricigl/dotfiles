@@ -21,10 +21,12 @@ for script in \
   scripts/validate.sh \
   tests/smoke-herdr-agents.sh \
   tests/test-prime-maintenance.sh \
-  tests/test-windows-herdr-shim.sh; do
+  tests/test-windows-herdr-shim.sh \
+  tests/test-shell-handoff.sh; do
   bash -n "$script"
 done
 ./tests/test-windows-herdr-shim.sh >/dev/null
+./tests/test-shell-handoff.sh >/dev/null
 python3 -c 'import ast, pathlib; path = pathlib.Path("scripts/prime-maintenance.py"); ast.parse(path.read_text(encoding="utf-8"), filename=str(path))'
 
 json_files=(
@@ -107,6 +109,12 @@ grep -F 'herdr.inputs.nixpkgs.follows = "nixpkgs";' flake.nix >/dev/null
 python3 -c 'import json; from pathlib import Path; lock=json.loads(Path("flake.lock").read_text()); assert lock["nodes"]["herdr"]["inputs"]["nixpkgs"] == ["nixpkgs"]; assert "nixpkgs" not in lock["nodes"]'
 grep -F 'herdr.packages.${pkgs.system}.default' modules/home-base.nix >/dev/null
 grep -F 'home.file.".config/herdr"' modules/home-base.nix >/dev/null
+grep -F 'programs.bash = {' modules/home-base.nix >/dev/null
+grep -F 'profileExtra = bashHandoff;' modules/home-base.nix >/dev/null
+grep -F 'initExtra = bashHandoff;' modules/home-base.nix >/dev/null
+grep -F 'exec zsh -l' modules/home-base.nix >/dev/null
+grep -F 'hm-session-vars.sh' modules/home-base.nix >/dev/null
+test -f tests/test-shell-handoff.sh
 if grep -qi 'herdr' modules/home-legacy-agents.nix; then
   printf '%s\n' "Legacy module must not declare Herdr directly." >&2
   exit 1

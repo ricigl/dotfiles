@@ -239,7 +239,21 @@ cd ~/.dotfiles
 home-manager switch -b backup --flake "$HOME/.dotfiles#$(whoami)@wsl"
 ```
 
-After the first activation, start a fresh regular shell so Home Manager's PATH and session variables are loaded before installing agents or running smoke tests:
+Home Manager enables `programs.bash` with a guarded interactive handoff to Nix-managed `zsh -l` upon login and interactive shell startup. Because standalone Home Manager runs without root or host mutation (leaving `/etc/passwd` and `/etc/shells` untouched), newly opened WSL terminals automatically load Home Manager's environment and hand off to Zsh.
+
+To verify in a fresh WSL shell:
+
+```bash
+wsl.exe -d Ubuntu
+```
+
+Inside the new shell, confirm Zsh and Home Manager environment are active:
+
+```bash
+echo "$SHELL $ZSH_VERSION"
+```
+
+To switch immediately within the current terminal without opening a new window, use the manual fallback:
 
 ```bash
 exec zsh -l
@@ -282,7 +296,7 @@ pi --version
 pi list | grep pi-mcp-adapter
 ```
 
-The regular Home Manager shell defines the interactive alias `agy` as `command agy --dangerously-skip-permissions`. After activation, start a fresh login shell with `exec zsh -l`; then `agy ...` automatically includes the flag. `command agy ...` bypasses the alias when needed.
+The regular Home Manager shell defines the interactive alias `agy` as `command agy --dangerously-skip-permissions`. In any fresh WSL shell (or after running `exec zsh -l` in the current terminal), `agy ...` automatically includes the flag. `command agy ...` bypasses the alias when needed.
 
 The upstream Linux command is `curl -fsSL https://herdr.dev/install.sh | sh`; this repository intentionally uses the locked Home Manager package instead, so the WSL server is reproducible and matches the pinned `0.8.2` Windows client.
 
@@ -567,7 +581,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 ## Repository map
 
 - `flake.nix`: Home Manager profiles, optional Node 22/build-validation shell, and Home Manager app.
-- `modules/home-base.nix`: default user packages, Google Chrome, shell/editor configuration, Node 24, npm PATH, Chrome devtools profile activation, Herdr, and direct Prime launcher.
+- `modules/home-base.nix`: default user packages, Google Chrome, shell/editor configuration (guarded Bash-to-Zsh handoff, Zsh, Starship), Node 24, npm PATH, Chrome devtools profile activation, Herdr, and direct Prime launcher.
 - `modules/home-common-agents.nix`: shared AGENTS.md, skills, and MCP links for AGY, Pi, and Prime.
 - `modules/home-orca-prime.nix`: reviewed Prime settings and Codebase Memory environment only.
 - `modules/home-firstmate.nix`: Firstmate launcher, explicit Linux backend guard, and tmux runtime dependency.
@@ -585,6 +599,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `tests/smoke-herdr-agents.sh`: target-runtime acceptance checks for the Herdr/Nix-managed support environment.
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `tests/test-windows-herdr-shim.sh`: contract tests for the Windows Herdr command shim and PATH handling.
+- `tests/test-shell-handoff.sh`: contract tests for the guarded Bash-to-Zsh handoff.
 - `home/`: repository-authored configuration linked by Home Manager.
 
 ## Notes

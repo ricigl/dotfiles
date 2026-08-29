@@ -22,6 +22,32 @@ let
   primeMaintenance = pkgs.writeShellScriptBin "prime-maintenance" ''
     exec "${dotfiles}/scripts/prime-maintenance.py" "$@"
   '';
+  bashHandoff = ''
+    # Guard: interactive shell only, not already in Zsh.
+    if [[ $- == *i* ]] && [ -z "''${ZSH_VERSION:-}" ] && [ -z "''${ZSH_NAME:-}" ]; then
+      if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+        . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+      elif [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix.sh' ]; then
+        . '/nix/var/nix/profiles/default/etc/profile.d/nix.sh'
+      fi
+
+      if [ -z "''${__HM_SESS_VARS_SOURCED:-}" ]; then
+        if [ -f "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh" ]; then
+          . "${config.home.profileDirectory}/etc/profile.d/hm-session-vars.sh"
+        elif [ -f "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh" ]; then
+          . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+        fi
+      fi
+
+      if command -v zsh >/dev/null 2>&1; then
+        exec zsh -l
+      elif [ -x "${config.home.profileDirectory}/bin/zsh" ]; then
+        exec "${config.home.profileDirectory}/bin/zsh" -l
+      elif [ -x "$HOME/.nix-profile/bin/zsh" ]; then
+        exec "$HOME/.nix-profile/bin/zsh" -l
+      fi
+    fi
+  '';
 in
 {
   home.packages = (with pkgs; [
@@ -71,6 +97,12 @@ in
     $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/.local/share/chrome-devtools-axi/dev-profile"
     $DRY_RUN_CMD chmod 0700 "${config.home.homeDirectory}/.local/share/chrome-devtools-axi/dev-profile"
   '';
+
+  programs.bash = {
+    enable = true;
+    profileExtra = bashHandoff;
+    initExtra = bashHandoff;
+  };
 
   programs.git = {
     enable = true;
