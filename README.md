@@ -259,6 +259,31 @@ To switch immediately within the current terminal without opening a new window, 
 exec zsh -l
 ```
 
+#### WSLg GUI and audio environment in SSH sessions
+
+Direct Ubuntu WSL terminals inherit WSLg environment variables (`DISPLAY=:0`, `WAYLAND_DISPLAY=wayland-0`, `XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir`, `PULSE_SERVER=unix:/mnt/wslg/PulseServer`) from WSL init. However, Windows WezTerm/Herdr SSH sessions attach to an OpenSSH daemon started by systemd, which does not inherit WSL init's environment. In an unconfigured SSH shell, `DISPLAY` is unset, and GUI applications such as Nix-managed `google-chrome` fail with `Missing X server or $DISPLAY`.
+
+Home Manager declaratively restores the WSLg GUI and audio environment without modifying sshd, `/etc`, sudo, or Windows configuration. In `modules/home-base.nix`, a POSIX-compatible hook is wired into `programs.bash.bashrcExtra` (for interactive and noninteractive SSH bash shells before the interactive guard) and `programs.zsh.envExtra` (for the Home Manager Zsh shell and noninteractive commands):
+
+- Exports `DISPLAY=:0` only when `/tmp/.X11-unix/X0` exists and `DISPLAY` is unset; existing `DISPLAY` values (such as SSH X11 forwarding `DISPLAY=localhost:10.0`) are preserved.
+- Exports `WAYLAND_DISPLAY=wayland-0` and `XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir` only when `/mnt/wslg/runtime-dir/wayland-0` exists and the variables are unset.
+- Exports `PULSE_SERVER=unix:/mnt/wslg/PulseServer` only when `/mnt/wslg/PulseServer` exists and `PULSE_SERVER` is unset.
+
+To verify WSLg socket availability and active environment:
+
+```bash
+test -S /tmp/.X11-unix/X0
+printf '%s\n' "$DISPLAY" "$WAYLAND_DISPLAY" "$XDG_RUNTIME_DIR"
+```
+
+If testing in an active session prior to rebuilding Home Manager, use the manual fallback:
+
+```bash
+export DISPLAY=:0
+```
+
+This manual export is only needed before rebuilding. After `./rebuild.sh`, all future interactive and noninteractive SSH sessions resolve the WSLg environment automatically.
+
 The rebuild wrapper also relocates stale Home Manager skill backups out of agent skill discovery roots into `~/.local/state/orca-prime/skill-backups/` without deleting them.
 
 ### 4. Use the optional Node 22 validation shell
@@ -581,7 +606,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 ## Repository map
 
 - `flake.nix`: Home Manager profiles, optional Node 22/build-validation shell, and Home Manager app.
-- `modules/home-base.nix`: default user packages, Google Chrome, shell/editor configuration (guarded Bash-to-Zsh handoff, Zsh, Starship), Node 24, npm PATH, Chrome devtools profile activation, Herdr, and direct Prime launcher.
+- `modules/home-base.nix`: default user packages, Google Chrome, shell/editor configuration (guarded Bash-to-Zsh handoff, WSLg GUI/audio environment discovery, Zsh, Starship), Node 24, npm PATH, Chrome devtools profile activation, Herdr, and direct Prime launcher.
 - `modules/home-common-agents.nix`: shared AGENTS.md, skills, and MCP links for AGY, Pi, and Prime.
 - `modules/home-orca-prime.nix`: reviewed Prime settings and Codebase Memory environment only.
 - `modules/home-firstmate.nix`: Firstmate launcher, explicit Linux backend guard, and tmux runtime dependency.
@@ -600,6 +625,7 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `tests/test-windows-herdr-shim.sh`: contract tests for the Windows Herdr command shim and PATH handling.
 - `tests/test-shell-handoff.sh`: contract tests for the guarded Bash-to-Zsh handoff.
+- `tests/test-wslg-display.sh`: contract tests for WSLg display and audio environment discovery.
 - `home/`: repository-authored configuration linked by Home Manager.
 
 ## Notes

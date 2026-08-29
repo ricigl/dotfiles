@@ -22,6 +22,25 @@ let
   primeMaintenance = pkgs.writeShellScriptBin "prime-maintenance" ''
     exec "${dotfiles}/scripts/prime-maintenance.py" "$@"
   '';
+  wslgHook = ''
+    # WSLg GUI and audio socket discovery for SSH and noninteractive sessions.
+    if [ -z "''${DISPLAY:-}" ] && [ -e /tmp/.X11-unix/X0 ]; then
+      export DISPLAY=:0
+    fi
+
+    if [ -e /mnt/wslg/runtime-dir/wayland-0 ]; then
+      if [ -z "''${WAYLAND_DISPLAY:-}" ]; then
+        export WAYLAND_DISPLAY=wayland-0
+      fi
+      if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
+        export XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
+      fi
+    fi
+
+    if [ -z "''${PULSE_SERVER:-}" ] && [ -e /mnt/wslg/PulseServer ]; then
+      export PULSE_SERVER=unix:/mnt/wslg/PulseServer
+    fi
+  '';
   bashHandoff = ''
     # Guard: interactive shell only, not already in Zsh.
     if [[ $- == *i* ]] && [ -z "''${ZSH_VERSION:-}" ] && [ -z "''${ZSH_NAME:-}" ]; then
@@ -100,6 +119,7 @@ in
 
   programs.bash = {
     enable = true;
+    bashrcExtra = wslgHook;
     profileExtra = bashHandoff;
     initExtra = bashHandoff;
   };
@@ -114,6 +134,7 @@ in
 
   programs.zsh = {
     enable = true;
+    envExtra = wslgHook;
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
 
