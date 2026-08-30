@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Focused deterministic contract and behavior tests for Firstmate clone safety
-# and Google Chrome system installation in scripts/install-home-agents.sh.
+# Focused deterministic contract and behavior tests for the user-owned agent,
+# Herdr integration, Hunk, Firstmate, and Google Chrome installation boundaries.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -10,6 +10,7 @@ FIRSTMATE_MODULE="$ROOT/modules/home-firstmate.nix"
 PACKAGES_DEFAULT="$ROOT/packages/default.nix"
 README="$ROOT/README.md"
 SMOKE_TEST="$ROOT/tests/smoke-herdr-agents.sh"
+COMMON_MODULE="$ROOT/modules/home-common-agents.nix"
 
 test -f "$INSTALLER"
 test -f "$BASE_MODULE"
@@ -17,11 +18,12 @@ test -f "$FIRSTMATE_MODULE"
 test -f "$PACKAGES_DEFAULT"
 test -f "$README"
 test -f "$SMOKE_TEST"
+test -f "$COMMON_MODULE"
 
 # ------------------------------------------------------------------------------
 # 1. Static Contract Checks
 # ------------------------------------------------------------------------------
-python3 - "$INSTALLER" "$BASE_MODULE" "$FIRSTMATE_MODULE" "$PACKAGES_DEFAULT" "$README" "$SMOKE_TEST" <<'PY'
+python3 - "$INSTALLER" "$BASE_MODULE" "$FIRSTMATE_MODULE" "$PACKAGES_DEFAULT" "$README" "$SMOKE_TEST" "$COMMON_MODULE" <<'PY'
 import sys
 from pathlib import Path
 
@@ -31,6 +33,7 @@ firstmate_module = Path(sys.argv[3]).read_text(encoding="utf-8")
 packages_default = Path(sys.argv[4]).read_text(encoding="utf-8")
 readme = Path(sys.argv[5]).read_text(encoding="utf-8")
 smoke_test = Path(sys.argv[6]).read_text(encoding="utf-8")
+common_module = Path(sys.argv[7]).read_text(encoding="utf-8")
 
 # 1.1 scripts/install-home-agents.sh contracts
 assert 'FIRSTMATE_REPO_URL="https://github.com/kunchenguid/firstmate.git"' in installer, "Missing FIRSTMATE_REPO_URL"
@@ -48,6 +51,17 @@ assert 'git pull' not in installer, "Installer must not auto-pull or update exis
 assert 'AGENTS.md' in installer.split('install_or_verify_firstmate')[1].split('find_system_chrome')[0], "Firstmate verification must require AGENTS.md"
 assert 'command -v' not in installer.split('find_system_chrome()')[1].split('}')[0], "find_system_chrome must not fall back to PATH"
 assert 'sha256' not in installer.lower().split("download_verified")[-1].split("install_or_verify_chrome")[0] or 'chrome_deb' not in installer.lower().split("download_verified")[-1].split("install_or_verify_chrome")[0], "Installer must not invent a Chrome checksum"
+assert 'herdr integration install pi' in installer, "Missing Herdr Pi integration"
+assert 'herdr integration install antigravity-cli' in installer, "Missing Herdr Antigravity CLI integration"
+assert 'npx --yes skills add herdrdev/herdr --skill herdr -g' in installer, "Missing global Herdr skill installation"
+assert 'HERDR_GLOBAL_SKILL_FILE="$HOME/.agents/skills/herdr/SKILL.md"' in installer, "Missing global Herdr skill verification path"
+assert 'npm install --global hunkdiff' in installer, "Hunk must be installed through npm globally"
+assert 'hunk.dev/install.sh' not in installer, "Hunk shell installer must not be used"
+assert 'herdr plugin install jhochenbaum/herdr-hunk-diff' not in installer, "Plugin source must be passed through the configured variable"
+assert 'herdr plugin install "$HUNK_PLUGIN_SOURCE" --yes' in installer, "Missing Hunk plugin installation"
+assert 'HUNK_PLUGIN_ID="jhochenbaum.hunkdiff"' in installer, "Missing Hunk plugin ID"
+assert 'herdr plugin action invoke setup-keys --plugin "$HUNK_PLUGIN_ID"' in installer, "Missing Hunk keybinding setup"
+assert 'herdr server reload-config' in installer, "Missing Herdr config reload"
 
 # 1.2 modules/home-base.nix contracts
 assert 'google-chrome' not in base_module.split("home.packages = (with pkgs; [")[1].split("]) ++ [")[0], "google-chrome must be removed from home.packages in home-base.nix"
@@ -73,12 +87,23 @@ assert 'fm-session-start.sh' not in smoke_test.split("for command_name in ")[1].
 assert 'firstmate_root="$HOME/firstmate"' in smoke_test, "smoke test must use exact $HOME/firstmate"
 assert '/usr/bin/google-chrome-stable' in smoke_test and '/usr/bin/google-chrome' in smoke_test, "smoke test must check absolute system paths"
 
-# 1.6 README.md documentation contracts
+# 1.6 global Herdr skill visibility
+assert 'home.file.".gemini/antigravity-cli/skills/herdr".source' in common_module, "AGY must expose the global Herdr skill"
+assert 'home.file.".prime/agent/skills/herdr".source' in common_module, "Prime must expose the global Herdr skill"
+assert 'mkOutOfStoreSymlink "${home}/.agents/skills/herdr"' in common_module, "AGY and Prime must link to the global Herdr skill"
+
+# 1.7 README.md documentation contracts
 assert 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' in readme, "README must document official Google Chrome deb URL"
 assert 'pkgs.google-chrome' not in readme, "README must not claim Chrome is pkgs.google-chrome"
 assert 'install-home-agents.sh' in readme, "README must document install-home-agents.sh"
 assert '~/firstmate' in readme, "README must document Firstmate checkout in ~/firstmate"
 assert 'apt-get' not in readme, "README must not reference apt-get"
+assert 'herdr integration install pi' in readme, "README must document the Herdr Pi integration"
+assert 'herdr integration install antigravity-cli' in readme, "README must document the Herdr Antigravity integration"
+assert 'npx skills add herdrdev/herdr --skill herdr -g' in readme, "README must document global Herdr skill installation"
+assert 'npm install --global hunkdiff' in readme, "README must document npm Hunk installation"
+assert 'jhochenbaum/herdr-hunk-diff' in readme, "README must document Hunk Herdr plugin"
+assert 'herdr server reload-config' in readme, "README must document Herdr config reload"
 
 print("Static contract checks for installer and ownership boundaries passed.")
 PY

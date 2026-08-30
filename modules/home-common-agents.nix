@@ -23,6 +23,13 @@ in
   home.file.".prime/agent/skills/i-have-adhd".source =
     "${agentPackages.i-have-adhd-skill}/share/skills/i-have-adhd";
 
+  # The installer owns the mutable global Herdr skill. These links expose the
+  # same checkout to AGY and Prime; Pi reads ~/.agents/skills directly.
+  home.file.".gemini/antigravity-cli/skills/herdr".source =
+    config.lib.file.mkOutOfStoreSymlink "${home}/.agents/skills/herdr";
+  home.file.".prime/agent/skills/herdr".source =
+    config.lib.file.mkOutOfStoreSymlink "${home}/.agents/skills/herdr";
+
   home.file.".agents/skills/lavish".source =
     "${agentPackages.lavish-axi}/lib/node_modules/lavish-axi-runtime/node_modules/lavish-axi/skills/lavish";
   home.file.".agents/skills/gh-axi".source =

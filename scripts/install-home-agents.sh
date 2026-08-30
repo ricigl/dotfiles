@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Install the reviewed AGY and Pi bootstrap scripts, clone Firstmate into $HOME/firstmate,
-# and install Google Chrome via apt for the regular Home Manager shell and WSL host environment.
+# Install the reviewed AGY and Pi bootstrap scripts, Herdr integrations, the global Herdr skill,
+# Hunk, the Hunk Herdr plugin, Firstmate, and Google Chrome for the regular Home Manager shell.
 #
 # NOTE: This script is an explicit host-changing installer. It installs user binaries into
-# $HOME/.local/bin, clones the upstream Firstmate repository to $HOME/firstmate, and installs
-# Google Chrome system packages via apt when absent.
+# $HOME/.local/bin and the user npm prefix, clones the upstream Firstmate repository to
+# $HOME/firstmate, installs Hunk through npm, and installs Google Chrome system packages via apt.
 set -euo pipefail
 
 AGY_INSTALLER_URL="https://antigravity.google/cli/install.sh"
@@ -15,13 +15,16 @@ PI_MCP_ADAPTER_PACKAGE="npm:pi-mcp-adapter@2.27.0"
 FIRSTMATE_REPO_URL="https://github.com/kunchenguid/firstmate.git"
 FIRSTMATE_DIR="$HOME/firstmate"
 CHROME_DEB_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+HERDR_GLOBAL_SKILL_FILE="$HOME/.agents/skills/herdr/SKILL.md"
+HUNK_PLUGIN_SOURCE="jhochenbaum/herdr-hunk-diff"
+HUNK_PLUGIN_ID="jhochenbaum.hunkdiff"
 
 if [ -n "${IN_NIX_SHELL:-}" ]; then
   printf '%s\n' "Run this from the regular Home Manager shell, not nix develop .#orca-prime." >&2
   exit 1
 fi
 
-for command_name in curl wget sha256sum bash sh node npm mktemp git; do
+for command_name in curl wget sha256sum bash sh node npm npx mktemp git herdr; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing required command: %s\n' "$command_name" >&2
     exit 1
@@ -35,6 +38,10 @@ fi
 
 mkdir -p "$HOME/.local/bin"
 export PATH="$HOME/.local/bin:$PATH"
+
+export NPM_CONFIG_PREFIX="${NPM_CONFIG_PREFIX:-$HOME/.local/share/npm}"
+mkdir -p "$NPM_CONFIG_PREFIX/bin"
+export PATH="$NPM_CONFIG_PREFIX/bin:$PATH"
 
 tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/home-agents-install.XXXXXXXXXX")"
 cleanup() {
@@ -144,6 +151,69 @@ install_or_verify_chrome() {
   printf 'Google Chrome installed successfully: %s (%s)\n' "$installed_version" "$installed_chrome"
 }
 
+install_or_verify_herdr_integrations() {
+  printf '%s\n' "Installing Herdr integrations for Pi and Antigravity CLI..."
+  herdr integration install pi
+  herdr integration install antigravity-cli
+
+  herdr integration status >/dev/null || {
+    printf '%s\n' "Herdr integration status verification failed after installation." >&2
+    exit 1
+  }
+}
+
+install_or_verify_herdr_skill() {
+  printf '%s\n' "Installing the global Herdr skill for all supported harnesses..."
+  npx --yes skills add herdrdev/herdr --skill herdr -g
+
+  if [ ! -f "$HERDR_GLOBAL_SKILL_FILE" ]; then
+    printf 'Error: global Herdr skill was not installed at %s.\n' "$HERDR_GLOBAL_SKILL_FILE" >&2
+    exit 1
+  fi
+}
+
+install_or_verify_hunk() {
+  local hunk_bin
+  hunk_bin="$(command -v hunk || true)"
+  if [ -z "$hunk_bin" ]; then
+    printf '%s\n' "Installing Hunk through the user npm prefix..."
+    npm install --global hunkdiff
+    hunk_bin="$(command -v hunk || true)"
+  fi
+
+  if [ -z "$hunk_bin" ]; then
+    printf '%s\n' "Error: Hunk was not found on PATH after npm installation." >&2
+    exit 1
+  fi
+
+  "$hunk_bin" --version >/dev/null 2>&1 || {
+    printf 'Error: Hunk executable %s did not respond to --version.\n' "$hunk_bin" >&2
+    exit 1
+  }
+  printf 'Hunk verified: %s (%s)\n' "$("$hunk_bin" --version 2>&1 | head -n1)" "$hunk_bin"
+}
+
+install_or_verify_hunk_plugin() {
+  printf 'Installing Herdr Hunk plugin %s...\n' "$HUNK_PLUGIN_SOURCE"
+  herdr plugin install "$HUNK_PLUGIN_SOURCE" --yes
+
+  local plugin_listing
+  plugin_listing="$(herdr plugin list --plugin "$HUNK_PLUGIN_ID" --json)"
+  printf '%s\n' "$plugin_listing" | grep -F "$HUNK_PLUGIN_ID" >/dev/null || {
+    printf 'Error: Herdr plugin %s was not listed after installation.\n' "$HUNK_PLUGIN_ID" >&2
+    exit 1
+  }
+
+  printf '%s\n' "Installing Herdr Hunk keybindings..."
+  herdr plugin action invoke setup-keys --plugin "$HUNK_PLUGIN_ID"
+
+  printf '%s\n' "Reloading the running Herdr server configuration..."
+  if ! herdr server reload-config; then
+    printf '%s\n' "Error: Herdr server reload-config failed. Start the Herdr server and rerun this installer to activate the Hunk keybindings." >&2
+    exit 1
+  fi
+}
+
 agy_installer="$tmp_dir/agy-install.sh"
 pi_installer="$tmp_dir/pi-install.sh"
 download_verified "$AGY_INSTALLER_URL" "$AGY_INSTALLER_SHA256" "$agy_installer"
@@ -175,6 +245,14 @@ install_or_verify_firstmate "$FIRSTMATE_DIR" "$FIRSTMATE_REPO_URL"
 
 install_or_verify_chrome
 
+install_or_verify_herdr_integrations
+
+install_or_verify_herdr_skill
+
+install_or_verify_hunk
+
+install_or_verify_hunk_plugin
+
 printf '\n=== Installation and Verification Summary ===\n'
 printf 'AGY: %s (%s)\n' "$(agy --version 2>&1 | head -n1)" "$(command -v agy)"
 printf 'Pi: %s (%s)\n' "$(pi --version 2>&1 | head -n1)" "$(command -v pi)"
@@ -186,3 +264,4 @@ if [ -n "$chrome_bin" ]; then
 else
   printf 'Google Chrome: not installed\n'
 fi
+printf 'Global Herdr skill: %s\n' "$HERDR_GLOBAL_SKILL_FILE"

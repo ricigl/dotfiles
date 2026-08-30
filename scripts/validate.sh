@@ -200,8 +200,17 @@ fail_item "Firstmate dependencies in modules/home-firstmate.nix failed verificat
 grep -F 'FIRSTMATE_REPO_URL="https://github.com/kunchenguid/firstmate.git"' scripts/install-home-agents.sh >/dev/null && \
 grep -F 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' scripts/install-home-agents.sh >/dev/null && \
 grep -F 'apt install -y' scripts/install-home-agents.sh >/dev/null && \
-pass_item "install-home-agents.sh Firstmate git clone and Google Chrome apt installer contracts verified" || \
-fail_item "install-home-agents.sh Firstmate or Chrome installer contracts failed verification"
+grep -F 'herdr integration install pi' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'herdr integration install antigravity-cli' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'npx --yes skills add herdrdev/herdr --skill herdr -g' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'npm install --global hunkdiff' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'herdr plugin install "$HUNK_PLUGIN_SOURCE" --yes' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'herdr plugin action invoke setup-keys --plugin "$HUNK_PLUGIN_ID"' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'herdr server reload-config' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'home.file.".gemini/antigravity-cli/skills/herdr"' modules/home-common-agents.nix >/dev/null && \
+grep -F 'home.file.".prime/agent/skills/herdr"' modules/home-common-agents.nix >/dev/null && \
+pass_item "install-home-agents.sh Herdr, global skill, Hunk, Firstmate, and Chrome contracts verified" || \
+fail_item "install-home-agents.sh integration, skill, Hunk, Firstmate, or Chrome contracts failed verification"
 
 grep -F 'herdr.url = "github:herdrdev/herdr/v0.8.2"' flake.nix >/dev/null && \
 grep -F 'herdr.inputs.nixpkgs.follows = "nixpkgs";' flake.nix >/dev/null && \
