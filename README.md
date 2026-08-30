@@ -177,7 +177,7 @@ This sets conservative `.wslconfig` defaults (8GB memory, 6 processors, 4GB swap
 
 The tracked WezTerm configuration keeps native Windows title bar and resize borders with `window_decorations = "TITLE | RESIZE"`, so the window remains draggable and resizable. `-InstallHackNerdFont` installs Hack Nerd Font v3.5.1 into the user font directory after verifying SHA-256 `fa24da7de7cefe7766614d27762570b20453c852fc1d5b657111666df9a5e449`.
 
-When `-ConfigureHerdrAlias` is used, the bootstrap creates the marked `wsl-herdr` entry in `%USERPROFILE%\.ssh\config`, selecting the dedicated `orca-wsl-ed25519` key and a stable `%USERPROFILE%\.ssh\orca-wsl-known-hosts` file. It installs a dedicated command shim at `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` (which invokes the installed `herdr.exe --remote wsl-herdr %*` without recursing), adds `%LOCALAPPDATA%\Programs\Herdr\remote-bin` to the current user PATH idempotently without touching machine-wide PATH, and writes the marked PowerShell profile function.
+When `-ConfigureHerdrAlias` is used, the bootstrap creates the marked `wsl-herdr` entry in `%USERPROFILE%\.ssh\config`, selecting the dedicated `orca-wsl-ed25519` key and a stable `%USERPROFILE%\.ssh\orca-wsl-known-hosts` file. It installs a dedicated command shim at `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` (which invokes the installed `herdr.exe --remote wsl-herdr --remote-keybindings server %*` without recursing), adds `%LOCALAPPDATA%\Programs\Herdr\remote-bin` to the current user PATH idempotently without touching machine-wide PATH, and writes the marked PowerShell profile function.
 
 ##### Troubleshooting a crates.io HTTP 403
 
@@ -550,9 +550,9 @@ After `-ConfigureHerdrAlias`, running bare `herdr` from either PowerShell or cmd
 herdr
 ```
 
-The command shim (`%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd`) and the PowerShell profile function both invoke `herdr.exe --remote wsl-herdr`, preserving additional arguments such as `herdr --session agents` without recursing. To bypass the alias and invoke the binary directly, use `herdr.exe --remote wsl-herdr`. Do not use the raw `ssh://user@127.0.0.1:2222` form unless that host has its own matching `IdentityFile` entry in the OpenSSH config.
+The command shim (`%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd`) and the PowerShell profile function both invoke `herdr.exe --remote wsl-herdr --remote-keybindings server`, preserving additional arguments such as `herdr --session agents` without recursing. To bypass the alias and invoke the binary directly, use `herdr.exe --remote wsl-herdr --remote-keybindings server`. Do not use the raw `ssh://user@127.0.0.1:2222` form unless that host has its own matching `IdentityFile` entry in the OpenSSH config.
 
-For repeat use, configure an SSH alias such as `wsl-herdr` and attach with `herdr --remote wsl-herdr`. Add projects by selecting explicit Linux paths such as `/home/<user>/src/<repository>` or `/home/<user>/firstmate/projects/<project>`. Shift+click on URLs inside terminal/Herdr opens them in your default browser.
+For repeat use, configure an SSH alias such as `wsl-herdr` and attach with `herdr --remote wsl-herdr --remote-keybindings server`. Add projects by selecting explicit Linux paths such as `/home/<user>/src/<repository>` or `/home/<user>/firstmate/projects/<project>`. Shift+click on URLs inside terminal/Herdr opens them in your default browser.
 
 ### Start Prime from a Herdr pane
 

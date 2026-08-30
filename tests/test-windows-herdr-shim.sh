@@ -18,8 +18,8 @@ content = script_path.read_text(encoding="utf-8")
 assert '$HerdrRemoteBinDir = Join-Path $env:LOCALAPPDATA "Programs\\Herdr\\remote-bin"' in content, "Missing HerdrRemoteBinDir definition"
 assert '$HerdrShimFile = Join-Path $HerdrRemoteBinDir "herdr.cmd"' in content, "Missing HerdrShimFile definition"
 
-# 2. Shim content generation: absolute/derived path, prepend --remote wsl-herdr, forward %*
-shim_line = '@"%~dp0..\\bin\\herdr.exe" --remote wsl-herdr %*'
+# 2. Shim content generation: remote target, server keybindings, and forwarded %*
+shim_line = '@"%~dp0..\\bin\\herdr.exe" --remote wsl-herdr --remote-keybindings server %*'
 assert shim_line in content, f"Expected shim content {shim_line} in bootstrap script"
 
 # 3. Idempotent User PATH modification without touching Machine PATH
@@ -37,7 +37,7 @@ assert 'throw "Installed Herdr command failed verification: herdr.exe --version"
 assert '# >>> herdr WSL remote alias >>>' in content
 assert '# <<< herdr WSL remote alias <<<' in content
 assert 'function herdr {' in content
-assert '& `$herdrExe.Source --remote wsl-herdr @args' in content
+assert '& `$herdrExe.Source --remote wsl-herdr --remote-keybindings server @args' in content
 
 # 6. Marked SSH config block preserved
 assert '# >>> herdr WSL SSH config >>>' in content

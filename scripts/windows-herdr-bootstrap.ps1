@@ -352,7 +352,7 @@ function Set-HerdrPowerShellAlias {
         New-Item -ItemType Directory -Path $remoteBinParent -Force | Out-Null
     }
 
-    $shimContent = '@"%~dp0..\bin\herdr.exe" --remote wsl-herdr %*' + "`r`n"
+    $shimContent = '@"%~dp0..\bin\herdr.exe" --remote wsl-herdr --remote-keybindings server %*' + "`r`n"
     [System.IO.File]::WriteAllText($HerdrShimFile, $shimContent, [System.Text.UTF8Encoding]::new($false))
 
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -387,7 +387,7 @@ function Set-HerdrPowerShellAlias {
         $startMarker
         "function herdr {"
         '    $herdrExe = Get-Command herdr.exe -CommandType Application -ErrorAction Stop'
-        "    & `$herdrExe.Source --remote wsl-herdr @args"
+        "    & `$herdrExe.Source --remote wsl-herdr --remote-keybindings server @args"
         "}"
         $endMarker
     ) -join [Environment]::NewLine

@@ -255,7 +255,7 @@ grep -F 'Install-WezTerm' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F 'ConfigureHerdrAlias' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F 'Programs\Herdr\remote-bin' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F 'herdr.cmd' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
-grep -F -- '--remote wsl-herdr %*' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
+grep -F -- '--remote wsl-herdr --remote-keybindings server %*' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F '[Environment]::GetEnvironmentVariable("Path", "User")' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F '[Environment]::SetEnvironmentVariable("Path",' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F '# >>> herdr WSL remote alias >>>' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
@@ -266,7 +266,7 @@ grep -F 'Host wsl-herdr' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F 'IdentityFile $keyPath' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F 'UserKnownHostsFile $knownHostsPath' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 grep -F 'Get-Command herdr.exe -CommandType Application' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
-grep -F -- '--remote wsl-herdr @args' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
+grep -F -- '--remote wsl-herdr --remote-keybindings server @args' scripts/windows-herdr-bootstrap.ps1 >/dev/null && \
 pass_item "Windows Herdr bootstrap and alias shim logic verified" || \
 fail_item "Windows Herdr bootstrap content failed verification"
 
