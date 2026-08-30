@@ -88,6 +88,7 @@ in
     fzf
     jq
     curl
+    glow
     gh
     lazygit
     nodejs_24

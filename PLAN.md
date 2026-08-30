@@ -17,7 +17,7 @@ Authority boundaries:
 
 - Repository owns declarative, reviewable configuration only.
 - Home Manager may own exact policy/config files for Prime/Lavish and public opt-in skill files.
-- Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, Herdr, shared policy/skill/MCP links, and pinned Nix packages for support tools; AGY, Pi, Prime Agent, Herdr integrations, the global Herdr skill, Hunk, Firstmate, and Chrome remain script-managed user/host installs.
+- Home Manager owns the regular shell UX, Node 24, PATH, all three agent launchers, Herdr, Glow, shared policy/skill/MCP links, and pinned Nix packages for support tools; AGY, Pi, Prime Agent, Herdr integrations, the global Herdr skill, Hunk, the Herdr Hunk plugin, the Herdr file-viewer plugin, Firstmate, and Chrome remain script-managed user/host installs.
 - The optional `orca-prime` shell owns Node 22, Python, uv, gh, jq, and build tooling for deterministic validation only. It is not required to launch Prime, AGY, Pi, or Firstmate.
 - Ubuntu apt/systemd owns WSL host prerequisites: `openssh-server`, `build-essential`, `python3`, and the loopback `sshd` service. These must exist before Herdr can relay over SSH, so they cannot live only inside a per-user Nix shell.
 - Windows PowerShell key preparation owns the Windows private key and public-key export to `%TEMP%\\orca-wsl-manual.pub`; the Ubuntu authorization helper owns installing that public key into the WSL user's `authorized_keys`; the Windows Herdr bootstrap owns WSL name checks, `.wslconfig`, Herdr installer verification, and terminal/node-pty prerequisite checks.
@@ -32,7 +32,7 @@ The regular Home Manager shell becomes the daily runtime for all three harnesses
 
 - Home Manager keeps Zsh, Starship, Git, Neovim, fonts, ABNT2, shortcuts, Node 24, `~/.local/bin`, and the persistent npm global bin path.
 - AGY, Pi, and Prime are launched directly from that regular shell.
-- `gh-axi`, `lavish-axi`, `no-mistakes`, `codebase-memory-mcp`, Treehouse, Caveman, and `i-have-adhd` are pinned Nix packages available from the same PATH; Firstmate, Herdr integrations, the global Herdr skill, and Hunk are installed by `scripts/install-home-agents.sh`.
+- `gh-axi`, `lavish-axi`, `no-mistakes`, `codebase-memory-mcp`, Glow, Treehouse, Caveman, and `i-have-adhd` are pinned Nix packages available from the same PATH; Firstmate, Herdr integrations, the global Herdr skill, Hunk, the Herdr Hunk plugin, and the Herdr file-viewer plugin are installed by `scripts/install-home-agents.sh`.
 - Caveman and the pinned `i-have-adhd` skill are exposed to all three harnesses through client-compatible skill roots.
 - Pi, AGY, and Prime retain client-specific MCP configuration schemas but point at the same local Codebase Memory policy and binary.
 - `nix develop .#orca-prime` remains available only for Node 22, Python, uv, gh, jq, compiler, and package validation. It is not required by any agent launcher.

@@ -7,7 +7,7 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq herdr prime prime-agent prime-maintenance no-mistakes agy pi treehouse lavish-axi gh-axi codebase-memory-mcp; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq glow herdr hunk prime prime-agent prime-maintenance no-mistakes agy pi treehouse lavish-axi gh-axi codebase-memory-mcp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
@@ -28,6 +28,8 @@ fi
 "$chrome_bin" --version >/dev/null
 
 prime-maintenance --help >/dev/null
+glow --version
+hunk --version
 herdr --version
 prime --version
 prime-agent --version
@@ -88,13 +90,14 @@ shared_policy="$HOME/.pi/agent/AGENTS.md"
 agy_policy="$HOME/.gemini/GEMINI.md"
 pi_mcp="$HOME/.config/mcp/mcp.json"
 agy_mcp="$HOME/.gemini/config/mcp_config.json"
+herdr_config="$HOME/.config/herdr/config.toml"
 shared_skill="$HOME/.agents/skills/caveman/SKILL.md"
 shared_no_mistakes_skill="$HOME/.agents/skills/no-mistakes/SKILL.md"
 agy_skill="$HOME/.gemini/antigravity-cli/skills/caveman/SKILL.md"
 no_mistakes_skill="$HOME/.gemini/antigravity-cli/skills/no-mistakes/SKILL.md"
 prime_no_mistakes_skill="$HOME/.prime/agent/skills/no-mistakes/SKILL.md"
 firstmate_root="$HOME/firstmate"
-for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$shared_skill" "$shared_no_mistakes_skill" "$agy_skill" "$no_mistakes_skill" "$prime_no_mistakes_skill"; do
+for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$herdr_config" "$shared_skill" "$shared_no_mistakes_skill" "$agy_skill" "$no_mistakes_skill" "$prime_no_mistakes_skill"; do
   test -r "$required_file" || {
     printf 'Missing Home Manager file: %s\n' "$required_file" >&2
     exit 1
@@ -119,6 +122,17 @@ done
 cmp -s "$shared_policy" "$agy_policy"
 cmp -s "$shared_policy" "$policy"
 pi list | grep -F 'pi-mcp-adapter' >/dev/null
+herdr plugin list --plugin herdr-file-viewer --json | grep -F 'herdr-file-viewer' >/dev/null
+for file_viewer_keybinding in \
+  'key = "prefix+f"' \
+  'command = "herdr-file-viewer.open-file-viewer"' \
+  'key = "prefix+shift+f"' \
+  'command = "herdr-file-viewer.open-file-viewer-tab"'; do
+  grep -F "$file_viewer_keybinding" "$herdr_config" >/dev/null || {
+    printf 'Missing Herdr file-viewer keybinding: %s\n' "$file_viewer_keybinding" >&2
+    exit 1
+  }
+done
 
 jq -e '
   .mcpServers.codebase_memory.command == "codebase-memory-mcp" and

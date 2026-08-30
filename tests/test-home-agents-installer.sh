@@ -11,6 +11,7 @@ PACKAGES_DEFAULT="$ROOT/packages/default.nix"
 README="$ROOT/README.md"
 SMOKE_TEST="$ROOT/tests/smoke-herdr-agents.sh"
 COMMON_MODULE="$ROOT/modules/home-common-agents.nix"
+HERDR_CONFIG="$ROOT/home/.config/herdr/config.toml"
 
 test -f "$INSTALLER"
 test -f "$BASE_MODULE"
@@ -19,11 +20,12 @@ test -f "$PACKAGES_DEFAULT"
 test -f "$README"
 test -f "$SMOKE_TEST"
 test -f "$COMMON_MODULE"
+test -f "$HERDR_CONFIG"
 
 # ------------------------------------------------------------------------------
 # 1. Static Contract Checks
 # ------------------------------------------------------------------------------
-python3 - "$INSTALLER" "$BASE_MODULE" "$FIRSTMATE_MODULE" "$PACKAGES_DEFAULT" "$README" "$SMOKE_TEST" "$COMMON_MODULE" <<'PY'
+python3 - "$INSTALLER" "$BASE_MODULE" "$FIRSTMATE_MODULE" "$PACKAGES_DEFAULT" "$README" "$SMOKE_TEST" "$COMMON_MODULE" "$HERDR_CONFIG" <<'PY'
 import sys
 from pathlib import Path
 
@@ -34,6 +36,7 @@ packages_default = Path(sys.argv[4]).read_text(encoding="utf-8")
 readme = Path(sys.argv[5]).read_text(encoding="utf-8")
 smoke_test = Path(sys.argv[6]).read_text(encoding="utf-8")
 common_module = Path(sys.argv[7]).read_text(encoding="utf-8")
+herdr_config = Path(sys.argv[8]).read_text(encoding="utf-8")
 
 # 1.1 scripts/install-home-agents.sh contracts
 assert 'FIRSTMATE_REPO_URL="https://github.com/kunchenguid/firstmate.git"' in installer, "Missing FIRSTMATE_REPO_URL"
@@ -62,12 +65,16 @@ assert 'herdr plugin install "$HUNK_PLUGIN_SOURCE" --yes' in installer, "Missing
 assert 'HUNK_PLUGIN_ID="jhochenbaum.hunkdiff"' in installer, "Missing Hunk plugin ID"
 assert 'herdr plugin action invoke setup-keys --plugin "$HUNK_PLUGIN_ID"' in installer, "Missing Hunk keybinding setup"
 assert 'herdr server reload-config' in installer, "Missing Herdr config reload"
+assert 'herdr plugin install smarzban/herdr-file-viewer' in installer, "Missing Herdr file-viewer plugin installation"
+assert 'HERDR_FILE_VIEWER_PLUGIN_ID="herdr-file-viewer"' in installer, "Missing Herdr file-viewer plugin ID"
+assert 'HERDR_CONFIG_FILE="$HOME/.config/herdr/config.toml"' in installer, "Missing Herdr config path"
 
 # 1.2 modules/home-base.nix contracts
 assert 'google-chrome' not in base_module.split("home.packages = (with pkgs; [")[1].split("]) ++ [")[0], "google-chrome must be removed from home.packages in home-base.nix"
 assert 'CHROME_DEVTOOLS_AXI_USER_DATA_DIR' in base_module, "home-base.nix must retain CHROME_DEVTOOLS_AXI_USER_DATA_DIR"
 assert 'CHROME_DEVTOOLS_AXI_HEADED' in base_module, "home-base.nix must retain CHROME_DEVTOOLS_AXI_HEADED"
 assert 'createChromeDevtoolsProfileDir' in base_module, "home-base.nix must retain createChromeDevtoolsProfileDir"
+assert '\n    glow\n' in base_module, "glow must be available in the regular Home Manager package set"
 
 # 1.3 modules/home-firstmate.nix contracts
 assert 'agentPackages.treehouse' in firstmate_module, "home-firstmate.nix must retain agentPackages.treehouse"
@@ -92,7 +99,20 @@ assert 'home.file.".gemini/antigravity-cli/skills/herdr".source' in common_modul
 assert 'home.file.".prime/agent/skills/herdr".source' in common_module, "Prime must expose the global Herdr skill"
 assert 'mkOutOfStoreSymlink "${home}/.agents/skills/herdr"' in common_module, "AGY and Prime must link to the global Herdr skill"
 
-# 1.7 README.md documentation contracts
+# 1.7 Herdr file-viewer configuration
+for line in [
+    '[[keys.command]]',
+    'key = "prefix+f"',
+    'type = "plugin_action"',
+    'command = "herdr-file-viewer.open-file-viewer"',
+    'description = "open file viewer in split"',
+    'key = "prefix+shift+f"',
+    'command = "herdr-file-viewer.open-file-viewer-tab"',
+    'description = "open file viewer in tab"',
+]:
+    assert line in herdr_config, f"Missing file-viewer config entry: {line}"
+
+# 1.8 README.md documentation contracts
 assert 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' in readme, "README must document official Google Chrome deb URL"
 assert 'pkgs.google-chrome' not in readme, "README must not claim Chrome is pkgs.google-chrome"
 assert 'install-home-agents.sh' in readme, "README must document install-home-agents.sh"
@@ -104,6 +124,10 @@ assert 'npx skills add herdrdev/herdr --skill herdr -g' in readme, "README must 
 assert 'npm install --global hunkdiff' in readme, "README must document npm Hunk installation"
 assert 'jhochenbaum/herdr-hunk-diff' in readme, "README must document Hunk Herdr plugin"
 assert 'herdr server reload-config' in readme, "README must document Herdr config reload"
+assert 'charmbracelet/glow' in readme, "README must document Glow"
+assert 'herdr plugin install smarzban/herdr-file-viewer' in readme, "README must document file-viewer plugin installation"
+assert 'herdr-file-viewer.open-file-viewer' in readme, "README must document file-viewer split keybinding"
+assert 'herdr-file-viewer.open-file-viewer-tab' in readme, "README must document file-viewer tab keybinding"
 
 print("Static contract checks for installer and ownership boundaries passed.")
 PY

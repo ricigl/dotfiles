@@ -21,8 +21,8 @@ The previous WezTerm, Claude Code, and Codex environment remains available as th
 | Layer | Owns |
 |---|---|
 | Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3`, Windows WezTerm terminal emulator, WinGet/App Installer |
-| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Nix-packaged support tools (`herdr`, `codebase-memory-mcp`, `no-mistakes`, `lavish-axi`, `gh-axi`, `quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`, `treehouse`), `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, shared policy/skills/MCP config, Treehouse and tmux dependencies for Firstmate |
-| `scripts/install-home-agents.sh` | Reviewed AGY and Pi installers, Herdr Pi/Antigravity integrations, global Herdr skill, npm Hunk and Herdr Hunk plugin setup, safe idempotent Firstmate git clone to `~/firstmate`, and Google Chrome official Debian package installation via `apt` |
+| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Nix-packaged support tools (`glow`, `herdr`, `codebase-memory-mcp`, `no-mistakes`, `lavish-axi`, `gh-axi`, `quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`, `treehouse`), `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, shared policy/skills/MCP config, Treehouse and tmux dependencies for Firstmate |
+| `scripts/install-home-agents.sh` | Reviewed AGY and Pi installers, Herdr Pi/Antigravity integrations, global Herdr skill, npm Hunk, Herdr Hunk plugin, and Herdr file-viewer plugin setup, safe idempotent Firstmate git clone to `~/firstmate`, and Google Chrome official Debian package installation via `apt` |
 | `.#orca-prime` | Optional Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, and build-validation environment |
 | Firstmate | Linux project-fleet coordination and Treehouse-managed project/crew worktrees under `~/firstmate/projects`; cloned from upstream into `~/firstmate` by `scripts/install-home-agents.sh` |
 | Windows Herdr | SSH thin client for selected WSL projects and Firstmate worktrees; no worktree lifecycle ownership |
@@ -55,10 +55,12 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - Herdr skill: global `~/.agents/skills/herdr/SKILL.md`, linked into the AGY and Prime skill roots
 - Hunk: npm package `hunkdiff`, installed globally by `scripts/install-home-agents.sh`
 - Herdr Hunk plugin: `jhochenbaum/herdr-hunk-diff`, plugin ID `jhochenbaum.hunkdiff`
+- Glow: `glow`, installed by Home Manager from `https://github.com/charmbracelet/glow` and available on the regular Ubuntu PATH
+- Herdr file-viewer plugin: `smarzban/herdr-file-viewer`, plugin ID `herdr-file-viewer`
 - Treehouse: `2.0.1`, Nix package
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
-`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Support tools (`quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`, `treehouse`) are Nix/Home Manager managed. AGY, Pi, Prime Agent, Firstmate (cloned to `~/firstmate`), Google Chrome (installed via apt from the official Debian package URL), Herdr integrations, the global Herdr skill, Hunk, and the Herdr Hunk plugin are managed through scripts.
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Support tools (`glow`, `quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`, `treehouse`) are Nix/Home Manager managed. AGY, Pi, Prime Agent, Firstmate (cloned to `~/firstmate`), Google Chrome (installed via apt from the official Debian package URL), Herdr integrations, the global Herdr skill, Hunk, the Herdr Hunk plugin, and the Herdr file-viewer plugin are managed through scripts.
 
 ## Security model
 
@@ -74,6 +76,7 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - AGY and Pi are user-owned transitional installs. Their reviewed bootstrap scripts are pinned, but upstream release payloads remain dynamic and may self-update; auth, sessions, caches, logs, and downloads remain local and untracked. Herdr is supplied by the pinned Home Manager package on Linux; its Windows client uses the reviewed official stable installer.
 - Herdr's Pi and Antigravity CLI integration files are user-level integration state installed by `scripts/install-home-agents.sh`. The global Herdr skill is installed under `~/.agents/skills/herdr` and exposed to AGY and Prime through Home Manager-managed links; its contents are not copied into this repository.
 - Hunk is installed with the user npm prefix using the unpinned `hunkdiff` package. The Herdr Hunk plugin is installed into Herdr's user-managed plugin directory from `jhochenbaum/herdr-hunk-diff`; neither installation is Nix-owned.
+- Glow is Nix/Home Manager managed and is available on the regular Ubuntu PATH. The Herdr file-viewer plugin is installed into Herdr's user-managed plugin directory from `smarzban/herdr-file-viewer`; its keybindings are declared in the tracked Herdr config and deployed to `~/.config/herdr/config.toml`.
 - Firstmate is cloned into `~/firstmate` from upstream `https://github.com/kunchenguid/firstmate.git` by `scripts/install-home-agents.sh` and launched from there with the chosen harness; its operational `data/`, `state/`, `config/`, `sessions`, caches, `projects/`, and Treehouse worktree state stay outside this repository. Treehouse and tmux remain Nix-managed dependencies.
 - Codebase Memory is local-only: allowed root `/home/ricardo`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact. Index only explicit project directories such as `/home/ricardo/src/<project>` or `/home/ricardo/firstmate/projects/<project>`; never index `/home/ricardo` itself or credential/config directories.
 - AGY, Pi, and Prime Codebase Memory MCP entries disable initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
@@ -295,7 +298,7 @@ The rebuild wrapper also relocates stale Home Manager skill backups out of agent
 
 ### 4. Install user-owned agent binaries and host tools from the regular shell
 
-Herdr is installed by the regular Home Manager profile. Run the home-agents installer to install AGY, Pi, their Herdr integrations, the global Herdr skill, Hunk, the Herdr Hunk plugin, the Firstmate checkout in `~/firstmate`, and Google Chrome via apt:
+Herdr and Glow are installed by the regular Home Manager profile. Run the home-agents installer to install AGY, Pi, their Herdr integrations, the global Herdr skill, Hunk, the Herdr Hunk and file-viewer plugins, the Firstmate checkout in `~/firstmate`, and Google Chrome via apt:
 
 ```bash
 cd ~/.dotfiles
@@ -307,13 +310,15 @@ pi list | grep pi-mcp-adapter
 test -x /usr/bin/google-chrome-stable || test -x /usr/bin/google-chrome
 git -C ~/firstmate remote get-url origin
 hunk --version
+glow --version
 test -f ~/.agents/skills/herdr/SKILL.md
 herdr plugin list --plugin jhochenbaum.hunkdiff --json
+herdr plugin list --plugin herdr-file-viewer --json
 ```
 
-`scripts/install-home-agents.sh` is an explicit host-changing installer that downloads and runs the reviewed AGY and Pi installers, installs the Herdr Pi and Antigravity CLI integrations, installs the global Herdr skill with `npx skills add herdrdev/herdr --skill herdr -g`, installs Hunk with `npm install --global hunkdiff`, installs the Herdr Hunk plugin, applies its keybindings, reloads the running Herdr server configuration, safely and idempotently clones Firstmate into `~/firstmate` (reusing existing checkouts with the expected origin without auto-pulling), and downloads the official Google Chrome Debian package from `https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb` to install it via `wget` and `apt` into the normal `/usr/bin` system path.
+`scripts/install-home-agents.sh` is an explicit host-changing installer that downloads and runs the reviewed AGY and Pi installers, installs the Herdr Pi and Antigravity CLI integrations, installs the global Herdr skill with `npx skills add herdrdev/herdr --skill herdr -g`, installs Hunk with `npm install --global hunkdiff`, installs the Herdr Hunk and file-viewer plugins, applies Hunk's keybindings, verifies the file-viewer keybindings deployed by Home Manager, reloads the running Herdr server configuration, safely and idempotently clones Firstmate into `~/firstmate` (reusing existing checkouts with the expected origin without auto-pulling), and downloads the official Google Chrome Debian package from `https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb` to install it via `wget` and `apt` into the normal `/usr/bin` system path.
 
-The integration and Hunk plugin portion is equivalent to:
+The integration and plugin setup portion is equivalent to:
 
 ```bash
 herdr integration install pi
@@ -322,10 +327,27 @@ npx skills add herdrdev/herdr --skill herdr -g
 npm install --global hunkdiff
 herdr plugin install jhochenbaum/herdr-hunk-diff --yes
 herdr plugin action invoke setup-keys --plugin jhochenbaum.hunkdiff
+herdr plugin install smarzban/herdr-file-viewer
 herdr server reload-config
 ```
 
-The script uses `npx --yes` for the global skill command so `npx` does not stop for a package-install prompt, and uses `--yes` for the Herdr plugin trust/install prompt. `herdr server reload-config` requires a running Herdr server; if no server is running, the installer stops with an instruction to start Herdr and rerun the installer.
+The file-viewer keybindings are deployed by Home Manager through `~/.config/herdr/config.toml`:
+
+```toml
+[[keys.command]]
+key = "prefix+f"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer"
+description = "open file viewer in split"
+
+[[keys.command]]
+key = "prefix+shift+f"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer-tab"
+description = "open file viewer in tab"
+```
+
+The script uses `npx --yes` for the global skill command so `npx` does not stop for a package-install prompt, and uses `--yes` for the Herdr Hunk plugin trust/install prompt. `herdr server reload-config` requires a running Herdr server; if no server is running, the installer stops with an instruction to start Herdr and rerun the installer.
 
 The regular Home Manager shell defines the interactive alias `agy` as `command agy --dangerously-skip-permissions`. In any fresh WSL shell (or after running `exec zsh -l` in the current terminal), `agy ...` automatically includes the flag. `command agy ...` bypasses the alias when needed.
 

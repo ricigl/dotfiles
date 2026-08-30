@@ -15,3 +15,15 @@ copy_mode  = "prefix+y"  # herdr's copy-mode entry key; copy-mode's own internal
 [ui]
 # Agents panel order: explicit choice of "spaces" (grouped by space, the default) over "priority".
 agent_panel_sort = "spaces"
+
+[[keys.command]]
+key = "prefix+f"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer"
+description = "open file viewer in split"
+
+[[keys.command]]
+key = "prefix+shift+f"
+type = "plugin_action"
+command = "herdr-file-viewer.open-file-viewer-tab"
+description = "open file viewer in tab"

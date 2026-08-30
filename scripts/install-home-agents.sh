@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install the reviewed AGY and Pi bootstrap scripts, Herdr integrations, the global Herdr skill,
-# Hunk, the Hunk Herdr plugin, Firstmate, and Google Chrome for the regular Home Manager shell.
+# Hunk, the Hunk Herdr plugin, the Herdr file-viewer plugin, Firstmate, and Google Chrome for the regular Home Manager shell.
 #
 # NOTE: This script is an explicit host-changing installer. It installs user binaries into
 # $HOME/.local/bin and the user npm prefix, clones the upstream Firstmate repository to
@@ -18,6 +18,8 @@ CHROME_DEB_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_
 HERDR_GLOBAL_SKILL_FILE="$HOME/.agents/skills/herdr/SKILL.md"
 HUNK_PLUGIN_SOURCE="jhochenbaum/herdr-hunk-diff"
 HUNK_PLUGIN_ID="jhochenbaum.hunkdiff"
+HERDR_FILE_VIEWER_PLUGIN_ID="herdr-file-viewer"
+HERDR_CONFIG_FILE="$HOME/.config/herdr/config.toml"
 
 if [ -n "${IN_NIX_SHELL:-}" ]; then
   printf '%s\n' "Run this from the regular Home Manager shell, not nix develop .#orca-prime." >&2
@@ -214,6 +216,35 @@ install_or_verify_hunk_plugin() {
   fi
 }
 
+install_or_verify_file_viewer_plugin() {
+  printf '%s\n' "Installing Herdr file-viewer plugin..."
+  herdr plugin install smarzban/herdr-file-viewer
+
+  local plugin_listing
+  plugin_listing="$(herdr plugin list --plugin "$HERDR_FILE_VIEWER_PLUGIN_ID" --json)"
+  printf '%s\n' "$plugin_listing" | grep -F "$HERDR_FILE_VIEWER_PLUGIN_ID" >/dev/null || {
+    printf 'Error: Herdr plugin %s was not listed after installation.\n' "$HERDR_FILE_VIEWER_PLUGIN_ID" >&2
+    exit 1
+  }
+
+  for keybinding in \
+    'key = "prefix+f"' \
+    'command = "herdr-file-viewer.open-file-viewer"' \
+    'key = "prefix+shift+f"' \
+    'command = "herdr-file-viewer.open-file-viewer-tab"'; do
+    grep -F "$keybinding" "$HERDR_CONFIG_FILE" >/dev/null || {
+      printf 'Error: Herdr file-viewer keybinding is missing from %s: %s\n' "$HERDR_CONFIG_FILE" "$keybinding" >&2
+      exit 1
+    }
+  done
+
+  printf '%s\n' "Reloading Herdr configuration with file-viewer keybindings..."
+  if ! herdr server reload-config; then
+    printf '%s\n' "Error: Herdr server reload-config failed after file-viewer installation. Start the Herdr server and rerun this installer." >&2
+    exit 1
+  fi
+}
+
 agy_installer="$tmp_dir/agy-install.sh"
 pi_installer="$tmp_dir/pi-install.sh"
 download_verified "$AGY_INSTALLER_URL" "$AGY_INSTALLER_SHA256" "$agy_installer"
@@ -252,6 +283,8 @@ install_or_verify_herdr_skill
 install_or_verify_hunk
 
 install_or_verify_hunk_plugin
+
+install_or_verify_file_viewer_plugin
 
 printf '\n=== Installation and Verification Summary ===\n'
 printf 'AGY: %s (%s)\n' "$(agy --version 2>&1 | head -n1)" "$(command -v agy)"

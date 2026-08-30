@@ -154,7 +154,8 @@ grep -F '.local/share/chrome-devtools-axi/dev-profile' modules/home-base.nix >/d
 grep -F 'agentPackages.quota-axi' modules/home-base.nix >/dev/null && \
 grep -F 'agentPackages.tasks-axi' modules/home-base.nix >/dev/null && \
 grep -F 'agentPackages.chrome-devtools-axi' modules/home-base.nix >/dev/null && \
-pass_item "Chrome DevTools profile and AXI support tools declarations in modules/home-base.nix verified" || \
+grep -F '    glow' modules/home-base.nix >/dev/null && \
+pass_item "Glow, Chrome DevTools profile, and AXI support declarations in modules/home-base.nix verified" || \
 fail_item "Chrome DevTools or AXI declarations in modules/home-base.nix failed verification"
 
 grep -F 'agentPackages.no-mistakes-skill' modules/home-common-agents.nix >/dev/null && \
@@ -207,10 +208,20 @@ grep -F 'npm install --global hunkdiff' scripts/install-home-agents.sh >/dev/nul
 grep -F 'herdr plugin install "$HUNK_PLUGIN_SOURCE" --yes' scripts/install-home-agents.sh >/dev/null && \
 grep -F 'herdr plugin action invoke setup-keys --plugin "$HUNK_PLUGIN_ID"' scripts/install-home-agents.sh >/dev/null && \
 grep -F 'herdr server reload-config' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'herdr plugin install smarzban/herdr-file-viewer' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'HERDR_FILE_VIEWER_PLUGIN_ID="herdr-file-viewer"' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'HERDR_CONFIG_FILE="$HOME/.config/herdr/config.toml"' scripts/install-home-agents.sh >/dev/null && \
 grep -F 'home.file.".gemini/antigravity-cli/skills/herdr"' modules/home-common-agents.nix >/dev/null && \
 grep -F 'home.file.".prime/agent/skills/herdr"' modules/home-common-agents.nix >/dev/null && \
-pass_item "install-home-agents.sh Herdr, global skill, Hunk, Firstmate, and Chrome contracts verified" || \
-fail_item "install-home-agents.sh integration, skill, Hunk, Firstmate, or Chrome contracts failed verification"
+grep -F 'key = "prefix+f"' home/.config/herdr/config.toml >/dev/null && \
+grep -F 'type = "plugin_action"' home/.config/herdr/config.toml >/dev/null && \
+grep -F 'command = "herdr-file-viewer.open-file-viewer"' home/.config/herdr/config.toml >/dev/null && \
+grep -F 'description = "open file viewer in split"' home/.config/herdr/config.toml >/dev/null && \
+grep -F 'key = "prefix+shift+f"' home/.config/herdr/config.toml >/dev/null && \
+grep -F 'command = "herdr-file-viewer.open-file-viewer-tab"' home/.config/herdr/config.toml >/dev/null && \
+grep -F 'description = "open file viewer in tab"' home/.config/herdr/config.toml >/dev/null && \
+pass_item "Glow, Herdr, file-viewer, global skill, Hunk, Firstmate, and Chrome contracts verified" || \
+fail_item "Glow, Herdr integration, file-viewer, skill, Hunk, Firstmate, or Chrome contracts failed verification"
 
 grep -F 'herdr.url = "github:herdrdev/herdr/v0.8.2"' flake.nix >/dev/null && \
 grep -F 'herdr.inputs.nixpkgs.follows = "nixpkgs";' flake.nix >/dev/null && \
@@ -425,7 +436,7 @@ run_subtest() {
 run_subtest "./tests/test-windows-herdr-shim.sh" "Windows Herdr shim contract"
 run_subtest "./tests/test-shell-handoff.sh" "Guarded Bash-to-Zsh handoff"
 run_subtest "./tests/test-wslg-display.sh" "WSLg display and audio discovery hook"
-run_subtest "./tests/test-home-agents-installer.sh" "Home agents installer Firstmate and Chrome contracts"
+run_subtest "./tests/test-home-agents-installer.sh" "Home agents, Glow, and Herdr plugin contracts"
 run_subtest "./tests/test-prime-maintenance.sh" "Prime maintenance session safety"
 run_subtest "./tests/test-compaction-proof.sh" "Pi OpenAI compaction proof parsing"
 run_subtest "./tests/pi-calm.test.sh" "Pi Calm extension isolation and rendering"
@@ -523,6 +534,7 @@ fi
 
 report_cmd_version "fzf" "fzf" "--version" 1
 report_cmd_version "curl" "curl" "--version" 1
+report_cmd_version "Glow" "glow" "--version" 1
 report_cmd_version "GitHub CLI (gh)" "gh" "--version" 1
 report_cmd_version "lazygit" "lazygit" "--version" 1
 report_cmd_version "tmux" "tmux" "-V" 1
@@ -533,6 +545,7 @@ report_cmd_version "uv" "uv" "--version" 1
 report_cmd_version "setxkbmap" "setxkbmap" "-version" 1
 
 report_cmd_version "Herdr" "herdr" "--version" 1
+report_cmd_version "Hunk" "hunk" "--version" 1
 report_cmd_version "Antigravity CLI (agy)" "agy" "--version" 1
 report_cmd_version "Pi" "pi" "--version" 1
 report_cmd_presence "Prime (wrapper)" "prime" 1
