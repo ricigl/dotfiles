@@ -53,7 +53,7 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - Treehouse: `2.0.1`, Nix package
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
-`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Google Chrome and the four support tools (`quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`) are Nix/Home Manager managed. Only the AGY/Pi and Prime Agent binaries remain script-installed.
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Google Chrome and the support tools (`quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`) are Nix/Home Manager managed. Only the AGY/Pi and Prime Agent binaries remain script-installed.
 
 ## Security model
 
@@ -75,7 +75,9 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 
 ## Clean installation
 
-### 1. Prepare Windows and WSL
+Follow this linear sequence for a fresh environment setup:
+
+### 1. Prerequisites and Ubuntu host bootstrap
 
 Install WSL2 and register the distribution with the exact name `Ubuntu`. Confirm from PowerShell:
 
@@ -84,7 +86,7 @@ wsl.exe --list --verbose
 wsl.exe --set-default Ubuntu
 ```
 
-Clone this repository inside Ubuntu, not on the Windows filesystem:
+Clone this repository inside Ubuntu under `/home/...`, not on the Windows filesystem:
 
 ```bash
 mkdir -p ~/src
@@ -92,13 +94,13 @@ git clone https://github.com/ricigl/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 ```
 
-Run the Ubuntu host bootstrap:
+Run the Ubuntu host bootstrap script:
 
 ```bash
 ./scripts/ubuntu-bootstrap.sh
 ```
 
-It installs the pre-Nix packages, preserves existing `/etc/wsl.conf` sections while enabling systemd, installs a loopback-only sshd drop-in, and validates the effective SSH policy. If it exits with status 2, run this in PowerShell:
+It installs pre-Nix host packages (`build-essential`, `python3`, `openssh-server`, etc.), preserves existing `/etc/wsl.conf` sections while setting `[boot] systemd=true`, installs a loopback-only sshd drop-in (`127.0.0.1:2222`), and validates the effective SSH policy. If it exits with status 2, shut down WSL from PowerShell:
 
 ```powershell
 wsl.exe --shutdown
@@ -123,13 +125,13 @@ PermitRootLogin no
 AllowUsers <current Ubuntu user>
 ```
 
-### 2. Prepare Windows client key, authorize in Ubuntu, and bootstrap Windows Herdr
+### 2. Windows key authorization and Herdr / WezTerm bootstrap
 
-Bootstrap SSH authentication and Windows tools in three explicit steps:
+Bootstrap SSH authentication and Windows tools in three steps:
 
 #### Step 1: Generate or prepare the Windows client SSH key
 
-From Windows PowerShell, run the Windows key helper script:
+From Windows PowerShell, run the key export helper:
 
 ```powershell
 $WslUser = (wsl.exe -d Ubuntu -- id -un).Trim()
@@ -138,18 +140,18 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File "$Repo\scripts\windows-herdr-key-bootstrap.ps1"
 ```
 
-This creates or reuses `%USERPROFILE%\.ssh\orca-wsl-ed25519`, derives the public key using `ssh-keygen -y -f`, and writes a clean LF-only UTF-8 public key to `%TEMP%\orca-wsl-manual.pub` without BOM or trailing carriage returns. It also prints the public-key fingerprint; do not paste the key contents.
+This creates or reuses `%USERPROFILE%\.ssh\orca-wsl-ed25519`, derives the public key using `ssh-keygen -y -f`, and writes a clean LF-only UTF-8 public key to `%TEMP%\orca-wsl-manual.pub`. It also prints the public-key fingerprint; do not paste the key contents.
 
 #### Step 2: Authorize the key inside Ubuntu WSL
 
-From the Ubuntu WSL terminal, authorize the exported Windows public key by passing its WSL mount path:
+From the Ubuntu WSL terminal, authorize the exported Windows public key by passing its mount path:
 
 ```bash
 cd ~/.dotfiles
 ./scripts/ubuntu-authorize-windows-key.sh /mnt/c/Users/Ricardo/AppData/Local/Temp/orca-wsl-manual.pub
 ```
 
-The explicit Ubuntu step is intentional: separating key export from authorization avoids fragile cross-boundary scripting, validates key syntax with `ssh-keygen -lf -`, resolves the user home safely with `getent passwd`, ensures secure permissions (0700 `~/.ssh` and 0600 `~/.ssh/authorized_keys`), and appends the key only if absent without clobbering existing authorized keys or exposing private key material. Compare the fingerprint printed by this step with the fingerprint printed in Step 1; they must match.
+The explicit Ubuntu step validates key syntax with `ssh-keygen -lf -`, resolves the user home safely with `getent passwd`, ensures secure permissions (0700 `~/.ssh` and 0600 `~/.ssh/authorized_keys`), and appends the key only if absent without clobbering existing authorized keys or exposing private key material. Compare the fingerprint printed by this step with the fingerprint from Step 1; they must match.
 
 > [!WARNING]
 > The bootstrap verifies loopback SSH with `StrictHostKeyChecking=accept-new`. Accepting a changed host key is safe only after an intentional WSL reinstall. If an unexpected host key change occurs, investigate before accepting it.
@@ -164,15 +166,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -Apply -InstallHerdr -InstallWezTerm -ConfigureHerdrAlias -ConfigureWezTerm -InstallHackNerdFont
 ```
 
-This preserves existing `.wslconfig` sections while setting conservative defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, configures an idempotent PowerShell-profile `herdr` function, creates a shell-independent command shim in `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` and adds it to the current user PATH, copies the tracked WezTerm configuration to `%USERPROFILE%\.config\wezterm\wezterm.lua` with a timestamped backup of differing existing content, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. After opening a new PowerShell, cmd.exe, or WezTerm window, bare `herdr` connects to Ubuntu automatically; additional arguments such as `herdr --session agents` are forwarded.
+This sets conservative `.wslconfig` defaults (8GB memory, 6 processors, 4GB swap, localhost forwarding), installs the reviewed stable Herdr client from `https://herdr.dev/install.ps1` (verified against SHA-256 `3415ea0bc562cad003afcc70ac9916b81cde043c4c26087f05255ae7807d1ba7`), installs WezTerm via WinGet using exact package ID `wez.wezterm`, configures an idempotent PowerShell-profile `herdr` function, creates a shell-independent command shim in `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` and adds it to the current user PATH, copies the tracked WezTerm configuration to `%USERPROFILE%\.config\wezterm\wezterm.lua` with a timestamped backup of differing existing content, and verifies the loopback SSH connection, native build prerequisites, WinGet availability, and WezTerm installation. After opening a new PowerShell, cmd.exe, or WezTerm window, bare `herdr` connects to Ubuntu automatically; additional arguments such as `herdr --session agents` are forwarded. In terminal windows and Herdr, Shift+click opens hyperlinks directly.
 
-The tracked WezTerm configuration is based on [Kun Cheng's example](https://github.com/kunchenguid/dotfiles/blob/main/home/.config/wezterm/wezterm.lua). It keeps the native Windows title bar and resize borders with `window_decorations = "TITLE | RESIZE"`, so the window remains draggable. `-InstallHackNerdFont` installs Hack Nerd Font v3.5.1 from the official Nerd Fonts release into the current user's Windows font directory after verifying SHA-256 `fa24da7de7cefe7766614d27762570b20453c852fc1d5b657111666df9a5e449`.
+The tracked WezTerm configuration keeps native Windows title bar and resize borders with `window_decorations = "TITLE | RESIZE"`, so the window remains draggable and resizable. `-InstallHackNerdFont` installs Hack Nerd Font v3.5.1 into the user font directory after verifying SHA-256 `fa24da7de7cefe7766614d27762570b20453c852fc1d5b657111666df9a5e449`.
 
-When `-ConfigureHerdrAlias` is used, the bootstrap creates the marked `wsl-herdr` entry in `%USERPROFILE%\.ssh\config`, selecting the dedicated `orca-wsl-ed25519` key and a stable `%USERPROFILE%\.ssh\orca-wsl-known-hosts` file. It installs a dedicated command shim at `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` (which invokes the installed `herdr.exe --remote wsl-herdr %*` without recursing), adds `%LOCALAPPDATA%\Programs\Herdr\remote-bin` to the current user PATH idempotently without touching machine-wide PATH, and writes the marked PowerShell profile function. Both cmd.exe (such as default WezTerm sessions) and PowerShell sessions use this target, so bare `herdr` does not depend on default SSH key discovery or fall back to Windows-local sessions.
+When `-ConfigureHerdrAlias` is used, the bootstrap creates the marked `wsl-herdr` entry in `%USERPROFILE%\.ssh\config`, selecting the dedicated `orca-wsl-ed25519` key and a stable `%USERPROFILE%\.ssh\orca-wsl-known-hosts` file. It installs a dedicated command shim at `%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd` (which invokes the installed `herdr.exe --remote wsl-herdr %*` without recursing), adds `%LOCALAPPDATA%\Programs\Herdr\remote-bin` to the current user PATH idempotently without touching machine-wide PATH, and writes the marked PowerShell profile function.
 
-#### Troubleshooting a crates.io HTTP 403
+##### Troubleshooting a crates.io HTTP 403
 
-If `./bootstrap.sh` reports a 403 for `https://crates.io/api/v1/crates/.../download` while building Herdr, the checkout is using an outdated nested nixpkgs lock. Pull the current branch and retry; Herdr is deliberately locked to the repository's root nixpkgs input, whose cargo importer uses the static crates.io CDN with the same Cargo checksums:
+If `./bootstrap.sh` reports a 403 for `https://crates.io/api/v1/crates/.../download` while building Herdr, the checkout is using an outdated nested nixpkgs lock. Pull the current branch and retry; Herdr is locked to the repository's root nixpkgs input:
 
 ```bash
 cd ~/.dotfiles
@@ -180,9 +182,7 @@ git pull --ff-only origin herdr-agents-nix
 ./bootstrap.sh
 ```
 
-Do not disable Nix hashes or replace the locked Herdr dependency with an unpinned source. If the error still names the API endpoint after pulling, verify the checkout with `git log -1 --oneline` and `git status --short --branch` before changing the lockfile.
-
-#### WezTerm and WinGet on Windows
+##### WezTerm and WinGet on Windows
 
 WezTerm is the Windows terminal emulator prerequisite for this environment. It is installed via WinGet with:
 
@@ -265,14 +265,14 @@ Direct Ubuntu WSL terminals inherit WSLg environment variables (`DISPLAY=:0`, `W
 
 Home Manager declaratively restores the WSLg GUI and audio environment without modifying sshd, `/etc`, sudo, or Windows configuration. In `modules/home-base.nix`, a POSIX-compatible hook is wired into `programs.bash.bashrcExtra` (for interactive and noninteractive SSH bash shells before the interactive guard) and `programs.zsh.envExtra` (for the Home Manager Zsh shell and noninteractive commands):
 
-- Exports `DISPLAY=:0` only when `/tmp/.X11-unix/X0` exists and `DISPLAY` is unset; existing `DISPLAY` values (such as SSH X11 forwarding `DISPLAY=localhost:10.0`) are preserved.
-- Exports `WAYLAND_DISPLAY=wayland-0` and `XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir` only when `/mnt/wslg/runtime-dir/wayland-0` exists and the variables are unset.
+- Exports `DISPLAY=:0` only when a WSLg X11 socket (`/tmp/.X11-unix/X0`, `/mnt/wslg/.X11-unix/X0`, or `/mnt/wslg/tmp/.X11-unix/X0`) is present and `DISPLAY` is unset; existing `DISPLAY` values (such as SSH X11 forwarding `DISPLAY=localhost:10.0`) are preserved.
+- Exports `WAYLAND_DISPLAY=wayland-0` only when unset and a Wayland socket (`/mnt/wslg/runtime-dir/wayland-0` or `/run/user/$(id -u)/wayland-0`) is present, setting `XDG_RUNTIME_DIR` to the matching directory only when unset.
 - Exports `PULSE_SERVER=unix:/mnt/wslg/PulseServer` only when `/mnt/wslg/PulseServer` exists and `PULSE_SERVER` is unset.
 
 To verify WSLg socket availability and active environment:
 
 ```bash
-test -S /tmp/.X11-unix/X0
+test -S /tmp/.X11-unix/X0 || test -S /mnt/wslg/.X11-unix/X0 || test -S /mnt/wslg/tmp/.X11-unix/X0
 printf '%s\n' "$DISPLAY" "$WAYLAND_DISPLAY" "$XDG_RUNTIME_DIR"
 ```
 
@@ -286,29 +286,7 @@ This manual export is only needed before rebuilding. After `./rebuild.sh`, all f
 
 The rebuild wrapper also relocates stale Home Manager skill backups out of agent skill discovery roots into `~/.local/state/orca-prime/skill-backups/` without deleting them.
 
-### 4. Use the optional Node 22 validation shell
-
-The regular Home Manager shell is the daily runtime for AGY, Pi, Prime, and Firstmate. Keep the development shell only for deterministic Node 22/build validation:
-
-```bash
-cd ~/.dotfiles
-nix develop .#orca-prime
-```
-
-Inside that optional shell:
-
-```bash
-node --version
-python3 --version
-uv --version
-gh --version
-```
-
-Expected Node major version inside the optional shell: `v22`.
-
-Return to a fresh regular shell before running the user-owned installers below. They do not require `nix develop`.
-
-### 5. Install the three user-owned agent binaries from the regular shell
+### 4. Install user-owned agent binaries from the regular shell
 
 Herdr is installed by the regular Home Manager profile. Verify it alongside AGY and Pi:
 
@@ -322,8 +300,6 @@ pi list | grep pi-mcp-adapter
 ```
 
 The regular Home Manager shell defines the interactive alias `agy` as `command agy --dangerously-skip-permissions`. In any fresh WSL shell (or after running `exec zsh -l` in the current terminal), `agy ...` automatically includes the flag. `command agy ...` bypasses the alias when needed.
-
-The upstream Linux command is `curl -fsSL https://herdr.dev/install.sh | sh`; this repository intentionally uses the locked Home Manager package instead, so the WSL server is reproducible and matches the pinned `0.8.2` Windows client.
 
 Install Prime from the regular shell. It is the only support component still installed by a reviewed script:
 
@@ -360,7 +336,40 @@ git remote -v
 
 Only after that review should you use `git push no-mistakes <branch>` or `/no-mistakes` from a supported coding agent. These tools use user-owned locations and must never be run with `sudo`.
 
-### Shared AGY, Pi, and Prime policy, skills, and Codebase Memory
+### 5. Validate environment with single aggregate command
+
+Run the canonical aggregate validator:
+
+```bash
+cd ~/.dotfiles
+./scripts/validate.sh
+```
+
+This single command executes static contract assertions, deterministic subtests, environment/tool version reporting, read-only SSH checks, WSLg discovery, browser checks, and Pi server-side compaction checks.
+
+#### Optional live server compaction proof
+
+Static validation always verifies the pinned `pi-openai-server-compaction` package, commit `8a3de2f3b0c178fdd6f73f2f94172dfc3943e466`, and extension deployment. To additionally prove live server-side compaction behavior from a real session file without scanning `~/.pi` sessions automatically:
+
+```bash
+PI_COMPACTION_SESSION_FILE=/path/to/session.jsonl ./scripts/validate.sh
+```
+
+The live proof parser inspects only JSONL metadata, requiring `details.remoteCompaction.implementation == "responses_compaction_v2"`, non-empty `replacementHistory`, and a final compaction item without printing message contents or private prompts.
+
+#### Windows and Ubuntu host verification
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File "$Repo\scripts\windows-herdr-bootstrap.ps1" `
+  -VerifyOnly
+```
+
+```bash
+./scripts/ubuntu-bootstrap.sh --verify-only
+```
+
+## Shared AGY, Pi, and Prime policy, skills, and Codebase Memory
 
 The repository root `AGENTS.md` is the single tracked shared policy for AGY, Pi, and Prime. Home Manager exposes that same source to Pi as `~/.pi/agent/AGENTS.md`, to AGY as `~/.gemini/GEMINI.md`, and to Prime as `~/.prime/agent/AGENTS.md`. Prime's safety, worktree, telemetry, and engineering rules are merged into the common file.
 
@@ -382,7 +391,27 @@ Cache: /home/ricardo/.cache/codebase-memory-mcp
 
 Pi uses the pinned `pi-mcp-adapter@2.27.0`; AGY uses native stdio MCP support; Prime uses its generic MCP configuration. All configurations keep diagnostics off and disable `delete_project`, `manage_adr`, and `ingest_traces`. For non-trivial work, follow the graph-first workflow in the shared `AGENTS.md`: check index status, get a bounded architecture overview, search narrowly, trace relevant paths, read exact symbols, verify source, and run blast-radius checks after edits.
 
-### Firstmate project crew
+## Optional Node 22 validation shell
+
+The regular Home Manager shell is the daily runtime for AGY, Pi, Prime, and Firstmate. Keep the development shell only for deterministic Node 22/build validation:
+
+```bash
+cd ~/.dotfiles
+nix develop .#orca-prime
+```
+
+Inside that optional shell:
+
+```bash
+node --version
+python3 --version
+uv --version
+gh --version
+```
+
+Expected Node major version inside the optional shell: `v22`.
+
+## Firstmate project crew
 
 Firstmate is packaged from the pinned upstream commit and exposed through Home Manager. Its mutable root remains separate from the Nix store:
 
@@ -395,7 +424,7 @@ test -d ~/firstmate/projects || mkdir -p ~/firstmate/projects
 
 The `firstmate` launcher creates `~/firstmate/projects` and copies the packaged project-level `AGENTS.md` into `~/firstmate` on first use. Its `data/`, `state/`, `config/`, sessions, caches, and projects remain outside this repository. Nix does not create project clones or start autonomous loops.
 
-The default Home Manager profile provides the `firstmate` launcher. It requires `tmux`, Treehouse, and the script-installed Pi harness, enters the Firstmate root, sets `FM_ROOT_OVERRIDE`, `FM_HOME`, and `FM_BACKEND=tmux`, and starts Pi:
+The default Home Manager profile provides the `firstmate` launcher. It requires `tmux`, Treehouse, and the script-installed Pi harness, enters `~/firstmate`, configures the Linux `tmux` backend, and starts Pi:
 
 ```bash
 firstmate
@@ -482,7 +511,7 @@ await mcp.call_tool(
 
 Use `get_architecture`, `search_graph`, `query_graph`, `trace_path`, and `get_code_snippet` before broad file reads. Keep `persistence` false unless a separately reviewed shared graph artifact is desired.
 
-### 5. Connect the Windows Herdr thin client
+## Connect the Windows Herdr thin client
 
 Herdr uses normal OpenSSH authentication for remote attach. Use the existing dedicated key:
 
@@ -502,9 +531,9 @@ herdr
 
 The command shim (`%LOCALAPPDATA%\Programs\Herdr\remote-bin\herdr.cmd`) and the PowerShell profile function both invoke `herdr.exe --remote wsl-herdr`, preserving additional arguments such as `herdr --session agents` without recursing. To bypass the alias and invoke the binary directly, use `herdr.exe --remote wsl-herdr`. Do not use the raw `ssh://user@127.0.0.1:2222` form unless that host has its own matching `IdentityFile` entry in the OpenSSH config.
 
-For repeat use, configure an SSH alias such as `wsl-herdr` and attach with `herdr --remote wsl-herdr`. Add projects by selecting explicit Linux paths such as `/home/<user>/src/<repository>` or `/home/<user>/firstmate/projects/<project>`.
+For repeat use, configure an SSH alias such as `wsl-herdr` and attach with `herdr --remote wsl-herdr`. Add projects by selecting explicit Linux paths such as `/home/<user>/src/<repository>` or `/home/<user>/firstmate/projects/<project>`. Shift+click on URLs inside terminal/Herdr opens them in your default browser.
 
-### 6. Start Prime from a Herdr pane
+### Start Prime from a Herdr pane
 
 In a Herdr pane attached to the assigned worktree:
 
@@ -521,37 +550,6 @@ ADHD presentation mode is opt-in:
 ```
 
 Use `normal mode` or `stop adhd mode` to disable it for the session.
-
-## Validation
-
-Static and Nix validation:
-
-```bash
-cd ~/.dotfiles
-./scripts/validate.sh
-```
-
-Runtime checks outside the dev shell confirm global Node 24:
-
-```bash
-./tests/smoke-herdr-agents.sh
-```
-
-Runtime checks inside the dev shell confirm Node 22 and Prime environment policy:
-
-```bash
-nix develop .#orca-prime --command ./tests/smoke-herdr-agents.sh
-```
-
-Windows and Ubuntu host checks:
-
-```powershell
-& "$Repo\scripts\windows-herdr-bootstrap.ps1" -VerifyOnly
-```
-
-```bash
-./scripts/ubuntu-bootstrap.sh --verify-only
-```
 
 ## Legacy fallback
 
@@ -619,13 +617,15 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation for the regular Home Manager shell.
 - `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, skills, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, and pi-openai-server-compaction.
 - `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
-- `scripts/validate.sh`: static, secret, flake, profile, and dev-shell validation.
+- `scripts/validate.sh`: single aggregate validation entrypoint for static contracts, subtests, version checks, SSH, WSLg, Chrome profile, and compaction checks.
 - `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.
 - `tests/smoke-herdr-agents.sh`: target-runtime acceptance checks for the Herdr/Nix-managed support environment.
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `tests/test-windows-herdr-shim.sh`: contract tests for the Windows Herdr command shim and PATH handling.
 - `tests/test-shell-handoff.sh`: contract tests for the guarded Bash-to-Zsh handoff.
 - `tests/test-wslg-display.sh`: contract tests for WSLg display and audio environment discovery.
+- `tests/test-compaction-proof.sh`: contract tests for Pi OpenAI server-side compaction session metadata proof parsing.
+- `tests/pi-calm.test.sh`: deterministic rendering and isolation tests for Pi Calm extension.
 - `home/`: repository-authored configuration linked by Home Manager.
 
 ## Notes

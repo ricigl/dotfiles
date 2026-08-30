@@ -24,20 +24,33 @@ let
   '';
   wslgHook = ''
     # WSLg GUI and audio socket discovery for SSH and noninteractive sessions.
-    if [ -z "''${DISPLAY:-}" ] && [ -e /tmp/.X11-unix/X0 ]; then
-      export DISPLAY=:0
+    if [ -z "''${DISPLAY:-}" ]; then
+      if [ -S /tmp/.X11-unix/X0 ] || [ -S /mnt/wslg/.X11-unix/X0 ] || [ -S /mnt/wslg/tmp/.X11-unix/X0 ]; then
+        export DISPLAY=:0
+      fi
     fi
 
-    if [ -e /mnt/wslg/runtime-dir/wayland-0 ]; then
+    if [ -S /mnt/wslg/runtime-dir/wayland-0 ] || [ -e /mnt/wslg/runtime-dir/wayland-0 ]; then
       if [ -z "''${WAYLAND_DISPLAY:-}" ]; then
         export WAYLAND_DISPLAY=wayland-0
       fi
       if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
         export XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
       fi
+    else
+      _wsl_uid="$(id -u 2>/dev/null || true)"
+      if [ -n "$_wsl_uid" ] && { [ -S "/run/user/$_wsl_uid/wayland-0" ] || [ -e "/run/user/$_wsl_uid/wayland-0" ]; }; then
+        if [ -z "''${WAYLAND_DISPLAY:-}" ]; then
+          export WAYLAND_DISPLAY=wayland-0
+        fi
+        if [ -z "''${XDG_RUNTIME_DIR:-}" ]; then
+          export XDG_RUNTIME_DIR="/run/user/$_wsl_uid"
+        fi
+      fi
+      unset _wsl_uid
     fi
 
-    if [ -z "''${PULSE_SERVER:-}" ] && [ -e /mnt/wslg/PulseServer ]; then
+    if [ -z "''${PULSE_SERVER:-}" ] && { [ -S /mnt/wslg/PulseServer ] || [ -e /mnt/wslg/PulseServer ]; }; then
       export PULSE_SERVER=unix:/mnt/wslg/PulseServer
     fi
   '';
