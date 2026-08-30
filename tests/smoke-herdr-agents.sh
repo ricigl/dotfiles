@@ -7,12 +7,25 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
   exit 1
 fi
 
-for command_name in git make g++ python3 node npm nvim zsh starship jq herdr prime prime-agent prime-maintenance no-mistakes agy pi firstmate treehouse fm-session-start.sh lavish-axi gh-axi codebase-memory-mcp; do
+for command_name in git make g++ python3 node npm nvim zsh starship jq herdr prime prime-agent prime-maintenance no-mistakes agy pi treehouse lavish-axi gh-axi codebase-memory-mcp; do
   command -v "$command_name" >/dev/null 2>&1 || {
     printf 'Missing command: %s\n' "$command_name" >&2
     exit 1
   }
 done
+
+chrome_bin=""
+for candidate in /usr/bin/google-chrome-stable /usr/bin/google-chrome; do
+  if [ -x "$candidate" ] 2>/dev/null; then
+    chrome_bin="$candidate"
+    break
+  fi
+done
+if [ -z "$chrome_bin" ]; then
+  printf '%s\n' "System Google Chrome binary (/usr/bin/google-chrome-stable or /usr/bin/google-chrome) is not installed." >&2
+  exit 1
+fi
+"$chrome_bin" --version >/dev/null
 
 prime-maintenance --help >/dev/null
 herdr --version
@@ -80,7 +93,7 @@ shared_no_mistakes_skill="$HOME/.agents/skills/no-mistakes/SKILL.md"
 agy_skill="$HOME/.gemini/antigravity-cli/skills/caveman/SKILL.md"
 no_mistakes_skill="$HOME/.gemini/antigravity-cli/skills/no-mistakes/SKILL.md"
 prime_no_mistakes_skill="$HOME/.prime/agent/skills/no-mistakes/SKILL.md"
-firstmate_root="${FIRSTMATE_ROOT:-$HOME/firstmate}"
+firstmate_root="$HOME/firstmate"
 for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_policy" "$pi_mcp" "$agy_mcp" "$shared_skill" "$shared_no_mistakes_skill" "$agy_skill" "$no_mistakes_skill" "$prime_no_mistakes_skill"; do
   test -r "$required_file" || {
     printf 'Missing Home Manager file: %s\n' "$required_file" >&2
@@ -88,14 +101,20 @@ for required_file in "$settings" "$policy" "$skill" "$shared_policy" "$agy_polic
   }
 done
 
-if [ -d "$firstmate_root" ]; then
-  for firstmate_path in AGENTS.md projects; do
-    test -e "$firstmate_root/$firstmate_path" || {
-      printf 'Missing Firstmate runtime path: %s/%s\n' "$firstmate_root" "$firstmate_path" >&2
-      exit 1
-    }
-  done
+if [ ! -d "$firstmate_root" ]; then
+  printf 'Missing Firstmate directory: %s\n' "$firstmate_root" >&2
+  exit 1
 fi
+if ! git -C "$firstmate_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  printf 'Firstmate directory %s is not a valid git repository\n' "$firstmate_root" >&2
+  exit 1
+fi
+for firstmate_path in AGENTS.md projects; do
+  test -e "$firstmate_root/$firstmate_path" || {
+    printf 'Missing Firstmate runtime path: %s/%s\n' "$firstmate_root" "$firstmate_path" >&2
+    exit 1
+  }
+done
 
 cmp -s "$shared_policy" "$agy_policy"
 cmp -s "$shared_policy" "$policy"

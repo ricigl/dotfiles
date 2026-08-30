@@ -1,11 +1,6 @@
 { pkgs, lib, i-have-adhd }:
 let
-  inherit (pkgs) fetchurl fetchgit stdenvNoCC;
-  firstmateCommit = "038d0f7ec6ba7238a151722931434dcf06ff37c4";
-  firstmateSource = fetchurl {
-    url = "https://github.com/kunchenguid/firstmate/archive/${firstmateCommit}.tar.gz";
-    hash = "sha256-LFOz/I2vOfWXAVyOmbho2J8gbhalJxlN1WzHSzgu1YA=";
-  };
+  inherit (pkgs) fetchurl stdenvNoCC;
   noMistakesSource = fetchurl {
     url = "https://github.com/kunchenguid/no-mistakes/archive/refs/tags/v1.57.0.tar.gz";
     hash = "sha256-lRkgF8sjAa1ND3WPaXHqIvSavmPgEZFrcci1bqZ5hLs=";
@@ -136,29 +131,6 @@ in
     '';
     meta = {
       description = "Firstmate Linux Treehouse worktree provider";
-      platforms = [ "x86_64-linux" ];
-    };
-  };
-
-  firstmate = stdenvNoCC.mkDerivation {
-    pname = "firstmate";
-    version = firstmateCommit;
-    src = firstmateSource;
-    sourceRoot = "firstmate-${firstmateCommit}";
-    installPhase = ''
-      runHook preInstall
-      mkdir -p "$out/share/firstmate" "$out/bin"
-      cp -R ./. "$out/share/firstmate/"
-      find "$out/share/firstmate/bin" -type f -name '*.sh' -exec chmod 0755 {} +
-      for script in "$out/share/firstmate"/bin/*.sh; do
-        [ -f "$script" ] || continue
-        ln -s "$script" "$out/bin/$(basename "$script")"
-      done
-      runHook postInstall
-    '';
-    meta = {
-      description = "Pinned Firstmate Linux tmux/Treehouse orchestration distro";
-      homepage = "https://github.com/kunchenguid/firstmate";
       platforms = [ "x86_64-linux" ];
     };
   };

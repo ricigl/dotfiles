@@ -18,7 +18,7 @@ Constraints:
 - Root `AGENTS.md` is the single shared policy source for all three harnesses.
 - Firstmate root is `~/firstmate`; project and Treehouse worktree root is `~/firstmate/projects`.
 - Firstmate owns Linux Treehouse worktrees; Windows Herdr connects over SSH without worktree lifecycle operations.
-- Linux Herdr is a pinned Home Manager package in the regular profile. Only `agy`, `pi`, and `prime-agent` are installed by scripts. Lavish, gh-axi, Codebase Memory, no-mistakes, Firstmate, Treehouse, Caveman, and `i-have-adhd` remain Nix/Home Manager packages.
+- Linux Herdr is a pinned Home Manager package in the regular profile. `agy`, `pi`, `prime-agent`, Firstmate (cloned to `~/firstmate`), and Google Chrome (installed via apt from the official Debian package) are installed by scripts. Lavish, gh-axi, Codebase Memory, no-mistakes, Treehouse, Caveman, and `i-have-adhd` remain Nix/Home Manager packages.
 - Windows SSH key: `%USERPROFILE%\.ssh\orca-wsl-ed25519`.
 - `gh auth status` currently fails because this environment is unauthenticated.
 - This host has no native `nix` executable. Use an available pinned container validator only if its daemon is running; do not claim target activation or Herdr runtime acceptance until Ricardo verifies them in Ubuntu WSL.

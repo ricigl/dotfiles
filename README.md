@@ -10,7 +10,7 @@ Windows 10
     └── SSH 127.0.0.1:2222
         └── Ubuntu WSL2 distro "Ubuntu"
             └── Linux repository/worktree under /home/...
-                ├── Home Manager: Zsh, Starship, Git, CLI tools, Neovim, ABNT2, Node 24, AGY/Pi/Prime PATH, shared agent policy/skills/MCP, Firstmate launcher
+                ├── Home Manager: Zsh, Starship, Git, CLI tools, Neovim, ABNT2, Node 24, AGY/Pi/Prime PATH, shared agent policy/skills/MCP, Treehouse/tmux dependencies for Firstmate
                 └── nix develop .#orca-prime: optional Node 22, Python, uv, gh, build and validation tools
 ```
 
@@ -21,9 +21,10 @@ The previous WezTerm, Claude Code, and Codex environment remains available as th
 | Layer | Owns |
 |---|---|
 | Windows and Ubuntu bootstrap | WSL resources, systemd, OpenSSH, `127.0.0.1:2222`, `build-essential`, global `python3`, Windows WezTerm terminal emulator, WinGet/App Installer |
-| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Google Chrome (`pkgs.google-chrome`), Nix-packaged support tools (`herdr`, `codebase-memory-mcp`, `no-mistakes`, `lavish-axi`, `gh-axi`, `quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`), `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, shared policy/skills/MCP config, Firstmate and Treehouse |
+| Home Manager | Zsh, Starship, Git, user CLI tools, Neovim, ABNT2, global Node 24, Nix-packaged support tools (`herdr`, `codebase-memory-mcp`, `no-mistakes`, `lavish-axi`, `gh-axi`, `quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`, `treehouse`), `~/.local/bin` and npm PATH, AGY/Pi/Prime launchers, shared policy/skills/MCP config, Treehouse and tmux dependencies for Firstmate |
+| `scripts/install-home-agents.sh` | Reviewed AGY and Pi installers, safe idempotent Firstmate git clone to `~/firstmate`, and Google Chrome official Debian package installation via `apt` |
 | `.#orca-prime` | Optional Node 22, Python, uv, gh, jq, ripgrep, make, GCC, pkg-config, and build-validation environment |
-| Firstmate | Linux project-fleet coordination and Treehouse-managed project/crew worktrees under `~/firstmate/projects` |
+| Firstmate | Linux project-fleet coordination and Treehouse-managed project/crew worktrees under `~/firstmate/projects`; cloned from upstream into `~/firstmate` by `scripts/install-home-agents.sh` |
 | Windows Herdr | SSH thin client for selected WSL projects and Firstmate worktrees; no worktree lifecycle ownership |
 | Prime | Coding and reasoning inside the current Firstmate-assigned worktree |
 
@@ -41,7 +42,7 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - quota-axi: `0.1.32`
 - tasks-axi: `0.2.5`
 - chrome-devtools-axi: `0.1.31`
-- Google Chrome: Nix package (`pkgs.google-chrome`)
+- Google Chrome: Official Debian package installed into `/usr/bin/google-chrome-stable` or `/usr/bin/google-chrome` via `scripts/install-home-agents.sh` from `https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb`
 - pi-openai-server-compaction: commit `8a3de2f3b0c178fdd6f73f2f94172dfc3943e466`
 - Codebase Memory MCP: `0.10.8`
 - no-mistakes: `1.57.0`
@@ -49,11 +50,11 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - AGY bootstrapper SHA-256: `ee1ea43ce4e9e56356c4ab6dad907ef357ae4bdfcaadb682735909fb57c9c640`
 - Pi bootstrapper SHA-256: `a3a3604ee550bf72c5da7da3c3014cc361c14ab3b91b1b24f097d9022bd8de5b`
 - Pi MCP adapter: `2.27.0` (`npm:pi-mcp-adapter@2.27.0`)
-- Firstmate: commit `038d0f7ec6ba7238a151722931434dcf06ff37c4` from `kunchenguid/firstmate`
+- Firstmate: Upstream git repository cloned to `~/firstmate` from `https://github.com/kunchenguid/firstmate.git` via `scripts/install-home-agents.sh`
 - Treehouse: `2.0.1`, Nix package
 - `i-have-adhd`: commit `2ed064090711586e0c97a2fbbf15465fe8f1808b`, skill directory only
 
-`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Google Chrome and the support tools (`quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`) are Nix/Home Manager managed. Only the AGY/Pi and Prime Agent binaries remain script-installed.
+`flake.lock` pins Nix inputs and the `i-have-adhd` source. The fixed-output packages in `packages/default.nix` pin release hashes and npm lockfile integrity values. Support tools (`quota-axi`, `tasks-axi`, `chrome-devtools-axi`, `pi-openai-server-compaction`, `treehouse`) are Nix/Home Manager managed. AGY, Pi, Prime Agent, Firstmate (cloned to `~/firstmate`), and Google Chrome (installed via apt from the official Debian package URL) are managed through scripts.
 
 ## Security model
 
@@ -64,10 +65,10 @@ Herdr's remote SSH attach starts before `nix develop`. Therefore Ubuntu must pro
 - Prime telemetry is disabled in both the dev shell and `~/.prime/agent/settings.json`.
 - Lavish is restricted to `127.0.0.1` and must not publish or share artifacts.
 - gh-axi begins read-only.
-- Chrome and chrome-devtools-axi profile directory `~/.local/share/chrome-devtools-axi/dev-profile`, browser sessions, cookies, and local data are local mutable state created with mode 0700 during Home Manager activation and stay outside Git.
+- Chrome and chrome-devtools-axi profile directory `~/.local/share/chrome-devtools-axi/dev-profile`, browser sessions, cookies, and local data are local mutable state created with mode 0700 during Home Manager activation and stay outside Git. Google Chrome is installed from the official Debian package URL (`https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb`) into the normal `/usr/bin` system path via `wget` and `apt` by `scripts/install-home-agents.sh`, not by Nix/Home Manager.
 - no-mistakes telemetry and automatic update checks are disabled by Home Manager. Its daemon, gate repositories, worktrees, logs, database, and evidence remain local mutable state.
 - AGY and Pi are user-owned transitional installs. Their reviewed bootstrap scripts are pinned, but upstream release payloads remain dynamic and may self-update; auth, sessions, caches, logs, and downloads remain local and untracked. Herdr is supplied by the pinned Home Manager package on Linux; its Windows client uses the reviewed official stable installer.
-- Firstmate is packaged from a reviewed commit; its operational `data/`, `state/`, `config/`, `sessions`, caches, `projects/`, and Treehouse worktree state stay outside this repository.
+- Firstmate is cloned into `~/firstmate` from upstream `https://github.com/kunchenguid/firstmate.git` by `scripts/install-home-agents.sh` and launched from there with the chosen harness; its operational `data/`, `state/`, `config/`, `sessions`, caches, `projects/`, and Treehouse worktree state stay outside this repository. Treehouse and tmux remain Nix-managed dependencies.
 - Codebase Memory is local-only: allowed root `/home/ricardo`, cache `/home/ricardo/.cache/codebase-memory-mcp`, diagnostics off, and no committed graph artifact. Index only explicit project directories such as `/home/ricardo/src/<project>` or `/home/ricardo/firstmate/projects/<project>`; never index `/home/ricardo` itself or credential/config directories.
 - AGY, Pi, and Prime Codebase Memory MCP entries disable initial mutating/high-risk tools: `delete_project`, `manage_adr`, and `ingest_traces`.
 - `i-have-adhd` is opt-in presentation policy, not an execution or permission policy.
@@ -261,7 +262,7 @@ exec zsh -l
 
 #### WSLg GUI and audio environment in SSH sessions
 
-Direct Ubuntu WSL terminals inherit WSLg environment variables (`DISPLAY=:0`, `WAYLAND_DISPLAY=wayland-0`, `XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir`, `PULSE_SERVER=unix:/mnt/wslg/PulseServer`) from WSL init. However, Windows WezTerm/Herdr SSH sessions attach to an OpenSSH daemon started by systemd, which does not inherit WSL init's environment. In an unconfigured SSH shell, `DISPLAY` is unset, and GUI applications such as Nix-managed `google-chrome` fail with `Missing X server or $DISPLAY`.
+Direct Ubuntu WSL terminals inherit WSLg environment variables (`DISPLAY=:0`, `WAYLAND_DISPLAY=wayland-0`, `XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir`, `PULSE_SERVER=unix:/mnt/wslg/PulseServer`) from WSL init. However, Windows WezTerm/Herdr SSH sessions attach to an OpenSSH daemon started by systemd, which does not inherit WSL init's environment. In an unconfigured SSH shell, `DISPLAY` is unset, and GUI applications such as `google-chrome` fail with `Missing X server or $DISPLAY`.
 
 Home Manager declaratively restores the WSLg GUI and audio environment without modifying sshd, `/etc`, sudo, or Windows configuration. In `modules/home-base.nix`, a POSIX-compatible hook is wired into `programs.bash.bashrcExtra` (for interactive and noninteractive SSH bash shells before the interactive guard) and `programs.zsh.envExtra` (for the Home Manager Zsh shell and noninteractive commands):
 
@@ -286,9 +287,9 @@ This manual export is only needed before rebuilding. After `./rebuild.sh`, all f
 
 The rebuild wrapper also relocates stale Home Manager skill backups out of agent skill discovery roots into `~/.local/state/orca-prime/skill-backups/` without deleting them.
 
-### 4. Install user-owned agent binaries from the regular shell
+### 4. Install user-owned agent binaries and host tools from the regular shell
 
-Herdr is installed by the regular Home Manager profile. Verify it alongside AGY and Pi:
+Herdr is installed by the regular Home Manager profile. Run the home-agents installer to install AGY, Pi, the Firstmate checkout in `~/firstmate`, and Google Chrome via apt:
 
 ```bash
 cd ~/.dotfiles
@@ -297,18 +298,22 @@ herdr --version
 agy --version
 pi --version
 pi list | grep pi-mcp-adapter
+google-chrome --version
+git -C ~/firstmate remote get-url origin
 ```
+
+`scripts/install-home-agents.sh` is an explicit host-changing installer that downloads and runs the reviewed AGY and Pi installers, safely and idempotently clones Firstmate into `~/firstmate` (reusing existing checkouts with the expected origin without auto-pulling), and downloads the official Google Chrome Debian package from `https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb` to install it via `wget` and `apt` into the normal `/usr/bin` system path.
 
 The regular Home Manager shell defines the interactive alias `agy` as `command agy --dangerously-skip-permissions`. In any fresh WSL shell (or after running `exec zsh -l` in the current terminal), `agy ...` automatically includes the flag. `command agy ...` bypasses the alias when needed.
 
-Install Prime from the regular shell. It is the only support component still installed by a reviewed script:
+Install Prime from the regular shell:
 
 ```bash
 ./scripts/install-prime-tools.sh
 prime-agent --version
 ```
 
-Codebase Memory, no-mistakes, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, Google Chrome, Firstmate, Treehouse, Caveman, and `i-have-adhd` are installed by the locked Nix/Home Manager profile during `./rebuild.sh`. Verify them directly:
+Codebase Memory, no-mistakes, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, Treehouse, Caveman, and `i-have-adhd` are installed by the locked Nix/Home Manager profile during `./rebuild.sh`. Verify them directly:
 
 ```bash
 codebase-memory-mcp --version
@@ -318,13 +323,13 @@ gh-axi --version
 quota-axi --version
 tasks-axi --version
 chrome-devtools-axi --help
-command -v google-chrome-stable
+test -x /usr/bin/google-chrome-stable || test -x /usr/bin/google-chrome
 printf '%s\n' "$CHROME_DEVTOOLS_AXI_USER_DATA_DIR" "$CHROME_DEVTOOLS_AXI_HEADED"
 treehouse --version
-command -v fm-session-start.sh
+test -d ~/firstmate/projects
 ```
 
-The Nix packages use fixed release hashes or committed lockfile integrity values. Google Chrome is installed through Home Manager (`pkgs.google-chrome`). The `chrome-devtools-axi` profile directory (`~/.local/share/chrome-devtools-axi/dev-profile`) and browser cookies/sessions remain local mutable runtime state outside the repository. Automated checks verify configuration, derivations, environment exports, and directory permissions; they do not execute browser runtime logins or mutating actions.
+The Nix packages use fixed release hashes or committed lockfile integrity values. Google Chrome is installed via apt from the official Debian package by `scripts/install-home-agents.sh`. The `chrome-devtools-axi` profile directory (`~/.local/share/chrome-devtools-axi/dev-profile`) and browser cookies/sessions remain local mutable runtime state outside the repository. Automated checks verify configuration, derivations, environment exports, and directory permissions; they do not execute browser runtime logins or mutating actions.
 
 The repository policy is in `.no-mistakes.yaml`. Review the configuration and trusted-default-branch behavior before manually initializing this repository:
 
@@ -413,24 +418,17 @@ Expected Node major version inside the optional shell: `v22`.
 
 ## Firstmate project crew
 
-Firstmate is packaged from the pinned upstream commit and exposed through Home Manager. Its mutable root remains separate from the Nix store:
+Firstmate is cloned from the upstream repository into `~/firstmate` by `scripts/install-home-agents.sh` and launched directly from `~/firstmate` using the user's chosen harness (such as Pi). Home Manager provides the Nix-managed host dependencies (`tmux` and the Treehouse worktree provider):
 
 ```bash
-firstmate --help
-command -v fm-session-start.sh
+cd ~/firstmate
 treehouse --version
 test -d ~/firstmate/projects || mkdir -p ~/firstmate/projects
 ```
 
-The `firstmate` launcher creates `~/firstmate/projects` and copies the packaged project-level `AGENTS.md` into `~/firstmate` on first use. Its `data/`, `state/`, `config/`, sessions, caches, and projects remain outside this repository. Nix does not create project clones or start autonomous loops.
+The upstream Firstmate checkout provides its project coordination policy (`AGENTS.md`); the installer creates its mutable `projects/` workspace. Its `data/`, `state/`, `config/`, sessions, caches, and projects remain outside this repository. Nix does not create project clones or start autonomous loops.
 
-The default Home Manager profile provides the `firstmate` launcher. It requires `tmux`, Treehouse, and the script-installed Pi harness, enters `~/firstmate`, configures the Linux `tmux` backend, and starts Pi:
-
-```bash
-firstmate
-```
-
-Firstmate owns project and crew worktrees through Linux Treehouse. Windows Herdr connects to WSL over SSH and may access an explicitly selected Firstmate worktree, but it does not create, move, remove, or prune worktrees. Do not select Firstmate's macOS-only `orca` backend in this WSL/Windows topology.
+Firstmate uses `tmux` and Treehouse for its Linux backend. Windows Herdr connects to WSL over SSH and may access an explicitly selected Firstmate worktree, but it does not create, move, remove, or prune worktrees. Do not select Firstmate's macOS-only `orca` backend in this WSL/Windows topology.
 
 The default Home Manager profile also provides a direct `prime` launcher. It runs the user-installed Prime Agent from the regular Node 24 shell:
 
@@ -604,22 +602,23 @@ rm -rf ~/.cache/codebase-memory-mcp
 ## Repository map
 
 - `flake.nix`: Home Manager profiles, optional Node 22/build-validation shell, and Home Manager app.
-- `modules/home-base.nix`: default user packages, Google Chrome, shell/editor configuration (guarded Bash-to-Zsh handoff, WSLg GUI/audio environment discovery, Zsh, Starship), Node 24, npm PATH, Chrome devtools profile activation, Herdr, and direct Prime launcher.
+- `modules/home-base.nix`: default user packages, shell/editor configuration (guarded Bash-to-Zsh handoff, WSLg GUI/audio environment discovery, Zsh, Starship), Node 24, npm PATH, Chrome devtools profile activation, Herdr, and direct Prime launcher.
 - `modules/home-common-agents.nix`: shared AGENTS.md, skills, and MCP links for AGY, Pi, and Prime.
 - `modules/home-orca-prime.nix`: reviewed Prime settings and Codebase Memory environment only.
-- `modules/home-firstmate.nix`: Firstmate launcher, explicit Linux backend guard, and tmux runtime dependency.
+- `modules/home-firstmate.nix`: Firstmate runtime dependencies (Treehouse worktree provider and tmux).
 - `modules/home-legacy-agents.nix`: WezTerm, Pi, Claude Code, and Codex fallback additions.
 - `scripts/ubuntu-bootstrap.sh`: Ubuntu system and sshd bootstrap.
 - `scripts/ubuntu-authorize-windows-key.sh`: authorizes the Windows client public key in Ubuntu with permission and fingerprint checks.
 - `scripts/windows-herdr-key-bootstrap.ps1`: Windows client SSH key generation and export helper.
 - `scripts/windows-herdr-bootstrap.ps1`: Windows Herdr installer, WezTerm installer via WinGet, WSL resources, and SSH verification.
-- `scripts/install-prime-tools.sh`: pinned Prime Agent installation; this is the only support installer remaining.
-- `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation for the regular Home Manager shell.
-- `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, skills, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, and pi-openai-server-compaction.
+- `scripts/install-prime-tools.sh`: pinned Prime Agent installation.
+- `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation, safe Firstmate git clone to `~/firstmate`, and Google Chrome official Debian package apt installation.
+- `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Treehouse, skills, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, and pi-openai-server-compaction.
 - `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
 - `scripts/validate.sh`: single aggregate validation entrypoint for static contracts, subtests, version checks, SSH, WSLg, Chrome profile, and compaction checks.
 - `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.
 - `tests/smoke-herdr-agents.sh`: target-runtime acceptance checks for the Herdr/Nix-managed support environment.
+- `tests/test-home-agents-installer.sh`: contract and behavioral tests for Firstmate safe clone and Google Chrome apt installation.
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `tests/test-windows-herdr-shim.sh`: contract tests for the Windows Herdr command shim and PATH handling.
 - `tests/test-shell-handoff.sh`: contract tests for the guarded Bash-to-Zsh handoff.

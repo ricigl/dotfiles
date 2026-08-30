@@ -32,7 +32,7 @@ The regular Home Manager shell becomes the daily runtime for all three harnesses
 
 - Home Manager keeps Zsh, Starship, Git, Neovim, fonts, ABNT2, shortcuts, Node 24, `~/.local/bin`, and the persistent npm global bin path.
 - AGY, Pi, and Prime are launched directly from that regular shell.
-- `gh-axi`, `lavish-axi`, `no-mistakes`, `codebase-memory-mcp`, Firstmate, Treehouse, Caveman, and `i-have-adhd` are pinned Nix packages available from the same PATH.
+- `gh-axi`, `lavish-axi`, `no-mistakes`, `codebase-memory-mcp`, Treehouse, Caveman, and `i-have-adhd` are pinned Nix packages available from the same PATH; Firstmate is cloned into `~/firstmate` by `scripts/install-home-agents.sh`.
 - Caveman and the pinned `i-have-adhd` skill are exposed to all three harnesses through client-compatible skill roots.
 - Pi, AGY, and Prime retain client-specific MCP configuration schemas but point at the same local Codebase Memory policy and binary.
 - `nix develop .#orca-prime` remains available only for Node 22, Python, uv, gh, jq, compiler, and package validation. It is not required by any agent launcher.
@@ -49,7 +49,7 @@ Implementation order:
 2. Move agent launchers and the npm global bin path into the regular Home Manager module.
 3. Package all support tools with fixed release hashes or lockfile integrity values; keep only AGY, Pi, and Prime Agent script-managed.
 4. Link the common policy and skills to all three clients and preserve client-specific MCP schemas.
-5. Package Firstmate and Treehouse while keeping `~/firstmate/projects` and all runtime state mutable outside the Nix store.
+5. Install Firstmate via `scripts/install-home-agents.sh` into `~/firstmate` and package Treehouse while keeping `~/firstmate/projects` and all runtime state mutable outside the Nix store.
 6. Retain `.#orca-prime` as an optional validation shell and remove agent-runtime assumptions from its launcher/tests.
 7. Run static checks, activation builds, regular-shell smoke checks, direct harness version/help checks, MCP read-only checks, and Herdr SSH acceptance on WSL.
 
@@ -65,7 +65,7 @@ Acceptance criteria:
 
 Nix packaging acceptance additions:
 
-- `packages/default.nix` exposes fixed-output packages for Codebase Memory, no-mistakes, Firstmate, Treehouse, Lavish, gh-axi, Caveman, and `i-have-adhd`.
+- `packages/default.nix` exposes fixed-output packages for Codebase Memory, no-mistakes, Treehouse, Lavish, gh-axi, Caveman, and `i-have-adhd`.
 - The only installation scripts remaining for user agents are `install-home-agents.sh` and `install-prime-tools.sh`.
 - Nix package outputs use release hashes or committed npm lockfile integrity values; no `lib.fakeHash` remains.
 
@@ -130,14 +130,14 @@ Branch `herdr-agents-nix` is based on `orca-agents-nix`. This variant replaces t
 |-- modules/
 |   |-- home-base.nix                     # shell UX, Node 24, Herdr, launchers and PATH
 |   |-- home-common-agents.nix            # common AGENTS.md, skills, and MCP links
-|   |-- home-firstmate.nix                # Firstmate launcher and tmux
+|   |-- home-firstmate.nix                # Firstmate Treehouse and tmux dependencies
 |   |-- home-orca-prime.nix               # optional Prime settings and build-shell support
 |   `-- home-legacy-agents.nix            # optional WezTerm/Pi/Claude/Codex fallback additions
 |-- scripts/
 |   |-- ubuntu-bootstrap.sh               # apt + sshd loopback prerequisites
 |   |-- windows-herdr-bootstrap.ps1       # WSL/Herdr/SSH verification
 |   |-- install-prime-tools.sh             # regular-shell pinned Prime install
-|   |-- install-home-agents.sh             # reviewed AGY/Pi bootstrap install
+|   |-- install-home-agents.sh             # AGY, Pi, Firstmate clone, and Chrome install
 |   `-- validate.sh                        # local validation wrapper, no evidence committed
 |-- packages/
 |   |-- default.nix                        # fixed-output support packages

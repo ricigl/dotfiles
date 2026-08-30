@@ -26,6 +26,7 @@ esac
 required_packages=(
   ca-certificates
   curl
+  wget
   git
   openssh-client
   openssh-server

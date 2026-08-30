@@ -94,7 +94,6 @@ in
     setxkbmapPkg
     neovim
     nerd-fonts.hack
-    google-chrome
     agentPackages.codebase-memory-mcp
     agentPackages.no-mistakes
     agentPackages.lavish-axi

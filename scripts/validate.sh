@@ -62,6 +62,7 @@ syntax_scripts=(
   tests/lib.sh
   tests/pi-calm.test.sh
   tests/smoke-herdr-agents.sh
+  tests/test-home-agents-installer.sh
   tests/test-prime-maintenance.sh
   tests/test-windows-herdr-shim.sh
   tests/test-shell-handoff.sh
@@ -146,15 +147,15 @@ grep -F 'sha256-iNwxX81HRuAcUyB7ssI45azzN7PJYXLZ2BYqFh6MwV0=' packages/default.n
 pass_item "Package versions and commit hashes in packages/default.nix verified" || \
 fail_item "Package version pins in packages/default.nix failed verification"
 
-grep -F 'google-chrome' modules/home-base.nix >/dev/null && \
+! grep -F 'google-chrome' modules/home-base.nix >/dev/null && \
 grep -F 'CHROME_DEVTOOLS_AXI_USER_DATA_DIR' modules/home-base.nix >/dev/null && \
 grep -F 'CHROME_DEVTOOLS_AXI_HEADED' modules/home-base.nix >/dev/null && \
 grep -F '.local/share/chrome-devtools-axi/dev-profile' modules/home-base.nix >/dev/null && \
 grep -F 'agentPackages.quota-axi' modules/home-base.nix >/dev/null && \
 grep -F 'agentPackages.tasks-axi' modules/home-base.nix >/dev/null && \
 grep -F 'agentPackages.chrome-devtools-axi' modules/home-base.nix >/dev/null && \
-pass_item "Chrome and AXI support tools declarations in modules/home-base.nix verified" || \
-fail_item "Chrome and AXI declarations in modules/home-base.nix failed verification"
+pass_item "Chrome DevTools profile and AXI support tools declarations in modules/home-base.nix verified" || \
+fail_item "Chrome DevTools or AXI declarations in modules/home-base.nix failed verification"
 
 grep -F 'agentPackages.no-mistakes-skill' modules/home-common-agents.nix >/dev/null && \
 grep -F 'home.file.".agents/skills/quota-axi"' modules/home-common-agents.nix >/dev/null && \
@@ -185,16 +186,22 @@ if grep -qF 'algal/pi-openai-server-compaction' home/.pi/agent/settings.json; th
   fail_item "Tracked Pi settings must not contain algal git extension"
 fi
 
-if grep -nE 'google-chrome.*\.deb|apt.*google-chrome|wget.*chrome' README.md >/dev/null 2>&1; then
-  fail_item "README must not instruct apt/.deb/wget installation of Chrome"
-fi
+grep -F 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' README.md >/dev/null && \
+pass_item "README documents official Google Chrome Debian package URL and host installation" || \
+fail_item "README missing Google Chrome deb URL documentation"
 
 grep -F 'pkgs.tmux' modules/home-firstmate.nix >/dev/null && \
-grep -F 'export FM_BACKEND=' modules/home-firstmate.nix >/dev/null && \
-grep -F 'FM_BACKEND:-tmux' modules/home-firstmate.nix >/dev/null && \
-grep -F 'exec pi "$@"' modules/home-firstmate.nix >/dev/null && \
-pass_item "Firstmate launcher and Linux tmux backend wiring verified" || \
-fail_item "Firstmate launcher wiring in modules/home-firstmate.nix failed verification"
+grep -F 'agentPackages.treehouse' modules/home-firstmate.nix >/dev/null && \
+! grep -F 'firstmate =' modules/home-firstmate.nix >/dev/null && \
+! grep -F 'agentPackages.firstmate' modules/home-firstmate.nix >/dev/null && \
+pass_item "Firstmate dependencies (tmux and Treehouse) in modules/home-firstmate.nix verified" || \
+fail_item "Firstmate dependencies in modules/home-firstmate.nix failed verification"
+
+grep -F 'FIRSTMATE_REPO_URL="https://github.com/kunchenguid/firstmate.git"' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' scripts/install-home-agents.sh >/dev/null && \
+grep -F 'apt install -y' scripts/install-home-agents.sh >/dev/null && \
+pass_item "install-home-agents.sh Firstmate git clone and Google Chrome apt installer contracts verified" || \
+fail_item "install-home-agents.sh Firstmate or Chrome installer contracts failed verification"
 
 grep -F 'herdr.url = "github:herdrdev/herdr/v0.8.2"' flake.nix >/dev/null && \
 grep -F 'herdr.inputs.nixpkgs.follows = "nixpkgs";' flake.nix >/dev/null && \
@@ -409,6 +416,7 @@ run_subtest() {
 run_subtest "./tests/test-windows-herdr-shim.sh" "Windows Herdr shim contract"
 run_subtest "./tests/test-shell-handoff.sh" "Guarded Bash-to-Zsh handoff"
 run_subtest "./tests/test-wslg-display.sh" "WSLg display and audio discovery hook"
+run_subtest "./tests/test-home-agents-installer.sh" "Home agents installer Firstmate and Chrome contracts"
 run_subtest "./tests/test-prime-maintenance.sh" "Prime maintenance session safety"
 run_subtest "./tests/test-compaction-proof.sh" "Pi OpenAI compaction proof parsing"
 run_subtest "./tests/pi-calm.test.sh" "Pi Calm extension isolation and rendering"
@@ -529,21 +537,29 @@ report_cmd_version "quota-axi" "quota-axi" "--version" 1
 report_cmd_version "tasks-axi" "tasks-axi" "--version" 1
 report_cmd_version "chrome-devtools-axi" "chrome-devtools-axi" "--help" 1
 
-if command -v google-chrome >/dev/null 2>&1; then
-  report_cmd_version "Google Chrome" "google-chrome" "--version" 1
-elif command -v google-chrome-stable >/dev/null 2>&1; then
-  report_cmd_version "Google Chrome Stable" "google-chrome-stable" "--version" 1
+if [ -x /usr/bin/google-chrome-stable ]; then
+  report_cmd_version "Google Chrome Stable" "/usr/bin/google-chrome-stable" "--version" 1
+elif [ -x /usr/bin/google-chrome ]; then
+  report_cmd_version "Google Chrome" "/usr/bin/google-chrome" "--version" 1
 else
   if [ "$IS_WSL" -eq 1 ]; then
-    fail_item "Google Chrome (google-chrome / google-chrome-stable) is not installed on target WSL PATH"
+    fail_item "Google Chrome (/usr/bin/google-chrome-stable or /usr/bin/google-chrome) is not installed on target WSL"
   else
-    info_item "Google Chrome" "not found in PATH on dev host"
+    info_item "Google Chrome" "not found in /usr/bin on dev host (installed via scripts/install-home-agents.sh on target WSL)"
   fi
 fi
 
-report_cmd_presence "Firstmate (launcher)" "firstmate" 1
 report_cmd_version "Treehouse" "treehouse" "--version" 1
-report_cmd_presence "Firstmate session start" "fm-session-start.sh" 1
+firstmate_dir="$HOME/firstmate"
+if [ -d "$firstmate_dir/.git" ]; then
+  info_item "Firstmate (checkout)" "present ($firstmate_dir)"
+else
+  if [ "$IS_WSL" -eq 1 ]; then
+    info_item "Firstmate (checkout)" "NOT CLONED on target WSL (run ./scripts/install-home-agents.sh)"
+  else
+    info_item "Firstmate (checkout)" "not cloned on dev host (installed via scripts/install-home-agents.sh on target WSL)"
+  fi
+fi
 
 # ==============================================================================
 # SECTION 4: SSH SERVER & RELAY STATUS (READ-ONLY)
@@ -663,20 +679,20 @@ fi
 section "6. BROWSER & CHROME DEVTOOLS AXI CONFIGURATION"
 
 chrome_cmd=""
-if command -v google-chrome >/dev/null 2>&1; then
-  chrome_cmd="google-chrome"
-elif command -v google-chrome-stable >/dev/null 2>&1; then
-  chrome_cmd="google-chrome-stable"
+if [ -x /usr/bin/google-chrome-stable ]; then
+  chrome_cmd="/usr/bin/google-chrome-stable"
+elif [ -x /usr/bin/google-chrome ]; then
+  chrome_cmd="/usr/bin/google-chrome"
 fi
 
 if [ -n "$chrome_cmd" ]; then
   chrome_ver="$("$chrome_cmd" --version 2>&1 | head -n1)"
-  pass_item "Google Chrome binary verified: $chrome_ver"
+  pass_item "Google Chrome binary verified: $chrome_ver ($chrome_cmd)"
 else
   if [ "$IS_WSL" -eq 1 ]; then
-    fail_item "google-chrome / google-chrome-stable is not present on target PATH"
+    fail_item "Google Chrome (/usr/bin/google-chrome-stable or /usr/bin/google-chrome) is not present on target"
   else
-    info_item "Google Chrome binary" "not on PATH on dev host (managed by pkgs.google-chrome in Home Manager)"
+    info_item "Google Chrome binary" "not in /usr/bin on dev host (installed via scripts/install-home-agents.sh on target WSL)"
   fi
 fi
 
