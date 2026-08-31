@@ -138,6 +138,7 @@ Branch `herdr-agents-nix` is based on `orca-agents-nix`. This variant replaces t
 |   |-- windows-herdr-bootstrap.ps1       # WSL/Herdr/SSH verification
 |   |-- install-prime-tools.sh             # regular-shell pinned Prime install
 |   |-- install-home-agents.sh             # AGY, Pi, Firstmate clone, and Chrome install
+|   |-- google-ai-search.sh               # user-owned Google AI search CLI (? alias)
 |   `-- validate.sh                        # local validation wrapper, no evidence committed
 |-- packages/
 |   |-- default.nix                        # fixed-output support packages
@@ -145,6 +146,7 @@ Branch `herdr-agents-nix` is based on `orca-agents-nix`. This variant replaces t
 |-- .no-mistakes.yaml                     # targeted gate policy, local-only evidence
 `-- tests/
     |-- smoke-herdr-agents.sh               # regular shell and optional dev-shell checks
+    |-- test-google-ai-search.sh           # Google AI search deterministic tests
     `-- test-prime-maintenance.sh          # Prime maintenance safety checks
 ```
 
