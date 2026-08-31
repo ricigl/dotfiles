@@ -188,9 +188,9 @@ JS_EXTRACTOR='(function() {
 JSON_JS_EXTRACTOR="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$JS_EXTRACTOR")"
 
 AXI_SCRIPT="$(cat <<AXI_EOF
-await open(${JSON_SEARCH_URL});
-await wait(${WAIT_MS});
-const result = await eval(${JSON_JS_EXTRACTOR});
+await page.open(${JSON_SEARCH_URL});
+await page.wait(${WAIT_MS});
+const result = await page.eval(${JSON_JS_EXTRACTOR});
 console.log(JSON.stringify(result));
 AXI_EOF
 )"

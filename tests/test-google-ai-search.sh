@@ -41,9 +41,9 @@ assert 'GOOGLE_AI_SEARCH_AXI_BIN' in script_content, "scripts/google-ai-search.s
 assert 'GOOGLE_AI_SEARCH_WAIT_MS' in script_content, "scripts/google-ai-search.sh must support wait ms override"
 assert 'GOOGLE_AI_SEARCH_WAIT_MS must be an integer between 0 and 60000' in script_content, "wait ms must be bounded before JavaScript interpolation"
 assert 'urllib.parse.quote_plus' in script_content or 'encodeURIComponent' in script_content, "scripts/google-ai-search.sh must URL-encode queries safely"
-assert 'await open(' in script_content, "scripts/google-ai-search.sh must use await open()"
-assert 'await wait(' in script_content, "scripts/google-ai-search.sh must use await wait()"
-assert 'await eval(' in script_content, "scripts/google-ai-search.sh must use await eval()"
+assert 'await page.open(' in script_content, "scripts/google-ai-search.sh must use await page.open()"
+assert 'await page.wait(' in script_content, "scripts/google-ai-search.sh must use await page.wait()"
+assert 'await page.eval(' in script_content, "scripts/google-ai-search.sh must use await page.eval()"
 assert 'console.log(JSON.stringify(' in script_content, "scripts/google-ai-search.sh must print output with console.log"
 assert 'GOOGLE_AI_SEARCH_W3M_FALLBACK' in script_content, "scripts/google-ai-search.sh must support w3m fallback"
 
@@ -189,7 +189,7 @@ case "$log_content" in
   *) printf 'Query was not properly URL encoded: %s\n' "$log_content" >&2; exit 1 ;;
 esac
 case "$log_content" in
-  *"await wait(3500)"*) ;;
+  *"await page.wait(3500)"*) ;;
   *) printf 'Wait ms override not reflected: %s\n' "$log_content" >&2; exit 1 ;;
 esac
 
