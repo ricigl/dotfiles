@@ -188,18 +188,27 @@ JS_EXTRACTOR='(function() {
 JSON_JS_EXTRACTOR="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$JS_EXTRACTOR")"
 
 AXI_SCRIPT="$(cat <<AXI_EOF
-await page.open(${JSON_SEARCH_URL});
 await page.wait(${WAIT_MS});
 const result = await page.eval(${JSON_JS_EXTRACTOR});
 console.log(JSON.stringify(result));
 AXI_EOF
 )"
 
+AXI_CMD=(
+  env
+  "CHROME_DEVTOOLS_AXI_HEADED=0"
+  "CHROME_DEVTOOLS_AXI_SESSION=$SESSION_NAME"
+  "CHROME_DEVTOOLS_AXI_USER_DATA_DIR=$PROFILE_DIR"
+  "$AXI_BIN"
+)
+
+if ! "${AXI_CMD[@]}" open "$SEARCH_URL" >/dev/null; then
+  printf '%s\n' "Error: browser automation failed or timed out while opening the search page." >&2
+  exit 1
+fi
+
 AXI_OUTPUT="$(
-  CHROME_DEVTOOLS_AXI_HEADED=0 \
-  CHROME_DEVTOOLS_AXI_SESSION="$SESSION_NAME" \
-  CHROME_DEVTOOLS_AXI_USER_DATA_DIR="$PROFILE_DIR" \
-  "$AXI_BIN" run <<< "$AXI_SCRIPT"
+  "${AXI_CMD[@]}" run <<< "$AXI_SCRIPT"
 )" || {
   printf '%s\n' "Error: browser automation failed or timed out." >&2
   exit 1

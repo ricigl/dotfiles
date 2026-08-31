@@ -41,7 +41,7 @@ assert 'GOOGLE_AI_SEARCH_AXI_BIN' in script_content, "scripts/google-ai-search.s
 assert 'GOOGLE_AI_SEARCH_WAIT_MS' in script_content, "scripts/google-ai-search.sh must support wait ms override"
 assert 'GOOGLE_AI_SEARCH_WAIT_MS must be an integer between 0 and 60000' in script_content, "wait ms must be bounded before JavaScript interpolation"
 assert 'urllib.parse.quote_plus' in script_content or 'encodeURIComponent' in script_content, "scripts/google-ai-search.sh must URL-encode queries safely"
-assert 'await page.open(' in script_content, "scripts/google-ai-search.sh must use await page.open()"
+assert 'open "$SEARCH_URL"' in script_content, "scripts/google-ai-search.sh must open the search URL before run"
 assert 'await page.wait(' in script_content, "scripts/google-ai-search.sh must use await page.wait()"
 assert 'await page.eval(' in script_content, "scripts/google-ai-search.sh must use await page.eval()"
 assert 'console.log(JSON.stringify(' in script_content, "scripts/google-ai-search.sh must print output with console.log"
@@ -122,7 +122,10 @@ esac
 cat <<'EOF_AXI' > "$fake_axi"
 #!/usr/bin/env bash
 set -euo pipefail
-if [ "$1" = "run" ]; then
+if [ "$1" = "open" ]; then
+  printf 'OPEN_URL=%s\n' "${2:-}" >> "$TEST_LOG"
+  exit 0
+elif [ "$1" = "run" ]; then
   payload="$(cat)"
   printf 'HEADED=%s\n' "${CHROME_DEVTOOLS_AXI_HEADED:-<UNSET>}" >> "$TEST_LOG"
   printf 'SESSION=%s\n' "${CHROME_DEVTOOLS_AXI_SESSION:-<UNSET>}" >> "$TEST_LOG"
@@ -172,6 +175,10 @@ esac
 
 # Verify isolation in log
 log_content="$(cat "$log_file")"
+case "$log_content" in
+  *"OPEN_URL=https://www.google.com/search?q=quantum+computing+%26+ai%3F+%2B+tests%2F100%25"*) ;;
+  *) printf 'Search URL was not properly URL encoded: %s\n' "$log_content" >&2; exit 1 ;;
+esac
 case "$log_content" in
   *"HEADED=0"*) ;;
   *) printf 'Failed to enforce CHROME_DEVTOOLS_AXI_HEADED=0\n' >&2; exit 1 ;;
