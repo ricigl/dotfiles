@@ -17,6 +17,12 @@ copy_mode  = "prefix+y"  # herdr's copy-mode entry key; copy-mode's own internal
 agent_panel_sort = "spaces"
 
 [[keys.command]]
+key = "prefix+shift+h"
+type = "plugin_action"
+command = "jhochenbaum.hunkdiff.review"
+description = "open Hunk review"
+
+[[keys.command]]
 key = "prefix+f"
 type = "plugin_action"
 command = "herdr-file-viewer.open-file-viewer"

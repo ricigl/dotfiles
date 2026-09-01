@@ -331,9 +331,18 @@ herdr plugin install smarzban/herdr-file-viewer
 herdr server reload-config
 ```
 
-The file-viewer keybindings are deployed by Home Manager through `~/.config/herdr/config.toml`:
+The Hunk and file-viewer keybindings are deployed by Home Manager through `~/.config/herdr/config.toml`:
 
 ```toml
+[keys]
+focus_pane_left = "prefix+h"
+
+[[keys.command]]
+key = "prefix+shift+h"
+type = "plugin_action"
+command = "jhochenbaum.hunkdiff.review"
+description = "open Hunk review"
+
 [[keys.command]]
 key = "prefix+f"
 type = "plugin_action"
@@ -348,6 +357,15 @@ description = "open file viewer in tab"
 ```
 
 The script uses `npx --yes` for the global skill command so `npx` does not stop for a package-install prompt, and uses `--yes` for the Herdr Hunk plugin trust/install prompt. `herdr server reload-config` requires a running Herdr server; if no server is running, the installer stops with an instruction to start Herdr and rerun the installer.
+
+If Herdr is attached to the WSL server from Windows, use `herdr.exe --remote wsl-herdr --remote-keybindings server`. Custom `plugin_action` bindings are not sent from a local Windows client to a remote server. After changing the config, run `herdr server reload-config` in the WSL server environment. Verify the actions directly before testing the keys:
+
+```bash
+herdr plugin action list --plugin jhochenbaum.hunkdiff
+herdr plugin action list --plugin herdr-file-viewer
+herdr plugin action invoke review --plugin jhochenbaum.hunkdiff
+herdr plugin action invoke open-file-viewer --plugin herdr-file-viewer
+```
 
 The regular Home Manager shell defines the interactive alias `agy` as `command agy --dangerously-skip-permissions`. In any fresh WSL shell (or after running `exec zsh -l` in the current terminal), `agy ...` automatically includes the flag. `command agy ...` bypasses the alias when needed.
 

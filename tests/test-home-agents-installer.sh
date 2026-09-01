@@ -67,6 +67,8 @@ assert 'herdr plugin action invoke setup-keys --plugin "$HUNK_PLUGIN_ID"' in ins
 assert 'herdr server reload-config' in installer, "Missing Herdr config reload"
 assert 'herdr plugin install smarzban/herdr-file-viewer' in installer, "Missing Herdr file-viewer plugin installation"
 assert 'HERDR_FILE_VIEWER_PLUGIN_ID="herdr-file-viewer"' in installer, "Missing Herdr file-viewer plugin ID"
+assert 'herdr plugin action list --plugin "$HERDR_FILE_VIEWER_PLUGIN_ID"' in installer, "Missing file-viewer action verification"
+assert 'for action_id in open-file-viewer open-file-viewer-tab' in installer, "Missing file-viewer action ID checks"
 assert 'HERDR_CONFIG_FILE="$HOME/.config/herdr/config.toml"' in installer, "Missing Herdr config path"
 
 # 1.2 modules/home-base.nix contracts
@@ -99,7 +101,16 @@ assert 'home.file.".gemini/antigravity-cli/skills/herdr".source' in common_modul
 assert 'home.file.".prime/agent/skills/herdr".source' in common_module, "Prime must expose the global Herdr skill"
 assert 'mkOutOfStoreSymlink "${home}/.agents/skills/herdr"' in common_module, "AGY and Prime must link to the global Herdr skill"
 
-# 1.7 Herdr file-viewer configuration
+# 1.7 Herdr Hunk and file-viewer configuration
+for line in [
+    'focus_pane_left  = "prefix+h"',
+    'key = "prefix+shift+h"',
+    'type = "plugin_action"',
+    'command = "jhochenbaum.hunkdiff.review"',
+    'description = "open Hunk review"',
+]:
+    assert line in herdr_config, f"Missing Hunk config entry: {line}"
+
 for line in [
     '[[keys.command]]',
     'key = "prefix+f"',
@@ -128,6 +139,8 @@ assert 'charmbracelet/glow' in readme, "README must document Glow"
 assert 'herdr plugin install smarzban/herdr-file-viewer' in readme, "README must document file-viewer plugin installation"
 assert 'herdr-file-viewer.open-file-viewer' in readme, "README must document file-viewer split keybinding"
 assert 'herdr-file-viewer.open-file-viewer-tab' in readme, "README must document file-viewer tab keybinding"
+assert 'jhochenbaum.hunkdiff.review' in readme, "README must document the explicit Hunk review binding"
+assert 'remote-keybindings server' in readme, "README must document server keybindings for remote Herdr"
 
 print("Static contract checks for installer and ownership boundaries passed.")
 PY

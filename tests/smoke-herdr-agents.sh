@@ -123,6 +123,16 @@ cmp -s "$shared_policy" "$agy_policy"
 cmp -s "$shared_policy" "$policy"
 pi list | grep -F 'pi-mcp-adapter' >/dev/null
 herdr plugin list --plugin herdr-file-viewer --json | grep -F 'herdr-file-viewer' >/dev/null
+herdr plugin action list --plugin jhochenbaum.hunkdiff | grep -F 'review' >/dev/null
+herdr plugin action list --plugin herdr-file-viewer | grep -F 'open-file-viewer' >/dev/null
+for hunk_keybinding in \
+'key = "prefix+shift+h"' \
+'command = "jhochenbaum.hunkdiff.review"'; do
+grep -F "$hunk_keybinding" "$herdr_config" >/dev/null || {
+  printf 'Missing Hunk keybinding: %s\n' "$hunk_keybinding" >&2
+  exit 1
+}
+done
 for file_viewer_keybinding in \
   'key = "prefix+f"' \
   'command = "herdr-file-viewer.open-file-viewer"' \

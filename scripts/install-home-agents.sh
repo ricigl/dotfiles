@@ -227,6 +227,15 @@ install_or_verify_file_viewer_plugin() {
     exit 1
   }
 
+  local action_listing
+  action_listing="$(herdr plugin action list --plugin "$HERDR_FILE_VIEWER_PLUGIN_ID")"
+  for action_id in open-file-viewer open-file-viewer-tab; do
+    printf '%s\n' "$action_listing" | grep -F "$action_id" >/dev/null || {
+      printf 'Error: Herdr plugin %s did not expose action %s after installation.\n' "$HERDR_FILE_VIEWER_PLUGIN_ID" "$action_id" >&2
+      exit 1
+    }
+  done
+
   for keybinding in \
     'key = "prefix+f"' \
     'command = "herdr-file-viewer.open-file-viewer"' \
