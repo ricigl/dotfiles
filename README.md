@@ -395,6 +395,7 @@ The regular Home Manager profile defines the Zsh alias `?` pointing to `scripts/
 ```
 
 - **Concise output**: The wrapper instructs AGY to avoid greetings, repetition, filler, and long background. Programming questions get direct actionable instructions, exact commands, or minimal code first.
+- **Tool restriction**: AGY is explicitly told not to use tools unless a web search is necessary; when needed, only web-search tools are allowed. All other tools are prohibited.
 - **Explicit runtime**: The wrapper invokes `agy --print --model gemini-3.7-flash-low --effort low --output-format text` and does not enable `--dangerously-skip-permissions` for read-only Q&A.
 - **No browser state**: This workflow does not use Google Search, Chrome, AXI, Google cookies, or an authenticated search profile.
 - **Safety and testing**: Empty questions and missing AGY fail clearly. The deterministic test uses a fake AGY executable and never invokes the real model or performs host actions.

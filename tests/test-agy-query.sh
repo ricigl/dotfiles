@@ -32,6 +32,9 @@ assert '--effort low' in script
 assert '--output-format text' in script
 assert 'briefly, clearly, and directly' in script
 assert 'direct actionable instructions' in script
+assert 'Use no tools unless a web search is necessary' in script
+assert 'if needed, use only web-search tools' in script
+assert 'Never use any other tools' in script
 assert '--dangerously-skip-permissions' not in script
 assert 'chrome-devtools-axi' not in script
 assert 'GOOGLE_AI_SEARCH' not in script

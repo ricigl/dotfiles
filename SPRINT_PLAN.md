@@ -30,7 +30,7 @@ The earlier sprint sections document the already-landed baseline. Sprint 6 below
 1. Task: add concise AGY Q&A CLI and Zsh `?` alias
    - Goal: provide direct terminal answers through AGY without browser automation or Google account state.
    - Exact files: `scripts/agy-query.sh`, `modules/home-base.nix`, `tests/test-agy-query.sh`, `scripts/validate.sh`, `README.md`, `PLAN.md`, `SPRINT_PLAN.md`.
-   - Implementation contract: add user-owned executable `scripts/agy-query.sh`; expose it as Zsh `?`; join question arguments safely; invoke `agy --print --model gemini-3.7-flash-low --effort low --output-format text`; instruct AGY to be short, concise, direct, and action-oriented for programming questions; print the model response to the terminal.
+   - Implementation contract: add user-owned executable `scripts/agy-query.sh`; expose it as Zsh `?`; join question arguments safely; invoke `agy --print --model gemini-3.7-flash-low --effort low --output-format text`; instruct AGY to be short, concise, direct, and action-oriented for programming questions; allow tools only when a web search is necessary and prohibit all other tools; print the model response to the terminal.
    - Forbidden scope: no `--dangerously-skip-permissions` for the Q&A wrapper; no browser automation, search profile, cookie, or account-auth state; no network or real AGY execution during tests; no credentials or secrets; no shell injection.
    - Verification commands: `bash -n scripts/agy-query.sh`; `bash -n tests/test-agy-query.sh`; `./tests/test-agy-query.sh`; `./scripts/validate.sh`; `git diff --check`.
    - Completion criteria: wrapper and alias contracts pass; fake-AGY behavior tests pass; aggregate validator passes; no stale browser-search files or references remain.
