@@ -374,7 +374,7 @@ treehouse --version
 test -d ~/firstmate/projects
 ```
 
-The Nix packages use fixed release hashes or committed lockfile integrity values. Google Chrome, Hunk, the global Herdr skill, Herdr integrations, and the Herdr Hunk and file-viewer plugins are installed by `scripts/install-home-agents.sh` outside Nix/Home Manager package ownership. The normal `chrome-devtools-axi` profile directory (`~/.local/share/chrome-devtools-axi/dev-profile`) and the separate Google AI search profile (`${XDG_DATA_HOME:-$HOME/.local/share}/google-ai-search/chrome-profile`), browser cookies/sessions, agent integrations, skill data, and plugin state remain local mutable runtime state outside the repository. Automated checks verify configuration, derivations, environment exports, and directory permissions; they do not execute browser runtime logins or mutating actions.
+The Nix packages use fixed release hashes or committed lockfile integrity values. Google Chrome, Hunk, the global Herdr skill, Herdr integrations, and the Herdr Hunk and file-viewer plugins are installed by `scripts/install-home-agents.sh` outside Nix/Home Manager package ownership. The normal `chrome-devtools-axi` profile directory (`~/.local/share/chrome-devtools-axi/dev-profile`), browser cookies/sessions, agent integrations, skill data, and plugin state remain local mutable runtime state outside the repository. Automated checks verify configuration, derivations, environment exports, and directory permissions; they do not execute browser runtime logins or mutating actions.
 
 The repository policy is in `.no-mistakes.yaml`. Review the configuration and trusted-default-branch behavior before manually initializing this repository:
 
@@ -386,19 +386,18 @@ git remote -v
 
 Only after that review should you use `git push no-mistakes <branch>` or `/no-mistakes` from a supported coding agent. These tools use user-owned locations and must never be run with `sudo`.
 
-### Google AI search CLI (`?` alias)
+### AGY concise terminal Q&A (`?` alias)
 
-The regular Home Manager profile defines the Zsh alias `?` pointing to `scripts/google-ai-search.sh`. It performs an isolated headless Google search using `chrome-devtools-axi run`, extracts the rendered AI Overview and deduplicated citation URLs using semantic DOM heuristics (supporting English and Portuguese labels), and prints clean terminal text:
+The regular Home Manager profile defines the Zsh alias `?` pointing to `scripts/agy-query.sh`. It sends the question to AGY in print mode using the available `gemini-3.7-flash-low` model and prints AGY's response directly in the terminal:
 
 ```bash
-? quantum computing algorithms
+? how do I undo the last local Git commit
 ```
 
-- **Headless isolation**: Inlines `CHROME_DEVTOOLS_AXI_HEADED=0`, session `google-ai-search`, and isolated profile `${XDG_DATA_HOME:-$HOME/.local/share}/google-ai-search/chrome-profile` (mode `0700`) without modifying the headed profile configuration.
-- **Robust extraction**: Uses semantic headings, accessibility labels, and data attributes rather than single obfuscated classes; extracts clean paragraphs and deduplicated source citation URLs.
-- **Clear outcomes**: If no AI Overview is present, prints a clear notification and the full search URL. If Google returns an unusual-traffic `/sorry` interstitial, reports that as a distinct blocked-request result without exposing Google's verification token or attempting to bypass the protection. Exit status `0` means an Overview was extracted, `2` means no Overview was present, `3` means Google blocked the automated request, and `1` means an input, browser, or extractor error.
-- **Optional fallback**: When `GOOGLE_AI_SEARCH_W3M_FALLBACK=1` or `GOOGLE_AI_SEARCH_FALLBACK_W3M=1` is enabled and `w3m` is installed, it falls back to terminal browser navigation for the no-Overview case without making `w3m` a hard dependency. `w3m` cannot expose a JavaScript-rendered AI Overview and is not used to bypass Google protections.
-- **Testability overrides**: Override binary via `GOOGLE_AI_SEARCH_AXI_BIN`, profile directory via `GOOGLE_AI_SEARCH_PROFILE_DIR`, session via `GOOGLE_AI_SEARCH_SESSION`, and wait timeout via `GOOGLE_AI_SEARCH_WAIT_MS`.
+- **Concise output**: The wrapper instructs AGY to avoid greetings, repetition, filler, and long background. Programming questions get direct actionable instructions, exact commands, or minimal code first.
+- **Explicit runtime**: The wrapper invokes `agy --print --model gemini-3.7-flash-low --effort low --output-format text` and does not enable `--dangerously-skip-permissions` for read-only Q&A.
+- **No browser state**: This workflow does not use Google Search, Chrome, AXI, Google cookies, or an authenticated search profile.
+- **Safety and testing**: Empty questions and missing AGY fail clearly. The deterministic test uses a fake AGY executable and never invokes the real model or performs host actions.
 
 ### 5. Validate environment with single aggregate command
 
@@ -671,14 +670,14 @@ rm -rf ~/.cache/codebase-memory-mcp
 - `scripts/windows-herdr-key-bootstrap.ps1`: Windows client SSH key generation and export helper.
 - `scripts/windows-herdr-bootstrap.ps1`: Windows Herdr installer, WezTerm installer via WinGet, WSL resources, and SSH verification.
 - `scripts/install-prime-tools.sh`: pinned Prime Agent installation.
-- `scripts/google-ai-search.sh`: user-owned CLI for headless Google AI search extraction via chrome-devtools-axi, mapped to Zsh `?` alias.
+- `scripts/agy-query.sh`: user-owned concise AGY terminal Q&A wrapper mapped to Zsh `?` alias.
 - `scripts/install-home-agents.sh`: checksum-verified AGY and Pi bootstrap installation, Herdr integrations, global Herdr skill installation, npm Hunk and Herdr Hunk plugin installation, safe Firstmate git clone to `~/firstmate`, and Google Chrome official Debian package apt installation.
 - `packages/default.nix`: fixed-output packages for Codebase Memory, no-mistakes, Treehouse, skills, Lavish, gh-axi, quota-axi, tasks-axi, chrome-devtools-axi, and pi-openai-server-compaction.
 - `scripts/prime-maintenance.py`: safe Prime worker and session inspection/cleanup utility.
 - `scripts/validate.sh`: single aggregate validation entrypoint for static contracts, subtests, version checks, SSH, WSLg, Chrome profile, and compaction checks.
 - `.no-mistakes.yaml`: targeted no-mistakes gate policy with local-only evidence.
 - `tests/smoke-herdr-agents.sh`: target-runtime acceptance checks for the Herdr/Nix-managed support environment.
-- `tests/test-google-ai-search.sh`: deterministic tests for Google AI search query encoding, session isolation, extraction, and fallbacks.
+- `tests/test-agy-query.sh`: deterministic tests for AGY model selection, prompt instructions, argument passing, and terminal output.
 - `tests/test-home-agents-installer.sh`: contract and behavioral tests for the user-owned agent, Herdr integration, global skill, Hunk, Firstmate, and Google Chrome installation boundaries.
 - `tests/test-prime-maintenance.sh`: disposable session metadata and deletion-safety tests.
 - `tests/test-windows-herdr-shim.sh`: contract tests for the Windows Herdr command shim and PATH handling.

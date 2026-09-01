@@ -23,18 +23,18 @@ Constraints:
 - `gh auth status` currently fails because this environment is unauthenticated.
 - This host has no native `nix` executable. Use an available pinned container validator only if its daemon is running; do not claim target activation or Herdr runtime acceptance until Ricardo verifies them in Ubuntu WSL.
 
-The earlier sprint sections document the already-landed baseline. Sprint 6 below supersedes conflicting Prime-policy, Prime-shell, and Orca-worktree assumptions. Sprint 7 below defines the Herdr thin-client variant. Sprint 8 defines the Google AI search shell workflow.
+The earlier sprint sections document the already-landed baseline. Sprint 6 below supersedes conflicting Prime-policy, Prime-shell, and Orca-worktree assumptions. Sprint 7 below defines the Herdr thin-client variant. Sprint 8 defines the concise AGY terminal Q&A workflow.
 
-## Sprint 8: Google AI Search Shell Workflow
+## Sprint 8: AGY Concise Terminal Q&A Workflow
 
-1. Task: add Google AI search CLI script and Zsh `?` alias
-   - Goal: provide fast, isolated terminal search extraction of Google AI Overviews and deduplicated source citations using `chrome-devtools-axi run`.
-   - Exact files: `scripts/google-ai-search.sh`, `modules/home-base.nix`, `tests/test-google-ai-search.sh`, `scripts/validate.sh`, `README.md`, `PLAN.md`, `SPRINT_PLAN.md`.
-   - Implementation contract: add user-owned executable `scripts/google-ai-search.sh`; expose as Zsh `?` alias in `modules/home-base.nix`; force isolated headless session with inline `CHROME_DEVTOOLS_AXI_HEADED=0`, `CHROME_DEVTOOLS_AXI_SESSION=google-ai-search`, and isolated profile `${XDG_DATA_HOME:-$HOME/.local/share}/google-ai-search/chrome-profile` (mode 0700); extract AI Overview using semantic DOM heuristics (supporting English and Portuguese labels) and deduplicate citation URLs; support clear no-overview message, search URL output, and optional w3m fallback when `GOOGLE_AI_SEARCH_W3M_FALLBACK=1` or `GOOGLE_AI_SEARCH_FALLBACK_W3M=1` and `w3m` is present; support testability overrides `GOOGLE_AI_SEARCH_AXI_BIN`, `GOOGLE_AI_SEARCH_PROFILE_DIR`, `GOOGLE_AI_SEARCH_WAIT_MS`.
-   - Forbidden scope: no modification of global `CHROME_DEVTOOLS_AXI_HEADED=1`; no reuse of default Chrome profile; no w3m hard dependency; no network/browser execution during tests; no CAPTCHA/evasion bypass; no shell injection.
-   - Verification commands: `bash -n scripts/google-ai-search.sh`; `bash -n tests/test-google-ai-search.sh`; `./tests/test-google-ai-search.sh`; `./scripts/validate.sh`; `git diff --check`.
-   - Completion criteria: all contract and behavioral unit tests pass; aggregate validator passes; no unstaged secrets or conflict markers.
-   - Logical commit message: `feat: add google ai search shell workflow and ? alias`.
+1. Task: add concise AGY Q&A CLI and Zsh `?` alias
+   - Goal: provide direct terminal answers through AGY without browser automation or Google account state.
+   - Exact files: `scripts/agy-query.sh`, `modules/home-base.nix`, `tests/test-agy-query.sh`, `scripts/validate.sh`, `README.md`, `PLAN.md`, `SPRINT_PLAN.md`.
+   - Implementation contract: add user-owned executable `scripts/agy-query.sh`; expose it as Zsh `?`; join question arguments safely; invoke `agy --print --model gemini-3.7-flash-low --effort low --output-format text`; instruct AGY to be short, concise, direct, and action-oriented for programming questions; print the model response to the terminal.
+   - Forbidden scope: no `--dangerously-skip-permissions` for the Q&A wrapper; no browser automation, search profile, cookie, or account-auth state; no network or real AGY execution during tests; no credentials or secrets; no shell injection.
+   - Verification commands: `bash -n scripts/agy-query.sh`; `bash -n tests/test-agy-query.sh`; `./tests/test-agy-query.sh`; `./scripts/validate.sh`; `git diff --check`.
+   - Completion criteria: wrapper and alias contracts pass; fake-AGY behavior tests pass; aggregate validator passes; no stale browser-search files or references remain.
+   - Logical commit message: `feat: replace google search alias with agy qna`.
 
 ## Sprint 7: Herdr Thin Client and Linux Home-Agent Server
 

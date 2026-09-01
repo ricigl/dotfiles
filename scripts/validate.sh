@@ -54,7 +54,7 @@ section "1. STATIC SYNTAX & CONTRACT CHECKS"
 syntax_scripts=(
   bootstrap.sh
   rebuild.sh
-  scripts/google-ai-search.sh
+  scripts/agy-query.sh
   scripts/install-home-agents.sh
   scripts/install-prime-tools.sh
   scripts/ubuntu-bootstrap.sh
@@ -63,7 +63,7 @@ syntax_scripts=(
   tests/lib.sh
   tests/pi-calm.test.sh
   tests/smoke-herdr-agents.sh
-  tests/test-google-ai-search.sh
+  tests/test-agy-query.sh
   tests/test-home-agents-installer.sh
   tests/test-prime-maintenance.sh
   tests/test-windows-herdr-shim.sh
@@ -160,10 +160,11 @@ grep -F '    glow' modules/home-base.nix >/dev/null && \
 pass_item "Glow, Chrome DevTools profile, and AXI support declarations in modules/home-base.nix verified" || \
 fail_item "Chrome DevTools or AXI declarations in modules/home-base.nix failed verification"
 
-grep -F '"?" = "${dotfiles}/scripts/google-ai-search.sh";' modules/home-base.nix >/dev/null && \
-test -x scripts/google-ai-search.sh && \
-pass_item "Google AI search script and Zsh ? alias in modules/home-base.nix verified" || \
-fail_item "Google AI search script or Zsh ? alias declaration failed verification"
+grep -F '"?" = "${dotfiles}/scripts/agy-query.sh";' modules/home-base.nix >/dev/null && \
+test -x scripts/agy-query.sh && \
+grep -F -- '--model gemini-3.7-flash-low' scripts/agy-query.sh >/dev/null && \
+pass_item "AGY concise Q&A script and Zsh ? alias in modules/home-base.nix verified" || \
+fail_item "AGY concise Q&A script or Zsh ? alias declaration failed verification"
 
 grep -F 'agentPackages.no-mistakes-skill' modules/home-common-agents.nix >/dev/null && \
 grep -F 'home.file.".agents/skills/quota-axi"' modules/home-common-agents.nix >/dev/null && \
@@ -447,7 +448,7 @@ run_subtest "./tests/test-home-agents-installer.sh" "Home agents, Glow, and Herd
 run_subtest "./tests/test-prime-maintenance.sh" "Prime maintenance session safety"
 run_subtest "./tests/test-compaction-proof.sh" "Pi OpenAI compaction proof parsing"
 run_subtest "./tests/pi-calm.test.sh" "Pi Calm extension isolation and rendering"
-run_subtest "./tests/test-google-ai-search.sh" "Google AI Search CLI and headless session isolation"
+run_subtest "./tests/test-agy-query.sh" "AGY concise terminal Q&A wrapper"
 
 # ==============================================================================
 # SECTION 3: ENVIRONMENT & TOOL VERSIONS
@@ -566,7 +567,7 @@ report_cmd_version "gh-axi" "gh-axi" "--version" 1
 report_cmd_version "quota-axi" "quota-axi" "--version" 1
 report_cmd_version "tasks-axi" "tasks-axi" "--version" 1
 report_cmd_version "chrome-devtools-axi" "chrome-devtools-axi" "--help" 1
-report_cmd_presence "Google AI Search (? alias)" "google-ai-search.sh" 0 "$ROOT/scripts/google-ai-search.sh"
+report_cmd_presence "AGY concise Q&A (? alias)" "agy-query.sh" 0 "$ROOT/scripts/agy-query.sh"
 
 if [ -x /usr/bin/google-chrome-stable ]; then
   report_cmd_version "Google Chrome Stable" "/usr/bin/google-chrome-stable" "--version" 1

@@ -169,7 +169,7 @@ in
       pull = "git pull";
       m = "git switch main";
       rebuild = "${dotfiles}/rebuild.sh";
-      "?" = "${dotfiles}/scripts/google-ai-search.sh";
+      "?" = "${dotfiles}/scripts/agy-query.sh";
     };
   };
 
