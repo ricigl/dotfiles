@@ -396,7 +396,8 @@ The regular Home Manager profile defines the Zsh alias `?` pointing to `scripts/
 
 - **Headless isolation**: Inlines `CHROME_DEVTOOLS_AXI_HEADED=0`, session `google-ai-search`, and isolated profile `${XDG_DATA_HOME:-$HOME/.local/share}/google-ai-search/chrome-profile` (mode `0700`) without modifying the headed profile configuration.
 - **Robust extraction**: Uses semantic headings, accessibility labels, and data attributes rather than single obfuscated classes; extracts clean paragraphs and deduplicated source citation URLs.
-- **Clear fallbacks**: If no AI Overview is present, prints a clear notification and the full search URL. When `GOOGLE_AI_SEARCH_W3M_FALLBACK=1` or `GOOGLE_AI_SEARCH_FALLBACK_W3M=1` is enabled and `w3m` is installed, it falls back to terminal browser navigation without making `w3m` a hard dependency.
+- **Clear outcomes**: If no AI Overview is present, prints a clear notification and the full search URL. If Google returns an unusual-traffic `/sorry` interstitial, reports that as a distinct blocked-request result without exposing Google's verification token or attempting to bypass the protection. Exit status `0` means an Overview was extracted, `2` means no Overview was present, `3` means Google blocked the automated request, and `1` means an input, browser, or extractor error.
+- **Optional fallback**: When `GOOGLE_AI_SEARCH_W3M_FALLBACK=1` or `GOOGLE_AI_SEARCH_FALLBACK_W3M=1` is enabled and `w3m` is installed, it falls back to terminal browser navigation for the no-Overview case without making `w3m` a hard dependency. `w3m` cannot expose a JavaScript-rendered AI Overview and is not used to bypass Google protections.
 - **Testability overrides**: Override binary via `GOOGLE_AI_SEARCH_AXI_BIN`, profile directory via `GOOGLE_AI_SEARCH_PROFILE_DIR`, session via `GOOGLE_AI_SEARCH_SESSION`, and wait timeout via `GOOGLE_AI_SEARCH_WAIT_MS`.
 
 ### 5. Validate environment with single aggregate command

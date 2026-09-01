@@ -38,6 +38,12 @@ SEARCH_URL="https://www.google.com/search?q=${ENCODED_QUERY}"
 JSON_SEARCH_URL="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$SEARCH_URL")"
 
 JS_EXTRACTOR='(function() {
+  var currentUrl = String(window.location.href || "");
+  var pageText = (document.body && (document.body.innerText || document.body.textContent) || "").trim();
+  if (/\/sorry(?:\/|$)/i.test(currentUrl) || /unusual traffic|not a robot|automated queries/i.test(pageText)) {
+    return { blocked: true };
+  }
+
   var headingPatterns = [
     /ai\s*overview/i,
     /vis[aã]o\s*geral/i,
@@ -246,7 +252,13 @@ if data is None:
 if not isinstance(data, dict):
     sys.exit(10)
 
-if data.get("found"):
+if data.get("blocked"):
+    print("Google blocked this automated request with an unusual-traffic check.")
+    print("No AI Overview was extracted.")
+    print(f"Search URL: {search_url}")
+    print("The script does not bypass CAPTCHA, bot checks, or other Google protections.")
+    sys.exit(3)
+elif data.get("found"):
     title = data.get("title") or "AI Overview"
     text = data.get("text", "").strip()
     citations = data.get("citations", [])
@@ -279,6 +291,9 @@ elif [ "$PARSE_STATUS" -eq 2 ]; then
     fi
   fi
   exit 2
+elif [ "$PARSE_STATUS" -eq 3 ]; then
+  printf '%s\n' "$PARSE_RESULT" >&2
+  exit 3
 else
   printf '%s\n' "Error: malformed extractor output from browser session." >&2
   exit 1

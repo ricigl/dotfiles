@@ -46,6 +46,7 @@ assert 'await page.wait(' in script_content, "scripts/google-ai-search.sh must u
 assert 'await page.eval(' in script_content, "scripts/google-ai-search.sh must use await page.eval()"
 assert 'console.log(JSON.stringify(' in script_content, "scripts/google-ai-search.sh must print output with console.log"
 assert 'GOOGLE_AI_SEARCH_W3M_FALLBACK' in script_content, "scripts/google-ai-search.sh must support w3m fallback"
+assert 'unusual-traffic check' in script_content, "scripts/google-ai-search.sh must identify Google unusual-traffic blocks"
 
 # 1.3 Validation script contract
 assert 'scripts/google-ai-search.sh' in validate, "validate.sh must include scripts/google-ai-search.sh in syntax checks"
@@ -294,6 +295,34 @@ test "$malformed_code" -ne 0
 case "$malformed_out" in
   *"malformed extractor output from browser session"*) ;;
   *) printf 'Unexpected malformed output: %s\n' "$malformed_out" >&2; exit 1 ;;
+esac
+
+# Test 2.10: Google unusual-traffic block is distinct from no overview
+cat <<'EOF_BLOCKED' > "$fake_axi"
+#!/usr/bin/env bash
+if [ "$1" = "open" ]; then
+  exit 0
+fi
+printf '%s\n' '{"blocked": true}'
+EOF_BLOCKED
+chmod +x "$fake_axi"
+
+set +e
+blocked_out="$(
+  GOOGLE_AI_SEARCH_AXI_BIN="$fake_axi" \
+  GOOGLE_AI_SEARCH_PROFILE_DIR="$fake_profile_dir" \
+  "$SCRIPT" "blocked query" 2>&1
+)"
+blocked_code=$?
+set -e
+test "$blocked_code" -eq 3
+case "$blocked_out" in
+  *"Google blocked this automated request with an unusual-traffic check."*) ;;
+  *) printf 'Missing Google block diagnostic: %s\n' "$blocked_out" >&2; exit 1 ;;
+esac
+case "$blocked_out" in
+  *"does not bypass CAPTCHA"*) ;;
+  *) printf 'Missing Google protection boundary: %s\n' "$blocked_out" >&2; exit 1 ;;
 esac
 
 printf '%s\n' "All Google AI Search contract and behavioral tests passed."
